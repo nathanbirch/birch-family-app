@@ -24,18 +24,34 @@ The specific square was picked by exhaustive search over all 1344 candidates.
 
 ---
 
-## Zero repeated adjacency over perfect evenness
+## The car's seat numbers are inverted against the table's
 
-A perfectly even schedule exists — every sibling pair exactly 3 side-by-side
-seatings — but it costs 5 repeated adjacencies, meaning one pair stays together
-through *every* rotation. The chosen schedule has **zero** repeats and a 2-or-4
-spread instead.
+One position number means one child in both scenes. Numbered the obvious way —
+front-to-back in the car, top-to-bottom at the table — that makes the child
+beside a parent at dinner the child beside them in the car too, the same child
+all week. Inverting the car's numbering makes the two scenes opposites instead:
+beside a parent at the table means the third row in the Expedition.
 
-This follows the stated priority order. The alternative is written out in a
-comment in `config/rotation.ts` for anyone who wants the other trade.
+The adjacency data follows the physical seats rather than the numbers, so the
+fairness analysis is unaffected by the relabelling. See
+[Family and seats](family-and-seats.md#the-inverted-numbering).
 
-The docs say "2 or 4", not "perfectly fair", because that is what the data
-shows.
+---
+
+## Perfect evenness, at a floor of five repeated adjacencies
+
+The inversion above constrains the schedule search: sweeping all twelve legal
+position-to-seat mappings against all 720 candidate schedules, none reaches
+zero repeated adjacencies any more. Five — exactly one sibling pair carried
+across each transition, a different pair each time — is the floor.
+
+The priority order is unchanged ("minimise repeated adjacency" first, then
+"distribute evenly"); the first criterion simply bottoms out higher now. Among
+the schedules that hit the floor, the chosen one is also perfectly even: every
+sibling pair exactly 3 side-by-side seatings. The previous zero-repeat schedule
+ran a 2-or-4 spread and could never have had that.
+
+The docs state both numbers, because that is what the data shows.
 
 ---
 

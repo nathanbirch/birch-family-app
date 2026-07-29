@@ -170,8 +170,50 @@ describe("seat geometry", () => {
 
   it("lays the Expedition out as 2 + 3 + 2", () => {
     expect(VEHICLE_PARENT_SEATS).toHaveLength(2);
-    expect(VEHICLE_CHILD_SEATS.filter((seat) => seat.position <= 3)).toHaveLength(3);
-    expect(VEHICLE_CHILD_SEATS.filter((seat) => seat.position >= 4)).toHaveLength(2);
+    const secondRow = VEHICLE_CHILD_SEATS.filter((seat) =>
+      seat.label.startsWith("second row"),
+    );
+    const thirdRow = VEHICLE_CHILD_SEATS.filter((seat) =>
+      seat.label.startsWith("third row"),
+    );
+    expect(secondRow).toHaveLength(3);
+    expect(thirdRow).toHaveLength(2);
+    // Rows are distinguishable by geometry too, not just by their labels.
+    expect(Math.max(...secondRow.map((seat) => seat.y))).toBeLessThan(
+      Math.min(...thirdRow.map((seat) => seat.y)),
+    );
+  });
+
+  /*
+   * The whole point of the two scenes sharing one set of position numbers is
+   * that a week is either "close to a parent" or "far from one" — never both.
+   * At the table the parents take the top of each bench, so positions 1 and 3
+   * are the ones beside them; in the car those same two children ride in the
+   * third row, furthest from the front seats.
+   */
+  it("inverts parent proximity between the table and the Expedition", () => {
+    const nearParentAtTable = TABLE_CHILD_SEATS.filter((seat) =>
+      TABLE_PARENT_SEATS.some(
+        (parent) =>
+          Math.abs(parent.x - seat.x) < 1 && Math.abs(parent.y - seat.y) < 20,
+      ),
+    ).map((seat) => seat.position);
+    expect([...nearParentAtTable].sort()).toEqual([1, 3]);
+
+    const thirdRow = VEHICLE_CHILD_SEATS.filter((seat) =>
+      seat.label.startsWith("third row"),
+    ).map((seat) => seat.position);
+    expect([...thirdRow].sort()).toEqual([1, 3]);
+  });
+
+  it("keeps each child on the same side of the table and the car", () => {
+    for (const position of [1, 2, 3, 4, 5] as const) {
+      const table = TABLE_CHILD_SEATS.find((s) => s.position === position)!;
+      const vehicle = VEHICLE_CHILD_SEATS.find((s) => s.position === position)!;
+      // Position 4 is the middle seat in the car, so it has no side to keep.
+      if (position === 4) continue;
+      expect(table.x < 50).toBe(vehicle.x < 50);
+    }
   });
 });
 

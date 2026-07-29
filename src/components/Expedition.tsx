@@ -14,8 +14,11 @@ import { SceneSeats } from "./SceneSeats";
  * The Expedition interior, photographed from above.
  *
  *   Driver                 Front passenger
- *   Child 1    Child 2    Child 3      (second row)
- *   Child 4               Child 5      (third row)
+ *   Child 2    Child 4    Child 5      (second row)
+ *   Child 1               Child 3      (third row)
+ *
+ * The child numbers are inverted relative to the dinner table on purpose — see
+ * the Expedition section of `config/seating.ts`.
  */
 export function Expedition({
   assignments,

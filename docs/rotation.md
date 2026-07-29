@@ -41,10 +41,10 @@ begins. The index can never go negative.
 ```ts
 export const CHILD_ROTATION_SCHEDULE = [
   ["hannah",  "emily",   "clara",   "william", "james"],
-  ["emily",   "william", "hannah",  "james",   "clara"],
-  ["william", "james",   "emily",   "clara",   "hannah"],
-  ["james",   "clara",   "william", "hannah",  "emily"],
-  ["clara",   "hannah",  "james",   "emily",   "william"],
+  ["emily",   "clara",   "james",   "hannah",  "william"],
+  ["clara",   "james",   "william", "emily",   "hannah"],
+  ["james",   "william", "hannah",  "clara",   "emily"],
+  ["william", "hannah",  "emily",   "james",   "clara"],
 ] as const;
 ```
 
@@ -52,6 +52,12 @@ Each row is one week; the five entries are Child Positions 1 to 5. The *same*
 position numbers drive both scenes — if Clara is in position 2 this week she is
 in Dinner Table Child Seat 2 **and** Expedition Child Seat 2. The two places are
 physically different; the number is the same.
+
+And deliberately *opposite* in character: the Expedition's seat numbering is
+inverted against the table's, so positions 1 and 3 — the two seats beside a
+parent at dinner — are the third row of the car. A week spent next to a parent
+at the table is a week in the back of the Expedition. See
+[Family and seats](family-and-seats.md#the-inverted-numbering).
 
 ## Why not just rotate the array
 
@@ -99,36 +105,39 @@ table or front/behind in the car.
 
 | Pair | Table (strong/weak) | Expedition (strong/weak) | Combined strong |
 |---|---|---|---|
-| Hannah + Emily | 2 / 2 | 2 / 2 | **4** |
-| Hannah + Clara | 2 / 2 | 2 / 2 | **4** |
-| Hannah + William | 1 / 0 | 1 / 2 | **2** |
-| Hannah + James | 1 / 0 | 1 / 2 | **2** |
-| Emily + Clara | 1 / 0 | 1 / 2 | **2** |
-| Emily + William | 2 / 2 | 2 / 2 | **4** |
-| Emily + James | 1 / 0 | 1 / 2 | **2** |
-| Clara + William | 1 / 0 | 1 / 2 | **2** |
-| Clara + James | 2 / 2 | 2 / 2 | **4** |
-| William + James | 2 / 2 | 2 / 2 | **4** |
+| Hannah + Emily | 2 / 0 | 1 / 3 | **3** |
+| Hannah + Clara | 1 / 2 | 2 / 1 | **3** |
+| Hannah + William | 2 / 0 | 1 / 3 | **3** |
+| Hannah + James | 1 / 2 | 2 / 1 | **3** |
+| Emily + Clara | 2 / 0 | 1 / 3 | **3** |
+| Emily + William | 1 / 2 | 2 / 1 | **3** |
+| Emily + James | 1 / 2 | 2 / 1 | **3** |
+| Clara + William | 1 / 2 | 2 / 1 | **3** |
+| Clara + James | 2 / 0 | 1 / 3 | **3** |
+| William + James | 2 / 0 | 1 / 3 | **3** |
 
-**Week-to-week siblings kept side by side: 0, 0, 0, 0, 0** — including the
-Week 5 → Week 1 wrap. No pair ever keeps the same neighbour through a rotation.
+Every pair, exactly **3** side-by-side seatings out of ten, and an identical
+weighted score of 4.5 each. The distribution is perfectly flat.
+
+**Week-to-week siblings kept side by side: 1, 1, 1, 1, 1** — including the
+Week 5 → Week 1 wrap. Exactly one pair carries a neighbour across each
+rotation, and it is a different pair each time.
 
 These numbers are re-derived by `tests/schedule.test.ts`, not copied by hand.
 
 ### The honest caveat
 
-Each pair sits side by side either **2 or 4 times** out of ten shared seatings.
-That is even, but **not perfectly equal**.
+This schedule does **not** hit zero repeated adjacencies, and an earlier one
+did. That changed when the Expedition's seat numbering was inverted against the
+table's, and it was not a free choice: sweeping all twelve legal
+position-to-seat mappings against all 720 candidate schedules, **none** reaches
+zero any more. Five — one pair per transition — is the floor.
 
-The search proves the trade-off is real. A perfectly equal schedule does exist —
-every pair exactly 3 strong and 3 weak — but only at the cost of 5 repeated
-adjacencies, meaning one sibling pair stays side by side through *every*
-rotation. The stated priorities rank "minimise repeated adjacency" above
-"distribute evenly", so the zero-repeat schedule won.
-
-The perfectly-even alternative is written out in a comment in
-`src/config/rotation.ts` if you would rather trade the other way. Both satisfy
-every hard requirement.
+What the inversion bought back is the other half of the trade-off the old
+schedule could never have. The old zero-repeat schedule ran a 2-or-4 band of
+pairings; this one is perfectly equal at 3. So the priorities still hold —
+"minimise repeated adjacency" first, then "distribute evenly" — the first
+criterion simply has a higher floor now, and the second comes out ideal.
 
 ## Editing the weeks
 

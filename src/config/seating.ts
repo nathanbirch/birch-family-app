@@ -204,14 +204,33 @@ export const TABLE_CHILD_OPPOSITES = [
 /* ------------------------------------------------------------------ */
 
 /*
- *  Nathan                  Sarah        (driver / front passenger)
+ *  Parent 1                Parent 2     (driver / front passenger)
  *
- *  Child 1    Child 2    Child 3        (second row)
+ *  Child 2    Child 4    Child 5        (second row)
  *
- *  Child 4               Child 5        (third row)
+ *  Child 1               Child 3        (third row)
  *
  * Measured against `public/scenes/expedition.png`: captain's chairs up front,
  * a three-across second row, and the two outboard seats of the third row.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THE NUMBERS RUN "BACKWARDS" HERE
+ * ---------------------------------------------------------------------------
+ * A position number means the same child in both scenes, so if the numbering
+ * ran front-to-back in the car the way it runs top-to-bottom at the table,
+ * whoever sat beside a parent at dinner would also sit beside them in the car —
+ * every week, all week. The two scenes are deliberately inverted instead:
+ *
+ *   positions 1 and 3   beside a parent at the table   ->  third row
+ *   positions 2, 4, 5   down the far end of the table  ->  second row
+ *
+ * So a week spent next to a parent at dinner is a week in the back of the car,
+ * and vice versa. Sides are still honoured: the left-bench children (1, 2) take
+ * the driver's side of the car, the right-bench children (3, 5) the passenger
+ * side, and position 4 — the middle of the right bench — takes the middle seat.
+ *
+ * The adjacency pairs below follow the *physical* seats, not the numbers, so
+ * the fairness analysis still measures who actually sits beside whom.
  */
 
 /**
@@ -228,13 +247,27 @@ export const VEHICLE_ENTRIES = {
 export const VEHICLE_CHILD_SEATS: readonly ChildSeat[] = [
   {
     position: 1,
+    x: 29,
+    y: 79,
+    label: "third row, driver side",
+    entry: VEHICLE_ENTRIES.rearLeft,
+  },
+  {
+    position: 2,
     x: 28,
     y: 59,
     label: "second row, driver side",
     entry: VEHICLE_ENTRIES.rearLeft,
   },
   {
-    position: 2,
+    position: 3,
+    x: 71,
+    y: 79,
+    label: "third row, passenger side",
+    entry: VEHICLE_ENTRIES.rearRight,
+  },
+  {
+    position: 4,
     x: 50,
     y: 59,
     label: "second row, middle",
@@ -242,24 +275,10 @@ export const VEHICLE_CHILD_SEATS: readonly ChildSeat[] = [
     entry: VEHICLE_ENTRIES.rearLeft,
   },
   {
-    position: 3,
+    position: 5,
     x: 72,
     y: 59,
     label: "second row, passenger side",
-    entry: VEHICLE_ENTRIES.rearRight,
-  },
-  {
-    position: 4,
-    x: 29,
-    y: 79,
-    label: "third row, driver side",
-    entry: VEHICLE_ENTRIES.rearLeft,
-  },
-  {
-    position: 5,
-    x: 71,
-    y: 79,
-    label: "third row, passenger side",
     entry: VEHICLE_ENTRIES.rearRight,
   },
 ] as const;
@@ -281,11 +300,14 @@ export const VEHICLE_PARENT_SEATS: readonly ParentSeat[] = [
   },
 ] as const;
 
-/** Side-by-side within a row. Weighted most heavily. */
+/**
+ * Side-by-side within a row: the three across the second row (2-4-5), and the
+ * two outboard third-row seats (1-3). Weighted most heavily.
+ */
 export const VEHICLE_CHILD_ADJACENCIES = [
-  [1, 2],
-  [2, 3],
+  [2, 4],
   [4, 5],
+  [1, 3],
 ] as const;
 
 /**
@@ -293,9 +315,9 @@ export const VEHICLE_CHILD_ADJACENCIES = [
  * child is "behind" the two second-row children flanking them. Weighted lower.
  */
 export const VEHICLE_CHILD_OPPOSITES = [
+  [1, 2],
   [1, 4],
-  [2, 4],
-  [2, 5],
+  [3, 4],
   [3, 5],
 ] as const;
 

@@ -23,36 +23,26 @@
  * Measured results for the schedule below (see `tests/schedule.test.ts`, which
  * re-derives these numbers, and the README for the full table):
  *
- *   Week-to-week siblings kept shoulder-to-shoulder: 0, 0, 0, 0, 0  (total 0)
+ *   Week-to-week siblings kept shoulder-to-shoulder: 1, 1, 1, 1, 1  (total 5)
  *   ...including the Week 5 -> Week 1 wrap.
  *
  *   Sibling pairs sharing a shoulder-to-shoulder seat over the whole cycle,
- *   counting the dinner table and the Expedition together:
+ *   counting the dinner table and the Expedition together: every one of the ten
+ *   pairs, exactly 3 times, for an identical weighted score of 4.5 each. The
+ *   distribution is perfectly equal — nobody is anybody's favourite.
  *
- *     hannah + emily     4      emily + clara      2
- *     hannah + clara     4      emily + william    4
- *     hannah + william   2      emily + james      2
- *     hannah + james     2      clara + william    2
- *     william + james    4      clara + james      4
- *
- *   So each pair sits side by side either 2 or 4 times across ten shared
- *   seatings. That is even but NOT perfectly equal, and the search proves the
- *   trade-off is real: a perfectly equal distribution (every pair exactly 3
- *   strong and 3 weak) does exist, but only at the cost of 5 repeated
- *   adjacencies — one sibling pair stays side by side through every single
- *   rotation. The stated priorities rank "minimise repeated adjacency in
- *   consecutive weeks" above "distribute pairings evenly", so the zero-repeat
- *   schedule wins.
- *
- *   The perfectly-even alternative, if you would rather have it:
- *
- *     ["hannah", "emily",   "clara",   "william", "james"],
- *     ["emily",  "william", "james",   "clara",   "hannah"],
- *     ["clara",  "james",   "emily",   "hannah",  "william"],
- *     ["william","clara",   "hannah",  "james",   "emily"],
- *     ["james",  "hannah",  "william", "emily",   "clara"],
- *
- *   Both satisfy every hard requirement. Swap it in and run `npm test`.
+ * ---------------------------------------------------------------------------
+ * WHY THIS IS NOT THE ZERO-REPEAT SCHEDULE IT USED TO BE
+ * ---------------------------------------------------------------------------
+ * The Expedition's seat numbering is deliberately inverted against the dinner
+ * table's, so a week beside a parent at dinner is a week in the third row of
+ * the car (see the Expedition section of `config/seating.ts`). That inversion
+ * constrains the search: sweeping all twelve legal position-to-seat mappings
+ * against all 720 candidate schedules, *none* reaches zero repeated adjacencies
+ * any more. Five — exactly one pair per transition — is the floor, and among
+ * the schedules that hit it this one also achieves a perfectly flat pairing
+ * distribution, which the old zero-repeat schedule never managed (it ran a 2-4
+ * band). So the trade-off moved, and it moved in a defensible direction.
  * ---------------------------------------------------------------------------
  *
  * If you edit these weeks, run `npm test` — the schedule tests enforce all the
@@ -63,10 +53,10 @@ import type { ChildId } from "./family";
 
 export const CHILD_ROTATION_SCHEDULE = [
   ["hannah", "emily", "clara", "william", "james"],
-  ["emily", "william", "hannah", "james", "clara"],
-  ["william", "james", "emily", "clara", "hannah"],
-  ["james", "clara", "william", "hannah", "emily"],
-  ["clara", "hannah", "james", "emily", "william"],
+  ["emily", "clara", "james", "hannah", "william"],
+  ["clara", "james", "william", "emily", "hannah"],
+  ["james", "william", "hannah", "clara", "emily"],
+  ["william", "hannah", "emily", "james", "clara"],
 ] as const satisfies ReadonlyArray<readonly ChildId[]>;
 
 export const ROTATION_LENGTH_WEEKS = CHILD_ROTATION_SCHEDULE.length;

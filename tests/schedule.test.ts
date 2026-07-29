@@ -114,9 +114,12 @@ describe("validator catches bad schedules", () => {
     const naiveReport = analyseSchedule(naive);
     const chosenReport = analyseSchedule(SCHEDULE);
 
-    // Every single transition of the naive schedule keeps siblings together.
-    expect(naiveReport.totalRepeats).toBeGreaterThan(0);
-    expect(chosenReport.totalRepeats).toBe(0);
+    // The naive schedule keeps far more siblings together than ours does, and
+    // spreads the pairings far less evenly.
+    expect(naiveReport.totalRepeats).toBeGreaterThan(
+      chosenReport.totalRepeats,
+    );
+    expect(chosenReport.spread.variance).toBeLessThan(naiveReport.spread.variance);
   });
 
   it("rejects a schedule that keeps a child in place", () => {
@@ -154,29 +157,32 @@ describe("sibling adjacency report", () => {
     expect(keys.size).toBe(10);
   });
 
-  it("keeps no sibling pair side by side across a rotation", () => {
-    expect(report.totalRepeats).toBe(0);
+  /*
+   * Documented, measured result — not an aspiration.
+   *
+   * Once the Expedition's seat numbers are inverted against the table's, zero
+   * repeats is no longer reachable by any schedule; one repeated pair per
+   * transition is the floor. See the comment block in src/config/rotation.ts.
+   */
+  it("keeps at most one sibling pair side by side across a rotation", () => {
+    expect(report.totalRepeats).toBe(5);
     for (const transition of report.transitions) {
-      expect(transition.repeats).toBe(0);
+      expect(transition.repeats).toBe(1);
     }
   });
 
   /*
-   * Documented, measured result — not an aspiration.
-   *
-   * Every pair sits shoulder-to-shoulder either 2 or 4 times across the ten
-   * shared seatings (5 weeks x 2 layouts). This is NOT perfectly equal, and
-   * the test asserts the real numbers rather than pretending otherwise. See
-   * the comment block in src/config/rotation.ts for the trade-off that
-   * produced it.
+   * The compensation for those five repeats: the pairings come out perfectly
+   * flat. Every pair is shoulder-to-shoulder exactly 3 times across the ten
+   * shared seatings (5 weeks x 2 layouts), for an identical weighted score.
    */
-  it("distributes pairings within a measured 2-to-4 band", () => {
+  it("distributes pairings perfectly evenly", () => {
     for (const entry of report.perPair) {
-      expect(entry.combinedStrong).toBeGreaterThanOrEqual(2);
-      expect(entry.combinedStrong).toBeLessThanOrEqual(4);
+      expect(entry.combinedStrong).toBe(3);
     }
-    expect(report.spread.min).toBe(3);
-    expect(report.spread.max).toBe(6);
+    expect(report.spread.min).toBe(4.5);
+    expect(report.spread.max).toBe(4.5);
+    expect(report.spread.range).toBe(0);
   });
 
   it("prints the adjacency table for the development record", () => {

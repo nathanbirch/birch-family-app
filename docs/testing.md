@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **191 tests across 9 files.**
+Vitest with jsdom and Testing Library. **195 tests across 9 files.**
 
 ## Coverage
 
@@ -24,7 +24,7 @@ paths that are real but not meaningfully reachable in jsdom.
 
 ## What each file covers
 
-### `rotation.test.ts` — 27 tests
+### `rotation.test.ts` — 31 tests
 The date maths, which is where a seating app is most likely to be quietly
 wrong.
 
@@ -58,7 +58,7 @@ Every hard fairness rule, plus the measured statistics.
   schedule exists to avoid
 - Adjacency counts are re-derived and asserted, not copied
 
-### `seating.test.ts` — 26 tests
+### `seating.test.ts` — 30 tests
 Geometry and configuration.
 
 - No two avatars can overlap, at any screen size
@@ -66,12 +66,15 @@ Geometry and configuration.
 - Everything stays inside the scene frame
 - The longest name still clears its neighbours
 - Both scenes use identical avatar sizing
+- **The two scenes invert parent proximity** — the positions beside a parent at
+  the table are exactly the third-row positions in the car
+- Each child keeps the same side of the table and the car (bar the middle seat)
 - Every seat has an off-scene doorway; the table has two, the car four
 - The arrival timing adds up to exactly 3000ms
 - Parent swap exchanges both scenes and never touches the children
 - Screen-reader summaries match the rendered assignments
 
-### `scenes.test.tsx` — 17 tests (×2 scenes)
+### `scenes.test.tsx` — 31 tests (×2 scenes)
 The two seating views, actually rendered.
 
 - All seven people, each exactly once, at their configured coordinates

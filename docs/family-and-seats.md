@@ -84,12 +84,40 @@ the table so seat 1 faces seat 3 and seat 2 faces seat 4.
 
 ```
    Driver                 Front passenger
-   Child 1    Child 2     Child 3          (second row)
-   Child 4                Child 5          (third row)
+   Child 2    Child 4     Child 5          (second row)
+   Child 1                Child 3          (third row)
 ```
 
 Captain's chairs up front, a three-across second row, and the two outboard
 seats of the third row.
+
+#### The inverted numbering
+
+The child numbers run "backwards" here on purpose. A position number means the
+same child in both scenes, so if the car were numbered front-to-back the way
+the table is numbered top-to-bottom, whoever sat beside a parent at dinner
+would also sit beside them in the car — the same child, every week, all week.
+
+The two scenes are inverted against each other instead:
+
+| Position | At the table | In the Expedition |
+|---|---|---|
+| 1 | beside Parent 1 | third row, driver side |
+| 3 | beside Parent 2 | third row, passenger side |
+| 2 | left bench, bottom | second row, driver side |
+| 4 | right bench, lower middle | second row, middle |
+| 5 | right bench, bottom | second row, passenger side |
+
+So a week next to a parent at dinner is a week in the back of the car, and a
+week down the far end of the table is a week in the second row. Sides are still
+honoured — the left-bench children (1, 2) take the driver's side, the
+right-bench children (3, 5) the passenger side, and position 4, the middle of
+the right bench, takes the middle seat.
+
+`VEHICLE_CHILD_ADJACENCIES` and `VEHICLE_CHILD_OPPOSITES` follow the *physical*
+seats, not the numbers, so the fairness analysis still measures who actually
+sits beside whom. This inversion is what raised the schedule's repeated-
+adjacency floor from 0 to 5 — see [Rotation](rotation.md#the-honest-caveat).
 
 ### Seat coordinates
 

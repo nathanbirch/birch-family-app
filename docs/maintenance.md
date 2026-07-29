@@ -74,6 +74,11 @@ npm run schedule:generate   # re-run the search and print fresh statistics
 The tests fail loudly on duplicates, missing position coverage, a child stuck in
 one seat, or a bad Week 5 → Week 1 wrap. See [Rotation](rotation.md).
 
+Two tests in `schedule.test.ts` assert the *measured* statistics — the repeated-
+adjacency total and the pairing spread — so a new schedule will fail them even
+when it is perfectly valid. Take the numbers from `schedule:generate`, update
+those two tests, and update the fairness table in [Rotation](rotation.md).
+
 ---
 
 ## Replace a scene photograph
