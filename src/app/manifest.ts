@@ -4,6 +4,12 @@ import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME } from "@/config/app";
 import { DEFAULT_THEME_ID, getTheme } from "@/config/themes";
 
 /**
+ * Next compiles this file into a route handler, which under `output: "export"`
+ * must declare that it can be resolved at build time rather than per request.
+ */
+export const dynamic = "force-static";
+
+/**
  * The web app manifest, generated from the same config as the rest of the app
  * so renaming the app in `config/app.ts` renames the installed icon too.
  */
