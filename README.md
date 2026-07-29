@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Birch Family Seats
 
-## Getting Started
+A small, installable web app that answers one question every week: **where does
+everyone sit?** It shows this week's places at the dinner table and in the Ford
+Expedition, and rotates the five children through a balanced five-week schedule.
 
-First, run the development server:
+No accounts, no database, no server, no tracking. The seating is derived
+entirely from three things:
+
+1. the rotation start date in the config,
+2. the device's current local date,
+3. the hardcoded five-week schedule.
+
+Two preferences are stored on the device: the chosen colour theme, and whether
+the two parents have swapped seats. Neither syncs anywhere.
+
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```bash
+npm run check      # typecheck + lint + tests — run before committing
+npm run build      # production build
+npm start          # serve it, and test PWA/offline behaviour
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Requires Node 20 or newer.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+> Offline behaviour cannot be tested with `npm run dev` — the service worker is
+> deliberately only registered in production builds. Use
+> `npm run build && npm start`.
 
-## Learn More
+## What it does
 
-To learn more about Next.js, take a look at the following resources:
+- **Dinner Table** and **Ford Expedition**, each a photograph of the real thing
+  with everyone placed on their actual seat.
+- The five children rotate through five numbered positions on a fixed five-week
+  cycle. The same position number applies to both scenes.
+- The parents stay put — unless you press the ⇄ button, which trades their
+  seats in both scenes and remembers it on that device.
+- Everyone walks in through a doorway and takes their seat over three seconds
+  on load, and again whenever the week rolls over.
+- Ten themes, including one dark. Installable as a PWA and fully usable offline
+  after the first visit.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Documentation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Everything lives in **[`docs/`](docs/README.md)**:
 
-## Deploy on Vercel
+| Doc | What's in it |
+|---|---|
+| [Getting started](docs/getting-started.md) | Install, run, test, build. Every npm script. |
+| [Architecture](docs/architecture.md) | Layout, what runs where, how data flows. |
+| [Family and seats](docs/family-and-seats.md) | People, avatars, photos, seat coordinates, the parent swap. |
+| [Rotation](docs/rotation.md) | Start date, the schedule, why it isn't a simple rotation, fairness numbers. |
+| [Themes](docs/themes.md) | All ten themes, tokens, persistence, the no-flash script. |
+| [Animation](docs/animation.md) | The three-second arrival and the swap glide. |
+| [PWA and offline](docs/pwa-and-offline.md) | Installing, the service worker, icons. |
+| [Accessibility](docs/accessibility.md) | What's been done and what it guarantees. |
+| [Testing](docs/testing.md) | What each test file covers, and current coverage. |
+| [Maintenance](docs/maintenance.md) | Recipes for common changes, plus troubleshooting. |
+| [Decisions](docs/decisions.md) | The non-obvious calls and why. |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## The most common change
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Almost everything you would want to adjust is data, not code, and lives in
+[`src/config/`](src/config/):
+
+| Want to change | File |
+|---|---|
+| Names, colours, avatar photos | `family.ts` |
+| Rotation start date, app name | `app.ts` |
+| The five-week schedule | `rotation.ts` |
+| Seat positions, parent defaults, animation timing | `seating.ts` |
+| The ten themes | `themes.ts` |
+
+See [Maintenance](docs/maintenance.md) for step-by-step recipes.

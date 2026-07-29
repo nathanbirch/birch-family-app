@@ -1,0 +1,52 @@
+"use client";
+
+import { APP_NAME } from "@/config/app";
+
+/**
+ * Last-resort fallback.
+ *
+ * Configuration mistakes (an unknown person id, a malformed start date) throw
+ * loudly in development so they are caught immediately. In production the
+ * family should still see something friendly and actionable rather than a
+ * blank white screen.
+ */
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-4 px-6 py-16 text-center">
+      <h1 className="text-2xl font-extrabold tracking-tight">
+        {APP_NAME} hit a snag
+      </h1>
+      <p style={{ color: "var(--color-text-muted)" }}>
+        The seating chart could not be worked out just now. Trying again usually
+        sorts it.
+      </p>
+      <button
+        type="button"
+        onClick={reset}
+        className="min-h-11 rounded-full px-5 text-sm font-semibold"
+        style={{
+          backgroundColor: "var(--color-primary)",
+          color: "var(--color-on-primary)",
+        }}
+      >
+        Try again
+      </button>
+      {process.env.NODE_ENV !== "production" ? (
+        <pre className="mt-4 max-w-full overflow-x-auto whitespace-pre-wrap rounded-xl p-4 text-left text-xs"
+          style={{
+            backgroundColor: "var(--color-surface-muted)",
+            border: "1px solid var(--color-border)",
+          }}
+        >
+          {error.message}
+        </pre>
+      ) : null}
+    </main>
+  );
+}
