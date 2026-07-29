@@ -58,14 +58,14 @@ export type PlacedSeat = SeatPoint & { entry: EntryPoint };
  */
 export const PARENT_ASSIGNMENTS = {
   table: {
-    parent1: "nathan" as PersonId,
-    parent2: "sarah" as PersonId,
+    parent1: "sarah" as PersonId,
+    parent2: "nathan" as PersonId,
   },
   vehicle: {
     /** parent1 === the driver's seat. */
-    parent1: "nathan" as PersonId,
+    parent1: "sarah" as PersonId,
     /** parent2 === the front passenger seat. */
-    parent2: "sarah" as PersonId,
+    parent2: "nathan" as PersonId,
   },
 } as const;
 

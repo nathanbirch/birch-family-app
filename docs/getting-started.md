@@ -22,6 +22,7 @@ npm run dev        # http://localhost:3000
 | `npm run check` | `typecheck` → `lint` → `test`. Run this before you commit. |
 | `npm run schedule:generate` | Development only. Searches every possible five-week schedule and prints the best, with fairness statistics. |
 | `npm run icons:generate` | Development only. Redraws the PWA icons into `public/icons/`. |
+| `npm run cache:clear` | Clears Next's optimised-image cache. Run this after replacing a photo that keeps its filename, then restart. |
 
 ## The one thing that will confuse you
 

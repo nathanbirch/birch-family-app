@@ -212,20 +212,42 @@ describe("arrival choreography", () => {
 });
 
 describe("parent assignments", () => {
-  it("puts Nathan and Sarah in their fixed seats", () => {
-    expect(PARENT_ASSIGNMENTS.table.parent1).toBe("nathan");
-    expect(PARENT_ASSIGNMENTS.table.parent2).toBe("sarah");
-    expect(PARENT_ASSIGNMENTS.vehicle.parent1).toBe("nathan");
-    expect(PARENT_ASSIGNMENTS.vehicle.parent2).toBe("sarah");
+  /*
+   * A deliberate snapshot of who currently sits where. Everything below this
+   * reads from the config instead, so only this one test needs touching if the
+   * two of them trade places for good.
+   */
+  it("seats Sarah in Parent Seat 1 and Nathan in Parent Seat 2", () => {
+    expect(PARENT_ASSIGNMENTS.table.parent1).toBe("sarah");
+    expect(PARENT_ASSIGNMENTS.table.parent2).toBe("nathan");
+    expect(PARENT_ASSIGNMENTS.vehicle.parent1).toBe("sarah");
+    expect(PARENT_ASSIGNMENTS.vehicle.parent2).toBe("nathan");
+  });
+
+  it("gives the two parents different seats in each scene", () => {
+    expect(PARENT_ASSIGNMENTS.table.parent1).not.toBe(
+      PARENT_ASSIGNMENTS.table.parent2,
+    );
+    expect(PARENT_ASSIGNMENTS.vehicle.parent1).not.toBe(
+      PARENT_ASSIGNMENTS.vehicle.parent2,
+    );
+  });
+
+  it("only ever seats parents in the parent seats", () => {
+    const parentIds = FAMILY.filter((m) => m.role === "parent").map((m) => m.id);
+    for (const pair of [PARENT_ASSIGNMENTS.table, PARENT_ASSIGNMENTS.vehicle]) {
+      expect(parentIds).toContain(pair.parent1);
+      expect(parentIds).toContain(pair.parent2);
+    }
   });
 
   it("swaps both scenes together", () => {
     const normal = getParentAssignments(false);
     const swapped = getParentAssignments(true);
 
-    expect(normal.table.parent1).toBe("nathan");
-    expect(swapped.table.parent1).toBe("sarah");
-    expect(swapped.table.parent2).toBe("nathan");
+    expect(normal.table.parent1).toBe(PARENT_ASSIGNMENTS.table.parent1);
+    expect(swapped.table.parent1).toBe(PARENT_ASSIGNMENTS.table.parent2);
+    expect(swapped.table.parent2).toBe(PARENT_ASSIGNMENTS.table.parent1);
     // Whoever takes Parent Seat 1 at dinner also takes the wheel.
     expect(swapped.vehicle.parent1).toBe(swapped.table.parent1);
     expect(swapped.vehicle.parent2).toBe(swapped.table.parent2);
@@ -239,8 +261,9 @@ describe("parent assignments", () => {
   });
 
   it("does not let a swap leak into the default config", () => {
+    const before = { ...PARENT_ASSIGNMENTS.table };
     getParentAssignments(true);
-    expect(PARENT_ASSIGNMENTS.table.parent1).toBe("nathan");
+    expect({ ...PARENT_ASSIGNMENTS.table }).toEqual(before);
   });
 
   it("swaps the parents in the weekly assignments", () => {
@@ -263,8 +286,10 @@ describe("parent assignments", () => {
       new Date(2027, 0, 4, 12),
     ]) {
       const assignments = getWeeklyAssignments(iso, START);
-      expect(assignments.tableParents.parent1).toBe("nathan");
-      expect(assignments.vehicleParents.parent2).toBe("sarah");
+      expect(assignments.tableParents).toEqual({ ...PARENT_ASSIGNMENTS.table });
+      expect(assignments.vehicleParents).toEqual({
+        ...PARENT_ASSIGNMENTS.vehicle,
+      });
     }
   });
 });
@@ -290,8 +315,12 @@ describe("screen-reader summaries", () => {
   it("describes all seven dinner-table seats", () => {
     const lines = getTableSummary(WEEK_3);
     expect(lines).toHaveLength(7);
-    expect(lines[0].text).toContain("Nathan is in Parent Seat 1");
-    expect(lines[1].text).toContain("Sarah is in Parent Seat 2");
+    expect(lines[0].text).toContain(
+      `${getPerson(PARENT_ASSIGNMENTS.table.parent1).name} is in Parent Seat 1`,
+    );
+    expect(lines[1].text).toContain(
+      `${getPerson(PARENT_ASSIGNMENTS.table.parent2).name} is in Parent Seat 2`,
+    );
     for (const line of lines) expect(line.text).toMatch(/\.$/);
   });
 

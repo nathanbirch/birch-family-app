@@ -26,8 +26,26 @@ calls, so a PWA framework would be more moving parts than the feature needs.
 | Request | Strategy |
 |---|---|
 | Navigations | Network first, falling back to the cached page. Freshest build when online; still opens on a dead signal. |
-| Everything else, same-origin | Cache first, with a quiet background refresh. |
+| `/_next/static/…` | Cache first. These filenames contain a content hash, so a URL can never mean two different things. |
+| Everything else, same-origin | Network first with forced revalidation, falling back to the cache. |
 | Cross-origin | Not intercepted at all. |
+
+That third row is deliberate. Optimised images, the photographs, the icons and
+the manifest are **not** content-addressed: replacing `dinner-table.png` with a
+new picture reuses the same URL. A cache-first worker would serve the old
+photograph until the cache version changed. Requests go out with
+`cache: "no-cache"` so the browser's own HTTP cache cannot answer either —
+Next serves optimised images with `max-age=14400`. The request is conditional,
+so an unchanged asset costs a 304 rather than a re-download, and offline
+behaviour is unaffected.
+
+### In development, the worker removes itself
+
+The dev and production servers share an origin, so a worker registered by one
+`npm start` would otherwise keep controlling every later `npm run dev` — serving
+stale JavaScript and stale photographs with no way for the app to recover. In
+development the app unregisters any worker it finds, deletes its caches, and
+reloads once.
 
 On install it precaches the page shell, the manifest and the icons, each
 individually so one missing file cannot fail the whole install. The scene and

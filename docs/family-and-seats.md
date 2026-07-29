@@ -64,6 +64,7 @@ another, and the children fill downwards:
    left bench        table        right bench
 
     Parent 1                       Parent 2
+   (Sarah)                        (Nathan)
     Child 1                        Child 3
     Child 2                        Child 4
                                    Child 5
@@ -105,13 +106,16 @@ if you change the avatar size.
 
 ```ts
 export const PARENT_ASSIGNMENTS = {
-  table:   { parent1: "nathan", parent2: "sarah" },
-  vehicle: { parent1: "nathan", parent2: "sarah" },  // parent1 drives
+  table:   { parent1: "sarah", parent2: "nathan" },
+  vehicle: { parent1: "sarah", parent2: "nathan" },  // parent1 drives
 } as const;
 ```
 
-This is the **default**. The table and vehicle are configured separately, so
-Sarah could drive while Nathan still takes Parent Seat 1 at dinner.
+This is the **default**: Sarah takes Parent Seat 1 and drives; Nathan takes
+Parent Seat 2 and the front passenger seat.
+
+The table and vehicle are configured separately, so you could have one person
+drive while the other still takes Parent Seat 1 at dinner.
 
 ### Swapping them day to day
 

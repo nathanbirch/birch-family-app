@@ -19,8 +19,9 @@ Leave `id` alone — it is the key the rotation schedule and the tests refer to.
 Drop the new file into `public/avatars/`, keeping the same filename. Square
 images work best; they are cropped to a circle.
 
-> **If it still shows the old photo**, Next's image optimiser is serving it from
-> cache. `rm -rf .next/cache/images` and restart.
+> **If it still shows the old photo**, see
+> [A replaced image still shows the old one](#a-replaced-image-still-shows-the-old-one).
+> Short version: `npm run cache:clear`, restart, hard-reload.
 
 ---
 
@@ -38,7 +39,7 @@ on purpose, so a child always recognises themselves.
 
 ---
 
-## Swap Nathan and Sarah
+## Swap the two parents
 
 Two different things, depending on what you mean:
 
@@ -46,6 +47,11 @@ Two different things, depending on what you mean:
 - **Change the default** — exchange the two ids in `PARENT_ASSIGNMENTS` in
   [`src/config/seating.ts`](../src/config/seating.ts). The table and vehicle are
   configured separately, so you can change one without the other.
+
+  One catch: the ⇄ button stores a *relative* preference, not an absolute one.
+  If a device has it toggled on, flipping the default moves that device back to
+  the old arrangement. Press the button again there, or clear
+  `birch-family-seats:parents-swapped:v1`.
 
 ---
 
@@ -76,7 +82,7 @@ one seat, or a bad Week 5 → Week 1 wrap. See [Rotation](rotation.md).
 2. If its shape differs, update that scene's `aspect` / `aspectRatio` in
    `TABLE_LAYOUT` or `VEHICLE_LAYOUT`.
 3. Re-measure the seat coordinates.
-4. `rm -rf .next/cache/images` and restart.
+4. `npm run cache:clear`, then restart the server and hard-reload the page.
 
 **How to re-measure properly.** Don't eyeball it — the photo is cropped by
 `object-fit: cover` to the frame's aspect ratio, so positions in the source file
@@ -146,8 +152,41 @@ Both are per-browser and per-device, and neither syncs.
 # Troubleshooting
 
 **A replaced image still shows the old one.**
-`rm -rf .next/cache/images`, then restart. Next caches optimised images by URL,
-and reusing a filename reuses the cache entry.
+
+Reusing a filename means the URL never changes, and *three* separate caches key
+on that URL. Clear them in this order — the first one is almost always the
+culprit:
+
+1. **Next's image optimiser** (server side, `.next/cache/images`). It stores the
+   resized copy against the request URL, so a new file at the same path is
+   never re-read.
+   ```bash
+   npm run cache:clear
+   ```
+   Restart the server afterwards; the optimiser also keeps an in-memory layer.
+
+2. **The service worker** (browser). Only relevant after you have run a
+   production build on that origin. In development the app now unregisters any
+   worker it finds and clears its caches automatically, so **loading the dev
+   page twice is enough**. In production, bumping `CACHE_VERSION` in
+   `public/sw.js` drops every old cache.
+
+3. **The browser's own HTTP cache.** Optimised images are served with
+   `max-age=14400`, so a normal reload can still show the old picture for four
+   hours. A hard reload (Cmd-Shift-R) or DevTools → Network → *Disable cache*
+   settles it.
+
+The service worker itself no longer serves stale pictures: non-hashed assets go
+network-first with forced revalidation. But the two caches either side of it can
+still hold one, which is why the order above matters.
+
+**Dev is serving an old build entirely.**
+A service worker registered by an earlier `npm start` keeps controlling
+`localhost:3000` during `npm run dev`, because they share an origin. The app
+now tears that down on its own — load the page, let it reload once, and you are
+back on live dev output. Note this also means a worker from this app can
+intercept *another* project served on the same port; if you juggle apps on
+:3000, unregister under DevTools → Application → Service Workers.
 
 **Offline doesn't work.**
 The service worker is not registered in `npm run dev` — that's deliberate. Use
