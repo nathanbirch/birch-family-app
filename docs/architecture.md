@@ -2,11 +2,37 @@
 
 ## The shape of it
 
-Next.js App Router, React server components by default, Tailwind v4 for layout
-and semantic CSS custom properties for colour. No database, no API routes, no
-server actions, no external services.
+Next.js 16 App Router, React server components by default, Tailwind v4 for
+layout and semantic CSS custom properties for colour. MongoDB Atlas behind a
+single shared login. Server Actions for the two mutations there are (sign in,
+sign out); no REST API routes.
 
-The whole app is one page. Seating is **derived**, never stored:
+## Routes
+
+```
+src/app/
+├── layout.tsx              root: theme, fonts, service worker
+├── login/page.tsx          the only page reachable signed out
+└── (app)/                  route group — parentheses keep it out of the URL
+    ├── layout.tsx          requireUser() + the bottom tab bar
+    ├── page.tsx            /          the dashboard
+    ├── seating/page.tsx    /seating   the seating rotation
+    └── account/page.tsx    /account   theme, sign out, app info
+```
+
+Everything inside `(app)` is protected by *where the file is*, not by
+remembering to add it to a list: the group's layout calls `requireUser()` before
+any child renders. `src/proxy.ts` does a fast cookie-signature check in front of
+that. See [Authentication](authentication.md) for why there are two checks.
+
+`config/navigation.ts` is the single source of truth for what pages exist. The
+bottom tab bar and the dashboard cards are both generated from it.
+
+## Two kinds of data
+
+The app deliberately keeps two categories apart.
+
+**Derived, never stored** — the entire seating rotation:
 
 ```
 ROTATION_START_DATE  ─┐
@@ -16,30 +42,53 @@ parent swap (local)  ───────────────────�
 ```
 
 There is nothing to save because there is nothing to decide. Two devices
-looking at the app on the same day always show the same seats.
+looking at the app on the same day always show the same seats, and the database
+being unreachable does not change a single seat.
+
+**Stored in MongoDB** — accounts and sessions, and nothing else so far. See
+[Database](database.md).
+
+Keep new features on the right side of that line where you can. A chore *chart*
+(who is assigned what, on what cycle) may well be derivable config like the
+seating schedule; whether a chore was *done* is genuinely state and belongs in
+the database.
 
 ## Server and client
 
-Server components are the default. Exactly one client island exists:
+Server components are the default. Every `page.tsx` and `layout.tsx` stays on
+the server, which is what lets them call `requireUser()` and query MongoDB
+directly with no API layer in between.
 
-- **`SeatingBoard`** (`"use client"`) — because the assignments depend on the
-  *device's* local date and must roll over at local midnight without a reload.
-  Everything it renders (the header, the status panel, both scenes) is a plain
-  pure component that happens to be in the client bundle.
-
-Everything else that is a client component is there for a specific interactive
-reason:
+Client components exist only where there is a specific interactive reason:
 
 | Component | Why it's a client component |
 |---|---|
+| `SeatingBoard` | assignments depend on the *device's* local date and must roll over at local midnight without a reload |
+| `SeatingCardBadge` | same, for the dashboard's "Week 3 of 5" badge |
+| `BottomNav` | needs `usePathname()` to know which tab is current |
+| `LoginForm` | `useActionState` for the pending state and the error message |
+| `SignOutButton` | `useFormStatus` for the pending state |
 | `ThemeProvider` / `ThemePicker` | `localStorage`, a popover, focus management |
 | `SwapParentsButton` | reads the swap store |
 | `ServiceWorker` | calls `navigator.serviceWorker.register` |
 | `error.tsx` | React error boundaries must be client components |
 
-`page.tsx` and `layout.tsx` stay on the server. The page renders the shell and
-hands the island an initial date, so the very first paint already shows real
-assignments before any JavaScript runs.
+The seating page renders the shell on the server and hands the island an
+initial date, so the very first paint already shows real assignments before any
+JavaScript runs.
+
+### Keeping the server bundle honest
+
+Two modules are split in half specifically to control what gets pulled where:
+
+- **`session-token.ts`** (JWT only, no MongoDB) is separate from
+  `session.ts`, because `proxy.ts` runs on every request and importing the
+  whole driver into it would be expensive.
+- **`passwords.ts`** (bcrypt only) is separate from `users.ts`, so password
+  hashing can be unit-tested without `server-only` or a database.
+
+Server-only modules import `"server-only"`, which turns "this accidentally
+ended up in the client bundle" from a silent data leak into a build error.
 
 ## Directories
 
@@ -51,6 +100,8 @@ here, strongly typed, with no logic beyond simple lookups.
 | File | Holds |
 |---|---|
 | `app.ts` | App name, rotation start date, the two `localStorage` keys |
+| `db.ts` | The database name and every collection name |
+| `navigation.ts` | The pages, the tab bar layout, the planned-feature cards |
 | `family.ts` | The seven people: names, roles, identifying colours, faces, photos |
 | `rotation.ts` | The hardcoded five-week schedule |
 | `seating.ts` | Seat coordinates, doorways, parent assignments, adjacency model, scene layout and arrival timing |
@@ -68,10 +119,21 @@ Pure functions. Nothing here imports React.
 | `seating-summary.ts` | The screen-reader description of each scene |
 | `theme-storage.ts` / `parent-storage.ts` | Guarded `localStorage` access |
 | `theme-store.ts` / `parent-store.ts` | Tiny external stores for `useSyncExternalStore` |
+| `db.ts` | The shared MongoDB client, and readable connection errors |
+| `auth/` | Sessions, users, passwords, the DAL, the sign-in/out actions |
+
+Everything outside `auth/` and `db.ts` is still pure and React-free, and is
+tested as such.
 
 ### `src/components/` — the rendering
 
 ```
+nav/BottomNav         the tab bar; nav/NavIcon holds the icon set
+auth/LoginForm        email + password, useActionState
+account/SignOutButton posts to the logout Server Action
+dashboard/SeatingCardBadge   the live "Week 3 of 5" pill
+PageBackground        the soft themed shapes behind every page
+
 SeatingBoard          the client island; owns the date and the swap
 ├── AppHeader         name, date, week badge, countdown
 │   ├── SwapParentsButton

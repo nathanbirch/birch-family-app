@@ -1,5 +1,11 @@
 # Animation
 
+> **Nothing starts until the avatars have loaded.** The whole arrival sequence
+> below is held back until every photograph in both scenes has decoded, so
+> people never walk to their seats as empty circles. See
+> [PWA and offline](pwa-and-offline.md#nobody-moves-until-the-photographs-have-loaded)
+> for how, and why the hiding happens before first paint rather than in React.
+
 Two movements, and nothing that loops. Once the arrival settles, the page is
 still.
 

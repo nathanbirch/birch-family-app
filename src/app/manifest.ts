@@ -4,8 +4,12 @@ import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME } from "@/config/app";
 import { DEFAULT_THEME_ID, getTheme } from "@/config/themes";
 
 /**
- * Next compiles this file into a route handler, which under `output: "export"`
- * must declare that it can be resolved at build time rather than per request.
+ * The manifest is the same for everyone and never changes between requests, so
+ * it is resolved once at build time rather than re-rendered per request.
+ *
+ * `proxy.ts` excludes `/manifest.webmanifest` from its matcher — a phone
+ * fetches it before there is any session, and redirecting it to /login would
+ * break installing the app to the home screen.
  */
 export const dynamic = "force-static";
 
@@ -29,7 +33,6 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: theme.colors.background,
     categories: ["lifestyle", "utilities"],
     icons: [
-      { src: "/icons/icon.svg", sizes: "any", type: "image/svg+xml" },
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
       {

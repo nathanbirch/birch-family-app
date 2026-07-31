@@ -9,6 +9,16 @@ import { APP_NAME } from "@/config/app";
  * loudly in development so they are caught immediately. In production the
  * family should still see something friendly and actionable rather than a
  * blank white screen.
+ *
+ * Since the app grew a database, by far the most likely thing to land here is
+ * MongoDB being unreachable — an Atlas free-tier cluster that has paused itself
+ * after 60 days idle, or an IP that is not on the Network Access allowlist. The
+ * copy below hints at that without asking the family to care about it, and the
+ * development-only detail at the bottom names it outright.
+ *
+ * Next.js strips server error messages in production before they reach this
+ * component, so there is no reliable way to branch on the cause here. Anything
+ * more specific has to be handled where the error is thrown.
  */
 export default function Error({
   error,
@@ -23,8 +33,8 @@ export default function Error({
         {APP_NAME} hit a snag
       </h1>
       <p style={{ color: "var(--color-text-muted)" }}>
-        The seating chart could not be worked out just now. Trying again usually
-        sorts it.
+        That page could not be loaded just now. Trying again usually sorts it —
+        if it keeps happening, the app probably cannot reach its database.
       </p>
       <button
         type="button"

@@ -48,14 +48,28 @@ export function clearStoredTheme(): boolean {
 }
 
 /**
- * The inline script that runs before first paint, so the saved theme is on
- * `<html>` before anything is visible. Kept deliberately tiny and total: any
- * failure leaves the server-rendered default theme in place.
+ * The inline script that runs before first paint.
+ *
+ * Two jobs, both of which have to happen before anything is visible:
+ *
+ * 1. Put the saved theme on `<html>`, so there is no flash of the default one.
+ * 2. Mark the document as `js`, which is what lets the seating scenes start
+ *    with their avatars hidden and animate them in once the photographs have
+ *    decoded. Doing it here rather than in React matters: by the time a
+ *    component could add the class, the first paint has already happened and
+ *    everyone would flash into place before walking in.
+ *
+ *    Without JavaScript the class never appears, the CSS that hides them never
+ *    applies, and the scenes render fully populated and static — which is the
+ *    correct fallback.
+ *
+ * Kept deliberately tiny and total: either failure leaves a working page.
  */
 export function buildThemeInitScript(): string {
   return `(function(){try{var k=${JSON.stringify(THEME_STORAGE_KEY)};var d=${JSON.stringify(
     DEFAULT_THEME_ID,
   )};var v=localStorage.getItem(k);var a=${JSON.stringify(
     THEME_IDS,
-  )};document.documentElement.setAttribute("data-theme",a.indexOf(v)>-1?v:d);}catch(e){}})();`;
+  )};document.documentElement.setAttribute("data-theme",a.indexOf(v)>-1?v:d);}catch(e){}
+try{document.documentElement.classList.add("js");}catch(e){}})();`;
 }

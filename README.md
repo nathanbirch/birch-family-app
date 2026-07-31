@@ -1,50 +1,88 @@
-# Birch Family Seats
+# Birch Family App
 
-A small, installable web app that answers one question every week: **where does
-everyone sit?** It shows this week's places at the dinner table and in the Ford
-Expedition, and rotates the five children through a balanced five-week schedule.
+A private, installable web app for the Birch family. It sits behind a login and
+currently holds one feature — the weekly **seating rotation** — with chore
+charts, rewards, stars, family mantras and a calendar planned.
 
-No accounts, no database, no server, no tracking. The seating is derived
-entirely from three things:
+---
 
-1. the rotation start date in the config,
-2. the device's current local date,
-3. the hardcoded five-week schedule.
+## Project facts
 
-Two preferences are stored on the device: the chosen colour theme, and whether
-the two parents have swapped seats. Neither syncs anywhere.
+Everything you need to find your way back into this project after months away.
+
+| | |
+|---|---|
+| **Repository** | <https://github.com/nathanbirch/birch-family-app> |
+| **GitHub owner** | `nathanbirch` |
+| **Default branch** | `main` |
+| **Package name** | `birch-family-app` |
+| **Live URL** | _not yet deployed — see [Deployment](docs/deployment.md)_ |
+| **Hosting** | Vercel (planned). Previously GitHub Pages; see below. |
+| **Framework** | Next.js 16.2 (App Router) · React 19 · TypeScript · Tailwind 4 |
+| **Database** | MongoDB Atlas, `cluster0.pmxixtt.mongodb.net` |
+| **Database name** | `birch_family_app` — this app touches nothing else on the cluster |
+| **Node version** | 20 or newer (22 recommended) |
+| **Secrets** | `.env`, gitignored. Template in `.env.example`. |
+
+> **The app was renamed.** It began life as `seating-rotation` /
+> "Birch Family Seats", a static site on GitHub Pages at
+> `seating.nathanbirch.one`. When it grew a login it stopped being hostable as
+> static files and moved to Vercel. The old Pages workflow and `CNAME` were
+> deleted. If an old link is still bookmarked somewhere, that is why it is dead.
+
+> **This repo is private-by-obscurity, not by hardening.** One shared login
+> guards it. Do not put anything in here you would mind a stranger reading if
+> the URL leaked. See [Authentication](docs/authentication.md).
+
+---
 
 ## Quick start
 
 ```bash
 npm install
-npm run dev        # http://localhost:3000
+cp .env.example .env    # then paste in the real values — see docs/database.md
+npm run db:seed         # creates indexes + the first login account
+npm run dev             # http://localhost:3000
 ```
+
+Sign in with **`birchfam` / `birchfam`**.
 
 ```bash
 npm run check      # typecheck + lint + tests — run before committing
 npm run build      # production build
-npm start          # serve it, and test PWA/offline behaviour
+npm start          # serve the production build locally
 ```
 
-Requires Node 20 or newer.
+> **First run will fail to connect** unless your current IP is on the Atlas
+> Network Access allowlist. The error is a bare TLS failure that says nothing
+> about allowlists — [Database](docs/database.md) explains the fix.
 
-> Offline behaviour cannot be tested with `npm run dev` — the service worker is
-> deliberately only registered in production builds. Use
-> `npm run build && npm start`.
+---
 
-## What it does
+## What's in it
 
-- **Dinner Table** and **Ford Expedition**, each a photograph of the real thing
-  with everyone placed on their actual seat.
-- The five children rotate through five numbered positions on a fixed five-week
-  cycle. The same position number applies to both scenes.
-- The parents stay put — unless you press the ⇄ button, which trades their
-  seats in both scenes and remembers it on that device.
-- Everyone walks in through a doorway and takes their seat over three seconds
-  on load, and again whenever the week rolls over.
-- Ten themes, including one dark. Installable as a PWA and fully usable offline
-  after the first visit.
+### Working now
+
+- **Login** — email and password, bcrypt-hashed, sessions in MongoDB. One
+  seeded account. No signup page; accounts are created by the seed script.
+- **Dashboard** (`/`) — a card per page, plus honest "coming soon" cards for
+  the planned features.
+- **Seating rotation** (`/seating`) — the original app. Photographs of the real
+  dinner table and Ford Expedition with everyone on their actual seat, rotating
+  the five children through a balanced five-week schedule.
+- **Account** (`/account`) — who's signed in, the theme picker, sign out.
+- **Bottom tab bar** — Seats · Home · Account, with Home in the middle.
+- Ten themes including a dark one. Installable as a PWA.
+
+### Planned
+
+Chore charts · Rewards · Stars · Family mantras · Google Calendar.
+
+These are listed in `PLANNED_FEATURES` in
+[`src/config/navigation.ts`](src/config/navigation.ts) and rendered on the
+dashboard, so the app itself is the roadmap. Delete an entry as you build it.
+
+---
 
 ## Documentation
 
@@ -53,7 +91,10 @@ Everything lives in **[`docs/`](docs/README.md)**:
 | Doc | What's in it |
 |---|---|
 | [Getting started](docs/getting-started.md) | Install, run, test, build. Every npm script. |
-| [Architecture](docs/architecture.md) | Layout, what runs where, how data flows. |
+| [Deployment](docs/deployment.md) | Vercel setup, env vars, domains, the GitHub Pages history. |
+| [Database](docs/database.md) | MongoDB, collections, seeding, the Atlas allowlist trap. |
+| [Authentication](docs/authentication.md) | How login works, changing the password, adding people. |
+| [Architecture](docs/architecture.md) | Routes, layout, what runs where, how data flows. |
 | [Family and seats](docs/family-and-seats.md) | People, avatars, photos, seat coordinates, the parent swap. |
 | [Rotation](docs/rotation.md) | Start date, the schedule, why it isn't a simple rotation, fairness numbers. |
 | [Themes](docs/themes.md) | All ten themes, tokens, persistence, the no-flash script. |
@@ -64,6 +105,8 @@ Everything lives in **[`docs/`](docs/README.md)**:
 | [Maintenance](docs/maintenance.md) | Recipes for common changes, plus troubleshooting. |
 | [Decisions](docs/decisions.md) | The non-obvious calls and why. |
 
+---
+
 ## The most common change
 
 Almost everything you would want to adjust is data, not code, and lives in
@@ -71,10 +114,27 @@ Almost everything you would want to adjust is data, not code, and lives in
 
 | Want to change | File |
 |---|---|
+| The app icon | `assets/icon-master.png`, then `npm run icons:generate` |
 | Names, colours, avatar photos | `family.ts` |
-| Rotation start date, app name | `app.ts` |
+| App name, rotation start date | `app.ts` |
+| Pages, the tab bar, the roadmap cards | `navigation.ts` |
+| Database and collection names | `db.ts` |
 | The five-week schedule | `rotation.ts` |
 | Seat positions, parent defaults, animation timing | `seating.ts` |
 | The ten themes | `themes.ts` |
 
 See [Maintenance](docs/maintenance.md) for step-by-step recipes.
+
+---
+
+## Adding the next feature
+
+The app is set up so a new page is roughly four steps:
+
+1. Add a collection name to `COLLECTIONS` in [`src/config/db.ts`](src/config/db.ts).
+2. Add an entry to `NAV_ITEMS` in [`src/config/navigation.ts`](src/config/navigation.ts)
+   (and delete the matching `PLANNED_FEATURES` entry).
+3. Create `src/app/(app)/<page>/page.tsx`. Call `await requireUser()` first.
+4. Extend `scripts/seed-database.ts` with any indexes the collection needs.
+
+The tab bar and the dashboard pick the new page up automatically.

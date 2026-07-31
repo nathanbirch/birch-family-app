@@ -1,0 +1,239 @@
+# Database
+
+## What and where
+
+| | |
+|---|---|
+| **Provider** | MongoDB Atlas |
+| **Cluster** | `cluster0.pmxixtt.mongodb.net` |
+| **Database** | `birch_family_app` |
+| **Driver** | `mongodb` (official Node driver) |
+| **Connection string** | `MONGODB_URI` in `.env` — never committed |
+
+---
+
+## This app stays in its own database
+
+The cluster is shared with other applications. Rather than scattering
+prefixed collections through somebody else's database, this app claims
+**`birch_family_app`** and never reads or writes outside it.
+
+That guarantee is enforced in one place. The connection string deliberately has
+no database path on the end, so the driver has no default to fall back on, and
+every query in the app goes through `getDb()`:
+
+```ts
+// src/lib/db.ts
+export async function getDb(): Promise<Db> {
+  const client = await getClient();
+  return client.db(DB_NAME);        // src/config/db.ts
+}
+```
+
+There is no code path that reaches another database. Nothing this app does can
+collide with, overwrite, or even see another app's data.
+
+---
+
+## Collections
+
+Declared in [`src/config/db.ts`](../src/config/db.ts). Add new ones there rather
+than hardcoding strings at the call site.
+
+### `users`
+
+One document per person who can sign in.
+
+| Field | Type | Notes |
+|---|---|---|
+| `_id` | ObjectId | |
+| `email` | string | Lowercased. Unique index. The login identifier. |
+| `passwordHash` | string | bcrypt, cost 12. Never leaves the server. |
+| `displayName` | string | Shown on the dashboard and account page. |
+| `createdAt` / `updatedAt` | Date | |
+
+**Indexes:** `email_unique` — unique on `email`. This is what actually enforces
+one account per email; the check in `createUserIfAbsent` is a convenience, not
+the guarantee.
+
+### `sessions`
+
+One document per signed-in device.
+
+| Field | Type | Notes |
+|---|---|---|
+| `_id` | ObjectId | The cookie holds a signed pointer to this. |
+| `userId` | ObjectId | → `users._id` |
+| `createdAt` | Date | |
+| `lastSeenAt` | Date | |
+| `expiresAt` | Date | 30 days after creation. |
+
+**Indexes:**
+
+- `session_ttl` — TTL index on `expiresAt` with `expireAfterSeconds: 0`.
+  MongoDB deletes expired sessions itself, so the collection cannot grow
+  without bound and there is no cleanup job to forget about. Mongo sweeps about
+  once a minute, so the app also re-checks `expiresAt` on read.
+- `by_user` — so "sign out everywhere" stays cheap when it is built.
+
+Deleting a session document signs that device out immediately. That is the
+whole reason the cookie is a pointer rather than a self-contained token — see
+[Authentication](authentication.md).
+
+---
+
+## Seeding
+
+```bash
+npm run db:seed
+```
+
+Creates every index and the first login account. **Safe to run repeatedly** —
+it never overwrites an existing account, so re-running it after you have
+changed a password does not reset it. Index creation is idempotent by
+definition.
+
+Run it:
+
+- once after cloning,
+- after adding a collection or index,
+- after pointing at a fresh cluster.
+
+The script is [`scripts/seed-database.ts`](../scripts/seed-database.ts). It
+reads `.env` via `tsx --env-file`, so it needs no extra setup.
+
+---
+
+## The allowlist
+
+**This is the one that will cost you an afternoon.** Atlas rejects connections
+from IP addresses that are not on its Network Access allowlist — and it rejects
+them *during the TLS handshake*, before it ever looks at your credentials. The
+error mentions neither Atlas nor allowlists:
+
+```
+805DF6F401000000:error:0A000438:SSL routines:ssl3_read_bytes:
+tlsv1 alert internal error … SSL alert number 80
+```
+
+It reads like a broken certificate or a TLS version mismatch. It is neither.
+
+**Fix:** <https://cloud.mongodb.com> → your project → **Network Access** →
+*Add IP Address* → *Add Current IP Address*.
+
+Both `src/lib/db.ts` (`describeConnectionError`) and the seed script translate
+this error into a message that names the actual cause, so you should not have
+to remember any of the above — but the raw error is here in case it shows up
+somewhere that does not.
+
+### For the deployed app
+
+Vercel's outbound IPs are not fixed, so add **`0.0.0.0/0`**.
+
+That sounds alarming and is worth being clear about: it means any host on the
+internet may *attempt* to connect. It does not mean anyone can read the data —
+the database user's password still gates access, and that password is only in
+`.env` and Vercel's environment settings. It is the standard configuration for
+serverless hosts. If you later want to narrow it, Vercel sells static outbound
+IPs on paid plans.
+
+### Other causes of connection failure
+
+| Symptom | Cause |
+|---|---|
+| `Server selection timed out` | Cluster paused in Atlas, or port 27017 blocked by a VPN or firewall. |
+| `Authentication failed` | Wrong username or password in `MONGODB_URI`. |
+| `MONGODB_URI is not set` | No `.env` locally, or the variable is missing in Vercel. |
+
+Atlas free-tier clusters **pause themselves after 60 days idle**. If this
+project sits untouched for a couple of months — which, given it is a family
+app, is likely — expect to log into Atlas and resume the cluster before
+anything works. Resuming takes a few minutes.
+
+### Just tell me what's wrong
+
+```bash
+npm run db:check
+```
+
+Works through the connection one layer at a time — DNS, TCP, TLS, then MongoDB
+— stops at the first failure, and tells you which of the causes below you have.
+It never prints the password.
+
+```
+  ✓ DNS      resolved 3 cluster members
+  ✓ TCP      port 27017 is reachable
+  ✗ TLS      handshake hung
+```
+
+The layering is the point: every cause below fails at a different layer, so the
+layer that breaks identifies the problem without guessing.
+
+| Fails at | Cause |
+|---|---|
+| DNS | Wrong cluster address, or the network is intercepting DNS |
+| TCP | **The network blocks outbound 27017** — common on corporate, hotel and guest wifi |
+| TLS, rejected | Your IP is not on the Atlas allowlist |
+| TLS, hung | The cluster is paused — *or* a firewall is proxying TCP and dropping the rest |
+| MongoDB | Wrong username or password |
+
+That last TLS row is genuinely ambiguous, and the check says so rather than
+guessing. Tethering to a phone for thirty seconds settles it: if it passes on
+cellular, the building was the problem; if it fails identically, the cluster is
+paused.
+
+### Telling "not allowlisted" apart from "paused" by hand
+
+If you would rather not use the script, or want to understand what it does.
+Both fail, and the driver's message is unhelpful in both cases:
+
+```bash
+# Does TCP reach the cluster at all?
+node -e "const n=require('net');const s=n.connect(27017,'ac-ia2kuwl-shard-00-00.pmxixtt.mongodb.net',
+()=>{console.log('TCP OK');s.end()});s.on('error',e=>console.log('TCP',e.code));
+s.setTimeout(8000,()=>{console.log('TCP TIMEOUT');s.destroy()})"
+```
+
+| TCP connect | TLS handshake | Meaning |
+|---|---|---|
+| succeeds | rejected — `tlsv1 alert internal error`, alert 80 | **IP not allowlisted.** Atlas is up and actively refusing you. |
+| succeeds | hangs until timeout, no error | **Cluster paused or resuming.** The edge accepts the socket; there is no `mongod` behind it. |
+| times out | — | Outbound 27017 blocked locally — VPN, corporate firewall, or a sandboxed shell. |
+
+A useful second signal for the paused case: ask the driver what it saw.
+
+```bash
+node --env-file=.env -e "
+const {MongoClient}=require('mongodb');
+new MongoClient(process.env.MONGODB_URI,{serverSelectionTimeoutMS:15000}).connect()
+ .catch(e=>{for(const [a,d] of e.reason?.servers??[]) console.log(a, d.type, d.error?.message??'no error')})"
+```
+
+Every replica-set member reporting `Unknown` **with no error at all** means the
+handshake never completed and never failed — it simply got no answer. That is a
+paused cluster, not a credentials or allowlist problem.
+
+---
+
+## Connection pooling
+
+`src/lib/db.ts` keeps exactly one `MongoClient` per process, cached on
+`globalThis`. Two reasons:
+
+- The driver maintains its own connection pool. A second client would double
+  the connections to the cluster for no benefit, and Atlas's free tier has a
+  hard connection cap that is easy to exhaust.
+- `next dev` hot-reloads modules on every edit. Without the `globalThis` cache
+  each reload would leak a fresh pool, and after enough edits the cluster stops
+  accepting new connections. Stashing the promise on `globalThis` survives
+  module reloads.
+
+---
+
+## Adding a collection
+
+1. Add its name to `COLLECTIONS` in [`src/config/db.ts`](../src/config/db.ts).
+2. Write its accessors in `src/lib/`, going through `getCollection()`.
+3. Add its indexes to [`scripts/seed-database.ts`](../scripts/seed-database.ts).
+4. Run `npm run db:seed`.
+5. Document its shape in the Collections section above.

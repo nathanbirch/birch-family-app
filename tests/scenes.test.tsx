@@ -53,9 +53,9 @@ const SCENES = [
   {
     name: "Dinner Table",
     render: (swapping = false) =>
-      render(<DinnerTable assignments={WEEK_1} swapping={swapping} />),
+      render(<DinnerTable assignments={WEEK_1} swapping={swapping} arriving />),
     renderSwapped: () =>
-      render(<DinnerTable assignments={WEEK_1_SWAPPED} swapping={false} />),
+      render(<DinnerTable assignments={WEEK_1_SWAPPED} swapping={false} arriving />),
     layout: TABLE_LAYOUT,
     parentSeats: TABLE_PARENT_SEATS,
     childSeats: TABLE_CHILD_SEATS,
@@ -64,9 +64,9 @@ const SCENES = [
   {
     name: "Ford Expedition",
     render: (swapping = false) =>
-      render(<Expedition assignments={WEEK_1} swapping={swapping} />),
+      render(<Expedition assignments={WEEK_1} swapping={swapping} arriving />),
     renderSwapped: () =>
-      render(<Expedition assignments={WEEK_1_SWAPPED} swapping={false} />),
+      render(<Expedition assignments={WEEK_1_SWAPPED} swapping={false} arriving />),
     layout: VEHICLE_LAYOUT,
     parentSeats: VEHICLE_PARENT_SEATS,
     childSeats: VEHICLE_CHILD_SEATS,
@@ -271,13 +271,13 @@ describe.each(SCENES)("$name scene", (scene) => {
 
 describe("both scenes together", () => {
   it("uses the same avatar size and shape in each", () => {
-    const table = render(<DinnerTable assignments={WEEK_1} swapping={false} />);
+    const table = render(<DinnerTable assignments={WEEK_1} swapping={false} arriving />);
     const tableWidth = table.container
       .querySelector<HTMLElement>(".seat-glide")!
       .style.width;
     table.unmount();
 
-    const car = render(<Expedition assignments={WEEK_1} swapping={false} />);
+    const car = render(<Expedition assignments={WEEK_1} swapping={false} arriving />);
     const carWidth = car.container
       .querySelector<HTMLElement>(".seat-glide")!
       .style.width;
@@ -287,7 +287,7 @@ describe("both scenes together", () => {
   });
 
   it("runs both arrivals off the same clock", () => {
-    const table = render(<DinnerTable assignments={WEEK_1} swapping={false} />);
+    const table = render(<DinnerTable assignments={WEEK_1} swapping={false} arriving />);
     const tableDelays = [
       ...table.container.querySelectorAll<HTMLElement>(".seat-glide"),
     ]
@@ -295,7 +295,7 @@ describe("both scenes together", () => {
       .sort((a, b) => a - b);
     table.unmount();
 
-    const car = render(<Expedition assignments={WEEK_1} swapping={false} />);
+    const car = render(<Expedition assignments={WEEK_1} swapping={false} arriving />);
     const carDelays = [
       ...car.container.querySelectorAll<HTMLElement>(".seat-glide"),
     ]
@@ -306,7 +306,7 @@ describe("both scenes together", () => {
   });
 
   it("gives a child the same position number in both scenes", () => {
-    const table = render(<DinnerTable assignments={WEEK_1} swapping={false} />);
+    const table = render(<DinnerTable assignments={WEEK_1} swapping={false} arriving />);
     const tableTops = new Map(
       TABLE_CHILD_SEATS.map((seat) => [
         getPerson(WEEK_1.children[seat.position - 1].childId).name,
@@ -315,7 +315,7 @@ describe("both scenes together", () => {
     );
     table.unmount();
 
-    const car = render(<Expedition assignments={WEEK_1} swapping={false} />);
+    const car = render(<Expedition assignments={WEEK_1} swapping={false} arriving />);
     for (const seat of VEHICLE_CHILD_SEATS) {
       const name = getPerson(WEEK_1.children[seat.position - 1].childId).name;
       expect(tableTops.get(name)).toBe(seat.position);

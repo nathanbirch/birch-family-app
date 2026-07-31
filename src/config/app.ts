@@ -5,14 +5,14 @@
  */
 
 /** Displayed in the header, the document title and the PWA manifest. */
-export const APP_NAME = "Birch Family Seats";
+export const APP_NAME = "Birch Family App";
 
 /** Used for the PWA `short_name` (keep it under ~12 characters). */
-export const APP_SHORT_NAME = "Birch Seats";
+export const APP_SHORT_NAME = "Birch Fam";
 
 /** One-line description used in metadata and the manifest. */
 export const APP_DESCRIPTION =
-  "Where everyone sits at the dinner table and in the Expedition this week.";
+  "The Birch family's home for seating, chores and everything else.";
 
 /**
  * The Monday that Week 1 of the rotation begins, as a local calendar date
@@ -20,7 +20,14 @@ export const APP_DESCRIPTION =
  */
 export const ROTATION_START_DATE = "2026-08-03";
 
-/* Versioned localStorage keys for the two device-local preferences. */
+/*
+ * Versioned localStorage keys for the two device-local preferences.
+ *
+ * These kept their original `birch-family-seats:` prefix through the rename to
+ * Birch Family App. Changing them would silently reset everyone's saved theme
+ * and parent-swap choice on their next visit, which is a worse outcome than a
+ * slightly dated string.
+ */
 
 export const THEME_STORAGE_KEY = "birch-family-seats:theme:v1";
 

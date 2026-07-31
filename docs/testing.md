@@ -7,20 +7,30 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **195 tests across 9 files.**
+Vitest with jsdom and Testing Library. **275 tests across 15 files.**
+
+Most files run in jsdom. The server-only modules opt into the Node environment
+with a `@vitest-environment node` docblock, because that is where they actually
+run — and because jsdom supplies its own `TextEncoder` whose `Uint8Array` comes
+from a different JavaScript realm, which `jose` rejects when verifying a
+signing key. `tests/setup.ts` guards its DOM cleanup on `window` existing so it
+can run under both.
 
 ## Coverage
 
 | | |
 |---|---|
-| Statements | 94.6% |
-| Branches | 81.2% |
-| Functions | 97.9% |
-| Lines | 96.4% |
+| Statements | 92.7% |
+| Branches | 80.8% |
+| Functions | 94.6% |
+| Lines | 94.1% |
 
-What is *not* covered is mostly `typeof window === "undefined"` guards and
-defensive `catch` branches that only fire in browsers that refuse storage —
-paths that are real but not meaningfully reachable in jsdom.
+What is *not* covered is mostly `typeof window === "undefined"` guards,
+defensive `catch` branches that only fire in browsers that refuse storage, and
+**`lib/db.ts`** — the MongoDB connection itself, which the automated suite
+deliberately never touches. Its error *translation* is covered indirectly
+through the login action tests, and the connection is covered by
+`npm run db:check` and the browser runs described below.
 
 ## What each file covers
 
@@ -115,6 +125,61 @@ Both rendering paths.
 - Still works when `localStorage` refuses to save
 - The button exposes `aria-pressed`, names both parents, and meets 44px
 
+### `session-token.test.ts` — 14 tests *(Node environment)*
+The session cookie, which is the only thing between a stranger and the app. So
+this is mostly about what it must **refuse**:
+
+- Round-trips a session id, and does not leave it readable in the token
+- Rejects: a missing cookie, an empty one, a non-JWT, a tampered signature, a
+  payload edited to point at someone else's session, a token signed with a
+  different secret, an expired token
+- Rejects an unsigned **`alg: none`** token — the classic JWT forgery
+- Refuses to run at all without a secret, or with one too short for HS256
+- The cookie name is versioned; the session lasts 30 days
+
+### `passwords.test.ts` — 12 tests *(Node environment)*
+Real bcrypt, not a mock, so this file takes a few seconds.
+
+- Accepts the right password, rejects the wrong one, never stores the plaintext
+- **Salts** — the same password hashes differently every time, and both verify
+- The cost factor is genuinely ≥ 12, asserted from the hash itself
+- A malformed hash returns `false` rather than throwing
+- **The unknown-email decoy does real work**, so a login for an address with no
+  account is not measurably faster than one that has one
+- Email normalisation: lowercase, trimmed, idempotent
+- **Demonstrates bcrypt's 72-byte truncation** — two different passwords
+  verifying against the same hash — which is why the form rejects longer input
+  instead of silently cutting it
+
+### `login-action.test.ts` — 12 tests *(Node environment)*
+The sign-in Server Action, with the database and `redirect()` mocked. This is
+where the app decides what a visitor is told, so every branch is pinned:
+
+- Missing email, missing password, over-long password, over-long email — each
+  rejected **without reaching the database**
+- **An unknown email and a wrong password give a byte-identical message**, so
+  the error text cannot be used to discover which addresses have accounts
+- The email is echoed back to refill the field; the password never is
+- A database outage says so, rather than blaming the password — and does not
+  leak the connection string or driver internals to the browser
+- A failed attempt never starts a session
+- Success starts a session with the right user id and redirects to `/`
+
+*(The mocked `redirect()` throws, as the real one does, so a bug that let the
+action continue past it would fail rather than pass silently.)*
+
+### `navigation.test.ts` — 17 tests
+The nav config that the tab bar and the dashboard are both generated from:
+
+- Unique routes, exactly one Home, at most one page per side slot
+- Labels short enough for a tab; no more than the five a bottom bar can hold
+- Bar order is left → home → right
+- The dashboard lists every page except itself
+- Nothing is advertised as "coming soon" that already exists
+- Active-tab matching: exact for Home, sub-routes for the rest, and
+  **`/seating` must not match `/seating-plan`** — the bug a naive `startsWith`
+  would introduce
+
 ### `stores.test.ts` — 9 tests
 The `useSyncExternalStore` contract for both preferences: a stable snapshot, a
 server snapshot that matches what the server renders, subscriber notification,
@@ -123,7 +188,12 @@ and picking up a change made in **another tab**.
 ## Conventions
 
 - `tests/setup.ts` clears `localStorage` and both store caches between tests,
-  and polyfills `matchMedia` (jsdom does not implement it).
+  and polyfills `matchMedia` (jsdom does not implement it). It no-ops entirely
+  under the Node environment, where there is no `window`.
+- Server-only modules are split so their pure half is directly testable —
+  `passwords.ts` out of `users.ts`, `session-token.ts` out of `session.ts`.
+  Neither half imports `server-only` or the MongoDB driver, so no test needs to
+  mock a database to cover password hashing or cookie verification.
 - Tests assert *measured* values rather than restating constants where it
   matters — the adjacency table and the arrival timing are both re-derived.
 - Where a number is a genuine invariant (`6 × 430 + 420 = 3000`), the test
@@ -140,3 +210,61 @@ Verified by hand in a real browser instead, because jsdom cannot do it:
 - Service worker registration and true offline reload
 - Colour contrast *(scripted separately against the theme config)*
 - That the seat coordinates land on the right part of each photograph
+
+### `use-server.test.ts` — 2 tests *(Node environment)*
+Reads the source of every `"use server"` module and fails if one exports
+anything other than an async function.
+
+This is a source-text check rather than a behavioural one because the bug it
+guards is invisible to every other layer: `tsc` accepts it, `next build`
+accepts it, and Vitest accepts it because it imports the module without the
+`"use server"` transform. It only surfaces when a user submits the form — and
+then it takes down the whole module, not just the offending export. See
+[Authentication](authentication.md#a-use-server-module-may-export-only-async-functions).
+
+### `proxy-matcher.test.ts` — 23 tests *(Node environment)*
+Which paths the proxy runs on, asserted against the exported `config.matcher`.
+
+The matcher used to name public folders one at a time, and `avatars/` was
+missing — so every family photograph redirected to `/login`, and because
+`next/image` fetches images server-side without the user's cookie, the
+optimiser got a 307 instead of a PNG and returned 400. Every avatar rendered as
+a plain coloured circle, and the build, the types and the whole suite were
+silent about it.
+
+- Every asset folder is skipped, `avatars/` named explicitly
+- Any trailing file extension is skipped, so a *new* asset folder needs no code
+  change — the property that makes the original mistake unrepeatable
+- `/`, `/seating`, `/account`, `/login`, `/signed-out` and plausible future
+  pages all still run the auth check
+- A dotted path *segment* is not mistaken for an asset, so a nested page cannot
+  silently lose its check
+
+Verified against a live database and a real browser (Playwright, iPhone
+viewport), after the cluster came back up:
+
+- **Sign-in matrix** — correct credentials, wrong password, unknown email, both
+  fields empty, either field alone, whitespace only, a 73-character password, a
+  201-character email, and a differently-cased email. Each lands on the right
+  page with the right message and only sets a cookie when it should. The
+  browser's own `required` attributes are stripped first, so the *server-side*
+  handling is what gets exercised.
+- **The signed-in journey** — dashboard, all three tabs, a reload, sign out,
+  and a protected page afterwards. No JavaScript errors.
+- **Session revocation** — deleting the session document server-side while the
+  browser keeps its cookie correctly lands on `/login`. This is what caught the
+  `ERR_TOO_MANY_REDIRECTS` loop between `proxy.ts` and `requireUser()`.
+- **Every image actually paints** — all 14 avatar `<img>` elements report
+  `naturalWidth > 0`, with no failed requests. Counting names in the DOM was
+  what let the coloured-circle regression through, since the names render
+  whether or not the photograph loads.
+
+Verified by hand against the running dev server rather than in the suite:
+
+- **The proxy's redirects.** `/`, `/seating` and `/account` each 307 to
+  `/login` when signed out (carrying `?next=`), `/login` returns 200, and
+  `/manifest.webmanifest` and `/scenes/*.png` are correctly *excluded* from the
+  matcher so a phone can install the app before signing in.
+
+All of the above now runs against the real cluster, so nothing database-related
+is left unverified.

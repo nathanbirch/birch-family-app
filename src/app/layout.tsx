@@ -23,9 +23,16 @@ export const metadata: Metadata = {
     title: APP_NAME,
     statusBarStyle: "default",
   },
+  /*
+   * Every icon is generated from `assets/icon-master.png` by
+   * `npm run icons:generate`. There is no SVG: the mark is artwork rather than
+   * geometry, so the PNGs are the source of truth. Smallest first, so a
+   * browser picking the first adequate match gets the right one.
+   */
   icons: {
     icon: [
-      { url: "/icons/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],

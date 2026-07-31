@@ -148,7 +148,28 @@ body,
   }
 }
 
-.animate-seat-arrive {
+/*
+ * Nobody moves until every photograph has decoded.
+ *
+ * `.seat-arrival` is on each person from the very first paint. While
+ * JavaScript is running (`html.js`, set by the pre-paint script) they start
+ * invisible, so the scene is an empty table rather than a room full of people
+ * who then walk in from the door they are already sitting next to.
+ *
+ * Once the avatars have decoded, React adds `.is-arriving` and the animation
+ * plays with its stagger intact. The images are already in the DOM and already
+ * downloaded at that point — they are merely transparent — so there is no
+ * request left to make and no chance of a face popping in mid-walk.
+ *
+ * With JavaScript off, `html.js` never appears, neither rule below applies,
+ * and everyone is simply in their seat. That is why the hiding rule is scoped
+ * to `.js` rather than living on `.seat-arrival` itself.
+ */
+.js .seat-arrival {
+  opacity: 0;
+}
+
+.js .seat-arrival.is-arriving {
   animation: seat-arrive var(--arrive-duration, 420ms)
     cubic-bezier(0.24, 0.86, 0.32, 1) both;
   animation-delay: var(--arrive-delay, 0ms);
@@ -229,11 +250,17 @@ body,
   }
 
   /* Everyone is simply in their seat already. */
-  .animate-seat-arrive,
+  .js .seat-arrival,
+  .js .seat-arrival.is-arriving,
   .seat-swap-arc,
   .animate-soft-rise,
   .animate-soft-fade {
     animation: none;
+  }
+
+  /* …and visible, since the animation that would have revealed them is gone. */
+  .js .seat-arrival {
+    opacity: 1;
   }
 
   .seat-glide {

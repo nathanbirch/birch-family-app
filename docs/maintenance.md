@@ -6,6 +6,67 @@ Run `npm run check` after any of them.
 
 ---
 
+## Add a new page
+
+The tab bar and the dashboard are both generated from one config, so this is
+four steps and no wiring:
+
+1. If it needs storage, add a collection name to `COLLECTIONS` in
+   [`src/config/db.ts`](../src/config/db.ts), and its indexes to
+   [`scripts/seed-database.ts`](../scripts/seed-database.ts). Then
+   `npm run db:seed`.
+2. Add an entry to `NAV_ITEMS` in
+   [`src/config/navigation.ts`](../src/config/navigation.ts), and delete the
+   matching entry from `PLANNED_FEATURES`.
+3. Add an icon to `ICONS` in
+   [`src/components/nav/NavIcon.tsx`](../src/components/nav/NavIcon.tsx).
+4. Create `src/app/(app)/<page>/page.tsx`, starting with
+   `await requireUser()`.
+
+Putting the file inside the `(app)` group is what protects it — the group's
+layout runs the auth check for everything beneath it.
+
+> The bottom bar holds **at most five** destinations, and only three slots
+> (`left`, `home`, `right`) are modelled today. Past that, tap targets get too
+> narrow and the pattern needs to change to a "More" sheet. `navigation.test.ts`
+> fails if you exceed five.
+
+---
+
+## Change the app icon
+
+1. Replace `assets/icon-master.png` — square, white mark on the brand blue,
+   1024px or larger, opaque, artwork inside the central ~90%.
+2. `npm run icons:generate` — regenerates all five PNGs plus `favicon.ico`,
+   normalising the background to the exact brand colour and insetting the
+   maskable variant automatically.
+3. Bump `CACHE_VERSION` in `public/sw.js`, or installed devices keep the old
+   icons indefinitely.
+4. On iOS, delete and re-add the home-screen shortcut — it will not refresh
+   its icon in place.
+
+The in-app mark (login screen, seating header) is
+`src/components/AppMark.tsx`, which renders the generated `icon-192.png`, so it
+updates with everything else. See [PWA and offline](pwa-and-offline.md#icons).
+
+---
+
+## Change the login password
+
+See [Authentication](authentication.md#changing-the-password). Short version:
+delete the user document and re-run `npm run db:seed` with a new `SEED_USER`,
+or write a fresh bcrypt hash straight into Atlas.
+
+---
+
+## Sign everybody out
+
+Empty the `sessions` collection, or change `SESSION_SECRET` (which invalidates
+every cookie at once). Either takes effect immediately — the cookie is only a
+pointer to a session document.
+
+---
+
 ## Change someone's name
 
 [`src/config/family.ts`](../src/config/family.ts) → edit `name`.
@@ -16,8 +77,18 @@ Leave `id` alone — it is the key the rotation schedule and the tests refer to.
 
 ## Replace someone's photo
 
-Drop the new file into `public/avatars/`, keeping the same filename. Square
-images work best; they are cropped to a circle.
+Drop the new file into **`assets/avatars/`** — not `public/` — named after the
+person's id (`emily.png`). Square images work best; they are cropped to a
+circle. Then:
+
+```bash
+npm run avatars:generate
+```
+
+That resizes it to 384px, writes it to `public/avatars/` under a
+content-hashed name, and regenerates `src/config/avatar-manifest.ts`. Never
+edit anything in `public/avatars/` or type a hashed filename by hand — both are
+generated, and the hash changes every time the picture does.
 
 > **If it still shows the old photo**, see
 > [A replaced image still shows the old one](#a-replaced-image-still-shows-the-old-one).

@@ -1,9 +1,14 @@
 /*
- * Birch Family Seats — offline service worker.
+ * Birch Family App — offline service worker.
  *
- * Deliberately small and hand-written: the app is a single page with no API
- * calls, so a full PWA framework would be more moving parts than the whole
- * feature needs.
+ * Deliberately small and hand-written: a full PWA framework would be more
+ * moving parts than this needs.
+ *
+ * A note on the login. Protected pages are server-rendered per request and
+ * redirect to /login without a session, so a redirect is never `ok` and never
+ * cached. What *is* cached is the HTML of pages you successfully loaded while
+ * signed in. On a shared family device behind one shared account that is the
+ * intent; it does mean signing out does not erase pages already in the cache.
  *
  * Strategy
  *   - Navigations: network first, falling back to the cached page. The family
@@ -21,16 +26,23 @@
  * Bump CACHE_VERSION to force every device to drop its old cache.
  */
 
-const CACHE_VERSION = "v2";
-const CACHE_NAME = `birch-family-seats-${CACHE_VERSION}`;
+/*
+ * v3: the app was renamed, every icon was redrawn, and `icon.svg` was removed.
+ * The version bump is what makes installed devices drop the old cache — and
+ * therefore the old plate-and-steering-wheel icons — on their next visit.
+ */
+const CACHE_VERSION = "v3";
+const CACHE_NAME = `birch-family-app-${CACHE_VERSION}`;
 const APP_SHELL = "/";
 
 const PRECACHE = [
   APP_SHELL,
   "/manifest.webmanifest",
-  "/icons/icon.svg",
+  "/favicon.ico",
+  "/icons/favicon-32.png",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
+  "/icons/icon-maskable-512.png",
   "/icons/apple-touch-icon.png",
 ];
 
@@ -80,16 +92,68 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Avatars are content-addressed too, so they get the same treatment: served
+  // from cache instantly, with no network round trip at all. That is what
+  // makes a repeat visit to the seating page paint faces immediately.
+  if (isHashedAvatar(url)) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
+
   event.respondWith(assetNetworkFirst(request));
 });
 
-/** Navigations: freshest build online, cached shell offline. */
+/**
+ * Is this an avatar whose filename carries a content hash?
+ *
+ * Two shapes, because the page requests avatars through Next's image
+ * optimiser rather than directly:
+ *
+ *   /avatars/hannah-5090be3683.png
+ *   /_next/image?url=%2Favatars%2Fhannah-5090be3683.png&w=384&q=75
+ *
+ * Both embed the hash, so both are safe to cache forever: replacing the
+ * photograph produces a different URL, and the old one is never requested
+ * again. `scripts/optimise-avatars.mjs` is what guarantees the hash is there.
+ *
+ * The hash check matters — an unhashed `/avatars/hannah.png` must NOT be
+ * cached first, because that URL could later mean a different picture.
+ */
+function isHashedAvatar(url) {
+  const HASHED = /\/avatars\/[^/]+-[0-9a-f]{8,}\.png$/;
+
+  if (HASHED.test(url.pathname)) return true;
+
+  if (url.pathname === "/_next/image") {
+    const target = url.searchParams.get("url");
+    return Boolean(target) && HASHED.test(target);
+  }
+
+  return false;
+}
+
+/**
+ * Navigations: freshest build online, cached page offline.
+ *
+ * Each page is cached under **its own URL**. An earlier version stored every
+ * navigation under `APP_SHELL` instead, which was harmless when the app was a
+ * single page and wrong the moment it was not: visiting /seating would
+ * overwrite the entry for "/", and opening the app offline would show the
+ * seating board where the dashboard should be.
+ *
+ * The app shell is still the fallback for a page that was never visited, so a
+ * cold offline navigation to /account lands on the dashboard rather than an
+ * error.
+ */
 async function pageNetworkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   try {
     const response = await fetch(request);
+    // Redirects (a signed-out visitor being sent to /login) are not `ok`, so
+    // they are never cached — which is what keeps a stale redirect from
+    // outliving the session that caused it.
     if (response && response.ok) {
-      cache.put(APP_SHELL, response.clone());
+      cache.put(request, response.clone());
     }
     return response;
   } catch {
@@ -98,7 +162,7 @@ async function pageNetworkFirst(request) {
     if (cached) return cached;
     return new Response(
       "<!doctype html><meta charset=utf-8><title>Offline</title>" +
-        "<p style=\"font:16px system-ui;padding:2rem\">Birch Family Seats needs to be " +
+        "<p style=\"font:16px system-ui;padding:2rem\">Birch Family App needs to be " +
         "opened online once before it can work offline.</p>",
       { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } },
     );

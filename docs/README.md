@@ -1,12 +1,20 @@
-# Birch Family Seats — documentation
+# Birch Family App — documentation
 
 Everything about how this app is put together and how to change it.
+
+**Repo:** <https://github.com/nathanbirch/birch-family-app> (owner
+`nathanbirch`, branch `main`) · **Host:** Vercel · **Database:** MongoDB Atlas,
+`birch_family_app`. See [Deployment](deployment.md) for the live URL and the
+full project facts.
 
 Start here if you are picking it up cold:
 
 | Doc | What's in it |
 |---|---|
 | [Getting started](getting-started.md) | Install, run, test, build. Every npm script explained. |
+| [Deployment](deployment.md) | Where it is hosted, Vercel setup, env vars, the GitHub Pages history. |
+| [Database](database.md) | MongoDB collections, seeding, and the Atlas allowlist trap. |
+| [Authentication](authentication.md) | How the login works, changing the password, adding people. |
 | [Architecture](architecture.md) | How the app is laid out, what runs where, and how data flows. |
 | [Family and seats](family-and-seats.md) | People, avatars, photos, seat coordinates, swapping the parents. |
 | [Rotation](rotation.md) | The start date, the five-week schedule, why it isn't a simple rotation, and the fairness numbers. |
@@ -20,10 +28,22 @@ Start here if you are picking it up cold:
 
 ## The app in one paragraph
 
-Seven people, two places to sit. The five children rotate through five numbered
-positions on a fixed five-week cycle; the two parents stay put unless you swap
-them. Which week it is comes from the device's own calendar, so there is nothing
-to update and nothing to sync. Everything else — the family, the schedule, the
-seat coordinates, all ten themes — is compiled into the app. There is no
-database, no server, no account, and no tracking. The only things stored on the
-device are the chosen theme and whether the parents are swapped.
+A private family app behind a single shared login. Signing in lands you on a
+dashboard with a card per page; a bottom tab bar moves between them, with Home
+in the middle. Today there is one real feature — the **seating rotation** —
+plus an account page; chore charts, rewards, stars, mantras and a calendar are
+planned, and are listed on the dashboard so the app itself is the roadmap. The
+seating is still entirely self-contained: seven people, two places to sit, the
+five children rotating through five numbered positions on a fixed five-week
+cycle while the two parents stay put unless you swap them. Which week it is
+comes from the device's own calendar, and the family, the schedule, the seat
+coordinates and all ten themes are compiled into the app rather than stored
+anywhere. The database holds only accounts and sessions.
+
+## What changed when the login arrived
+
+This began as `seating-rotation` / "Birch Family Seats" — a static export on
+GitHub Pages with no server, no database and no accounts. Adding a login made
+static hosting impossible, so it moved to Vercel and grew a MongoDB dependency.
+The seating rotation code itself was untouched by that change; it simply lives
+at `/seating` now instead of `/`. [Deployment](deployment.md) has the details.

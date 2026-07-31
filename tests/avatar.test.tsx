@@ -138,8 +138,18 @@ describe("Avatar labelling", () => {
     expect(shortClass).toContain("w-full");
   });
 
-  it("carries the arrival animation class", () => {
-    const { container } = render(<Avatar member={getPerson("james")} />);
-    expect(container.querySelector(".animate-seat-arrive")).not.toBeNull();
+  it("waits for the photographs before playing the walk-in", () => {
+    /*
+     * `.seat-arrival` is always present; `.is-arriving` is what actually
+     * starts the animation, and it only appears once every photograph in the
+     * scene has loaded. Otherwise people cross the room as empty circles that
+     * fill in after they have sat down.
+     */
+    const waiting = render(<Avatar member={getPerson("james")} />);
+    expect(waiting.container.querySelector(".seat-arrival")).not.toBeNull();
+    expect(waiting.container.querySelector(".is-arriving")).toBeNull();
+
+    const arrived = render(<Avatar member={getPerson("james")} arriving />);
+    expect(arrived.container.querySelector(".seat-arrival.is-arriving")).not.toBeNull();
   });
 });

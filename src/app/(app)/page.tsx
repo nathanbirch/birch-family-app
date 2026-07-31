@@ -1,0 +1,148 @@
+import Link from "next/link";
+
+import { NavIcon } from "@/components/nav/NavIcon";
+import { SeatingCardBadge } from "@/components/dashboard/SeatingCardBadge";
+import { APP_NAME } from "@/config/app";
+import { DASHBOARD_ITEMS, PLANNED_FEATURES } from "@/config/navigation";
+import { requireUser } from "@/lib/auth/dal";
+import { toIsoDate } from "@/lib/dates";
+
+/**
+ * The dashboard — one card per page, plus what is still to come.
+ *
+ * A Server Component. It knows who is signed in (via the DAL) and renders the
+ * cards from `config/navigation.ts`, so adding a feature to that list adds it
+ * here without touching this file.
+ */
+export default async function DashboardPage() {
+  const user = await requireUser();
+  const initialDateIso = toIsoDate(new Date());
+
+  return (
+    <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-4 pt-6 sm:px-6 sm:pt-10">
+      <header className="animate-soft-fade mb-6 sm:mb-8">
+        <p
+          className="text-sm font-semibold"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          Welcome back
+        </p>
+        <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">
+          {user.displayName}
+        </h1>
+      </header>
+
+      <section aria-labelledby="pages-heading">
+        <h2 id="pages-heading" className="sr-only">
+          Pages
+        </h2>
+        <ul className="animate-soft-rise flex flex-col gap-3">
+          {DASHBOARD_ITEMS.map((item) => (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                className="app-card themed-transition flex items-center gap-4 p-4 transition-transform active:scale-[0.98] sm:p-5"
+              >
+                <span
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
+                  style={{
+                    backgroundColor: "var(--color-primary)",
+                    color: "var(--color-on-primary)",
+                  }}
+                >
+                  <NavIcon name={item.icon} className="h-6 w-6" />
+                </span>
+
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-lg font-bold tracking-tight">
+                      {item.title}
+                    </span>
+                    {item.href === "/seating" ? (
+                      <SeatingCardBadge initialDateIso={initialDateIso} />
+                    ) : null}
+                  </span>
+                  <span
+                    className="mt-0.5 block text-sm"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
+                    {item.description}
+                  </span>
+                </span>
+
+                <ChevronRight />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-labelledby="planned-heading" className="mt-8">
+        <h2
+          id="planned-heading"
+          className="mb-3 px-1 text-xs font-bold uppercase tracking-wider"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          Coming soon
+        </h2>
+        {/*
+          Deliberately not links and not buttons: there is nothing behind them
+          yet, and a tappable card that does nothing is worse than an honest
+          one that says so.
+        */}
+        <ul className="grid grid-cols-2 gap-3">
+          {PLANNED_FEATURES.map((feature) => (
+            <li
+              key={feature.title}
+              className="app-card flex flex-col gap-2 p-4 opacity-60"
+            >
+              <span
+                className="flex h-9 w-9 items-center justify-center rounded-xl"
+                style={{
+                  backgroundColor: "var(--color-surface-muted)",
+                  color: "var(--color-text-muted)",
+                }}
+              >
+                <NavIcon name={feature.icon} className="h-5 w-5" />
+              </span>
+              <span className="text-sm font-bold leading-tight">
+                {feature.title}
+              </span>
+              <span
+                className="text-xs leading-snug"
+                style={{ color: "var(--color-text-muted)" }}
+              >
+                {feature.description}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <p
+        className="mt-8 text-center text-xs"
+        style={{ color: "var(--color-text-muted)" }}
+      >
+        {APP_NAME}
+      </p>
+    </main>
+  );
+}
+
+function ChevronRight() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-5 w-5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ color: "var(--color-text-muted)" }}
+      aria-hidden="true"
+    >
+      <path d="m9 5 7 7-7 7" />
+    </svg>
+  );
+}

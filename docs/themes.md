@@ -69,9 +69,15 @@ Saved under `birch-family-seats:theme:v1`. To clear it:
 localStorage.removeItem("birch-family-seats:theme:v1");
 ```
 
+> The key still says `birch-family-seats` after the app was renamed to Birch
+> Family App. Renaming it would silently reset everyone's saved theme on their
+> next visit, which is a worse outcome than a slightly dated string.
+
 This preference lives **only in the current browser on the current device**. It
-does not sync — a theme picked on a phone will not appear on a laptop. That is
-intentional: there is no server to sync with.
+does not sync — a theme picked on a phone will not appear on a laptop. The app
+does now have a server and a database, so syncing it *would* be possible; it is
+left device-local deliberately, because a theme is a property of the screen you
+are looking at rather than of the account.
 
 An unreadable or unrecognised stored value silently falls back to Ocean, and
 the app still works when `localStorage` throws entirely (Safari private

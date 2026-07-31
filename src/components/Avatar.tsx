@@ -17,9 +17,15 @@ type AvatarProps = {
   member: FamilyMember;
   /** Rendered under the portrait. Defaults to the person's first name. */
   showName?: boolean;
+  /**
+   * Start the walk-in. Held back until every photograph in the scene has
+   * loaded, so nobody crosses the room as an empty circle — see
+   * `hooks/useImagesReady.ts`.
+   */
+  arriving?: boolean;
 };
 
-export function Avatar({ member, showName = true }: AvatarProps) {
+export function Avatar({ member, showName = true, arriving = false }: AvatarProps) {
   return (
     // `w-full` matters: it pins the avatar to the seat's configured size. Left
     // to shrink-to-fit, the circle would be sized by the name label beneath it
@@ -27,7 +33,9 @@ export function Avatar({ member, showName = true }: AvatarProps) {
     //
     // The arrival animation lives here; the timing variables it reads are set
     // by `<Seat>`.
-    <div className="animate-seat-arrive flex w-full flex-col items-center gap-[0.35em] leading-none">
+    <div
+      className={`seat-arrival${arriving ? " is-arriving" : ""} flex w-full flex-col items-center gap-[0.35em] leading-none`}
+    >
       <div
         className="relative aspect-square w-full rounded-full"
         style={{
@@ -39,12 +47,21 @@ export function Avatar({ member, showName = true }: AvatarProps) {
         }}
       >
         {member.imageSrc ? (
+          /*
+           * `priority`: these are the point of the page and sit above the
+           * fold, so Next emits a preload link and fetches them eagerly at
+           * high priority rather than lazily. Only seven distinct files, a few
+           * KB each once the optimiser has served them as WebP — and the
+           * arrival animation waits on them, so fetching them late would delay
+           * the whole scene.
+           */
           <Image
             src={member.imageSrc}
             alt=""
             fill
             sizes="(min-width: 1024px) 140px, 90px"
             className="rounded-full object-cover"
+            priority
           />
         ) : (
           <FaceIllustration

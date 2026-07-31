@@ -24,9 +24,12 @@ import { SceneSeats } from "./SceneSeats";
 export function DinnerTable({
   assignments,
   swapping,
+  arriving,
 }: {
   assignments: WeeklyAssignments;
   swapping: boolean;
+  /** `true` once every photograph has loaded and people may walk in. */
+  arriving: boolean;
 }) {
   return (
     <SceneCard
@@ -44,6 +47,7 @@ export function DinnerTable({
         parents={assignments.tableParents}
         childIds={assignments.children.map((entry) => entry.childId)}
         swapping={swapping}
+        arriving={arriving}
       />
     </SceneCard>
   );

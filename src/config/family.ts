@@ -8,6 +8,8 @@
  * rotation schedule and should not change.
  */
 
+import { AVATAR_SOURCES } from "./avatar-manifest";
+
 export type PersonId =
   | "nathan"
   | "sarah"
@@ -29,8 +31,13 @@ export type FamilyMember = {
   /** Darker shade of `avatarColor`, used for the avatar ring and text. */
   avatarColorDark: string;
   /**
-   * Optional path to a *local* image in `public/` (e.g. `/avatars/emily.jpg`).
-   * When set, the photo replaces the illustrated avatar.
+   * Optional path to a *local* avatar photo. When set, it replaces the
+   * illustrated avatar.
+   *
+   * These come from `AVATAR_SOURCES`, which `npm run avatars:generate` writes
+   * from the masters in `assets/avatars/`. The filenames carry a content hash,
+   * so do not type one by hand — it would go stale the next time the picture
+   * changes.
    */
   imageSrc?: string;
   /** Illustration traits — see `components/Avatar.tsx`. */
@@ -53,7 +60,7 @@ export const FAMILY: readonly FamilyMember[] = [
     role: "parent",
     avatarColor: "#3b82f6",
     avatarColorDark: "#1d4ed8",
-    imageSrc: "/avatars/nathan.png",
+    imageSrc: AVATAR_SOURCES.nathan,
     face: { hair: "short", hairColor: "#3f2d22", skin: "#f2c9a4" },
   },
   {
@@ -62,7 +69,7 @@ export const FAMILY: readonly FamilyMember[] = [
     role: "parent",
     avatarColor: "#fb7185",
     avatarColorDark: "#be123c",
-    imageSrc: "/avatars/sarah.png",
+    imageSrc: AVATAR_SOURCES.sarah,
     face: { hair: "wavy", hairColor: "#6b3f22", skin: "#f6d5b6" },
   },
   {
@@ -71,7 +78,7 @@ export const FAMILY: readonly FamilyMember[] = [
     role: "child",
     avatarColor: "#a855f7",
     avatarColorDark: "#7e22ce",
-    imageSrc: "/avatars/hannah.png",
+    imageSrc: AVATAR_SOURCES.hannah,
     face: { hair: "long", hairColor: "#4a2f1d", skin: "#f6d5b6" },
   },
   {
@@ -80,7 +87,7 @@ export const FAMILY: readonly FamilyMember[] = [
     role: "child",
     avatarColor: "#14b8a6",
     avatarColorDark: "#0f766e",
-    imageSrc: "/avatars/emily.png",
+    imageSrc: AVATAR_SOURCES.emily,
     face: { hair: "bun", hairColor: "#2f2620", skin: "#e8b48b", accessory: "glasses" },
   },
   {
@@ -89,7 +96,7 @@ export const FAMILY: readonly FamilyMember[] = [
     role: "child",
     avatarColor: "#ec4899",
     avatarColorDark: "#be185d",
-    imageSrc: "/avatars/clara.png",
+    imageSrc: AVATAR_SOURCES.clara,
     face: { hair: "curly", hairColor: "#8a5522", skin: "#f7dcc2", accessory: "bow" },
   },
   {
@@ -98,7 +105,7 @@ export const FAMILY: readonly FamilyMember[] = [
     role: "child",
     avatarColor: "#22c55e",
     avatarColorDark: "#15803d",
-    imageSrc: "/avatars/william.png",
+    imageSrc: AVATAR_SOURCES.william,
     face: { hair: "swoop", hairColor: "#c98b3c", skin: "#f4cda6", accessory: "freckles" },
   },
   {
@@ -107,7 +114,7 @@ export const FAMILY: readonly FamilyMember[] = [
     role: "child",
     avatarColor: "#f97316",
     avatarColorDark: "#c2410c",
-    imageSrc: "/avatars/james.png",
+    imageSrc: AVATAR_SOURCES.james,
     face: { hair: "buzz", hairColor: "#4a3526", skin: "#e0a877" },
   },
 ] as const;

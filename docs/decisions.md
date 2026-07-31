@@ -4,6 +4,98 @@ The calls that are not obvious from reading the code, and why they were made.
 
 ---
 
+## The app left GitHub Pages because a login cannot be static
+
+This shipped for months as a static export on GitHub Pages. Adding a login
+ended that: comparing a bcrypt hash, setting an `HttpOnly` cookie and holding a
+database connection string all require a process that runs when the request
+arrives, and a static host has none. Doing any of it in the browser would mean
+shipping the hash or the connection string to the browser.
+
+So the move to Vercel was forced by the feature, not chosen for its own sake.
+Nothing about the seating rotation needed to change. See
+[Deployment](deployment.md).
+
+---
+
+## Its own database, not prefixed collections
+
+The Atlas cluster is shared with other apps. Rather than scattering
+`birchfam_`-prefixed collections through a database someone else owns, this app
+claims `birch_family_app` outright and resolves it in exactly one function
+(`getDb()`). The connection string has no database path, so there is no default
+to accidentally fall back to, and no code path reaches another database.
+
+Prefixes would have relied on everyone remembering the prefix forever. This
+relies on nothing.
+
+---
+
+## The session cookie is a pointer, not the session
+
+The cookie holds a signed JWT whose whole payload is a session id; the session
+itself is a MongoDB document. A self-contained JWT would have been simpler and
+saved a query per request — but it cannot be revoked. Signing out, or kicking a
+lost phone off the app, would be impossible until the token expired.
+
+The cost is one indexed lookup per protected request. The benefit is that
+deleting a row signs a device out instantly. For a family app where a phone
+gets lost or handed down, that is the right trade.
+
+---
+
+## Two auth checks that do different jobs
+
+`proxy.ts` verifies the cookie's signature and redirects. `requireUser()` loads
+the session from the database. The proxy deliberately does **not** query Mongo,
+because it runs on every request including prefetches — a query there would be
+paid for every page a user merely hovers, and every navigation would be as slow
+as the cluster.
+
+The rule that falls out: the proxy is a fast, fallible convenience; the data
+access layer is the authority. Never move a security decision into the proxy.
+
+---
+
+## An unknown email costs the same as a known one
+
+`authenticate()` runs a bcrypt comparison against a decoy hash when no user
+matches, and the error text is byte-identical for "no such user" and "wrong
+password". Both exist so that neither response time nor wording reveals which
+email addresses have accounts.
+
+The decoy hash is generated at runtime rather than hardcoded: `bcrypt.compare`
+returns `false` almost instantly against a malformed hash, so a typo'd constant
+would silently reintroduce the exact timing gap it was there to close.
+
+---
+
+## The bottom bar, not a top bar or a drawer
+
+This is used one-handed on phones. The top of a modern phone screen is out of
+comfortable thumb reach, which is why both iOS and Android put primary
+navigation at the bottom. A bottom bar also survives the on-screen keyboard and
+the browser chrome that hides and reappears while scrolling; a sticky top bar
+does not. A drawer hides the app's structure behind a tap, which is the wrong
+trade when there are only three destinations.
+
+Home sits in the centre because it is the anchor you return to, and the centre
+is the easiest point on the bar to hit without looking.
+
+---
+
+## The roadmap is rendered in the app
+
+Chore charts, rewards, stars, mantras and the calendar appear on the dashboard
+as muted "coming soon" cards, driven by `PLANNED_FEATURES`. They are not links
+and not buttons — a tappable card that does nothing is worse than an honest one
+that says so.
+
+This keeps the app truthful about what it is today, and doubles as the to-do
+list for whoever picks the project up next. Delete an entry as you build it.
+
+---
+
 ## Seating is derived, never stored
 
 There is no "current seating" anywhere. It is computed from the start date, the
@@ -164,11 +256,16 @@ cannot rot.
 
 ## Two persisted preferences, both device-local
 
-Theme and parent-swap. Neither syncs, because there is no server. That is
-stated plainly in the UI docs rather than left for someone to discover.
+Theme and parent-swap. Neither syncs. Originally that was forced — there was no
+server. There is one now, so it is a choice: both are properties of the device
+you are holding rather than of the account, and the seating app is used on
+several phones at once. That is stated plainly in the UI docs rather than left
+for someone to discover.
 
 Both are stored under versioned keys (`…:v1`) so a future format change can be
-migrated or ignored cleanly.
+migrated or ignored cleanly. Their keys still carry the old
+`birch-family-seats` prefix after the rename, because changing them would
+silently reset every device's saved preferences.
 
 ---
 

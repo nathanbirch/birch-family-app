@@ -1,25 +1,33 @@
 {
-  "name": "birch-family-seats",
+  "name": "birch-family-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "db:check": "node --env-file=.env scripts/check-database.mjs",
+    "db:seed": "tsx --env-file=.env scripts/seed-database.ts",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "check": "npm run typecheck && npm run lint && npm run test",
     "schedule:generate": "tsx scripts/generate-balanced-schedule.ts",
     "icons:generate": "node scripts/generate-icons.mjs",
-    "check": "npm run typecheck && npm run lint && npm run test",
-    "test:coverage": "vitest run --coverage",
-    "cache:clear": "rm -rf .next/cache/images"
+    "cache:clear": "rm -rf .next/cache/images",
+    "avatars:generate": "node scripts/optimise-avatars.mjs"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.5",
+    "mongodb": "^7.5.0",
     "next": "16.2.12",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "server-only": "^0.0.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

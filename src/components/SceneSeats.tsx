@@ -37,6 +37,7 @@ export function SceneSeats({
   parents,
   childIds,
   swapping,
+  arriving,
 }: {
   layout: SceneLayout;
   parentSeats: readonly ParentSeat[];
@@ -46,6 +47,8 @@ export function SceneSeats({
   childIds: readonly PersonId[];
   /** `true` while the parents are trading places. */
   swapping: boolean;
+  /** `true` once every photograph has loaded and people may walk in. */
+  arriving: boolean;
 }) {
   const placements: SeatPlacement[] = [
     ...parentSeats.map((seat, index) => ({
@@ -78,7 +81,7 @@ export function SceneSeats({
           arrivalIndex={placement.arrivalIndex}
           arcing={swapping && placement.isParent}
         >
-          <Avatar member={getPerson(placement.personId)} />
+          <Avatar member={getPerson(placement.personId)} arriving={arriving} />
         </Seat>
       ))}
     </>

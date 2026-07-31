@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 
 import { useCurrentDate } from "@/hooks/useCurrentDate";
+import { useImagesReady } from "@/hooks/useImagesReady";
 import { useParentSwap } from "@/hooks/useParentSwap";
 import { getRotationStatus } from "@/lib/rotation";
 
@@ -26,6 +27,11 @@ export function SeatingBoard({ initialDateIso }: { initialDateIso: string }) {
     [date, swapped],
   );
 
+  // Keyed on the week so a rollover re-measures: those scenes remount with a
+  // fresh set of <img> elements.
+  const scenes = useRef<HTMLDivElement>(null);
+  const arriving = useImagesReady(scenes, { key: status.weekNumber });
+
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
       <AppHeader
@@ -41,13 +47,27 @@ export function SeatingBoard({ initialDateIso }: { initialDateIso: string }) {
         remount and everyone walks in and takes their new seat again.
         Swapping the parents deliberately does *not* remount — that way the
         two of them glide across rather than starting over.
+
+        `ref` + `useImagesReady` hold the walk-in until all fourteen avatars
+        have loaded, so nobody crosses the room as an empty circle. The images
+        are in the DOM from the first paint (transparent, via `.seat-arrival`),
+        so they are downloading the whole time this is waiting.
       */}
       <div
         key={status.weekNumber}
+        ref={scenes}
         className="grid gap-4 sm:gap-6 lg:grid-cols-2 lg:items-start"
       >
-        <DinnerTable assignments={status.assignments} swapping={swapping} />
-        <Expedition assignments={status.assignments} swapping={swapping} />
+        <DinnerTable
+          assignments={status.assignments}
+          swapping={swapping}
+          arriving={arriving}
+        />
+        <Expedition
+          assignments={status.assignments}
+          swapping={swapping}
+          arriving={arriving}
+        />
       </div>
     </div>
   );
