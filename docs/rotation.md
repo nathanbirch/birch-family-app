@@ -5,11 +5,16 @@
 [`src/config/app.ts`](../src/config/app.ts):
 
 ```ts
-export const ROTATION_START_DATE = "2026-08-03";
+export const ROTATION_START_DATE = "2026-07-27";
 ```
 
 The Monday that Week 1 begins, read as a **local** calendar date. Point it at a
 day that isn't a Monday and the app snaps back to that week's Monday.
+
+Note that a *future* start date does not stop the app showing Week 1's seats —
+before the start it renders week 1 with a "starts in N days" note, and the
+family will just sit in them. Anchor the date to the Monday the seats are first
+actually used, or the first real rotation day looks like nothing happened.
 
 ## How "which week is it" is decided
 

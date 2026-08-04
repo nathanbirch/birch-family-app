@@ -28,15 +28,25 @@ function localDate(iso: string, hour = 12, minute = 0): Date {
   return new Date(year, month - 1, day, hour, minute, 0, 0);
 }
 
-const START = getRotationStartDate();
+/**
+ * A fixed anchor for the date maths below, deliberately *not* read from the
+ * config. Re-anchoring the real rotation is a one-line config change the family
+ * should be able to make without a wall of failing tests; what these tests are
+ * for is the arithmetic relative to whatever the anchor happens to be. The
+ * config value itself is asserted separately, just below.
+ */
+const START = getRotationStartDate("2026-08-03");
 
 describe("configuration sanity", () => {
-  it("uses the configured start date, which is a Monday", () => {
+  it("uses a configured start date that is a Monday", () => {
     const configured = parseLocalDate(ROTATION_START_DATE);
     expect(configured).not.toBeNull();
     // 1 === Monday
     expect(configured!.getDay()).toBe(1);
-    expect(differenceInCalendarDays(configured!, START)).toBe(0);
+    // ...and `getRotationStartDate()` passes it through untouched.
+    expect(differenceInCalendarDays(configured!, getRotationStartDate())).toBe(
+      0,
+    );
   });
 });
 

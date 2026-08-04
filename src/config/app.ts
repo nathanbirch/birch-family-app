@@ -17,8 +17,14 @@ export const APP_DESCRIPTION =
 /**
  * The Monday that Week 1 of the rotation begins, as a local calendar date
  * (`YYYY-MM-DD`). Change this to re-anchor the five-week cycle.
+ *
+ * This was originally 2026-08-03, the Monday *after* the app was built. But the
+ * app happily showed Week 1's seats during the days before that date, and the
+ * family sat in them — so when 2026-08-03 arrived nothing moved, and the week
+ * that should have been Week 2 was Week 1 all over again. Re-anchored one week
+ * earlier to the Monday the seats were actually first used.
  */
-export const ROTATION_START_DATE = "2026-08-03";
+export const ROTATION_START_DATE = "2026-07-27";
 
 /*
  * Versioned localStorage keys for the two device-local preferences.
