@@ -187,9 +187,9 @@ list, and every date decision is made on the *device* — `useCurrentDate`, the
 same hook the seating board uses — so the calendar rolls over at local midnight
 with no reload.
 
-**Week is the default.** Day is too narrow to answer "what's coming up"; month
-on a phone reduces each day to a chip. Week shows seven days with readable
-titles.
+**Day is the default**, in the list layout. The page is nearly always opened to
+answer "what's on today", and day answers it with no scanning: one column, every
+title in full. Week and month are one tap away for the planning questions.
 
 The week view is seven **stacked rows**, not seven columns: at phone width a
 column is about forty pixels, which fits a dot and nothing else.
