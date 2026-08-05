@@ -20,6 +20,9 @@ import { getChoreCountdownLabel } from "@/lib/stars/rotation";
 import { getChartSectionsForChild, getTasksForChild } from "@/lib/stars/tasks";
 import { getWeekStartIso, referenceDateFor } from "@/lib/stars/week";
 
+import { Avatar } from "../Avatar";
+
+import { ChildBackdrop } from "./ChildBackdrop";
 import { ChildTabs } from "./ChildTabs";
 import { StarChartCard } from "./StarChartCard";
 
@@ -141,28 +144,53 @@ export function StarsBoard({
   }
 
   const person = getPerson(selected);
+  /*
+   * The child's own colour, mixed with the theme's text colour so it keeps its
+   * contrast on all ten themes — their identifying hue, still readable as
+   * type. Same trick as `--color-star-ink`; see globals.css.
+   */
+  const accentInk = `color-mix(in srgb, ${person.avatarColor} 62%, var(--color-text))`;
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="animate-soft-fade flex flex-col gap-1">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Stars
+      <ChildBackdrop selected={selected} />
+
+      {/*
+        Keyed on the child, so the whole header — face, name, colour — is
+        replaced rather than edited when you switch. It arrives with the same
+        soft fade the rest of the app uses, which is the movement that tells a
+        child at a glance that the page changed under them.
+      */}
+      <header
+        key={`header-${selected}`}
+        className="animate-soft-fade flex items-center gap-3"
+      >
+        <span className="block w-14 shrink-0 sm:w-16">
+          <Avatar member={person} showName={false} arriving />
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <h1
+            className="truncate text-3xl font-extrabold tracking-tight sm:text-4xl"
+            style={{ color: accentInk }}
+          >
+            {person.name}&rsquo;s Stars
           </h1>
-          <p className="text-sm font-semibold" style={{ color: "var(--color-text-muted)" }}>
-            {formatDateRange(monday, addDays(monday, 4))}
+          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+            {formatDateRange(monday, addDays(monday, 4))} ·{" "}
+            {getChoreCountdownLabel(reference)}
           </p>
         </div>
-        <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-          {getChoreCountdownLabel(reference)} · colour a star each day you finish.
-        </p>
       </header>
 
       <ChildTabs selected={selected} totals={totals} onSelect={setSelected} />
 
       <p
-        className="text-center text-sm font-bold"
-        style={{ color: "var(--color-star-ink)" }}
+        className="themed-transition rounded-2xl px-4 py-2 text-center text-sm font-bold"
+        style={{
+          backgroundColor: `color-mix(in srgb, ${person.avatarColor} 18%, var(--color-surface))`,
+          color: accentInk,
+        }}
         aria-live="polite"
       >
         {person.name} has {weekTotal.earned} of {weekTotal.possible} stars this
@@ -190,13 +218,25 @@ export function StarsBoard({
         — it reads as *their* chart arriving rather than the labels silently
         changing under your thumb.
       */}
-      <div key={selected} className="animate-soft-rise flex flex-col gap-3">
+      {/*
+        Both this and the header are keyed on the child, and the two keys are
+        deliberately *prefixed differently*. Siblings sharing a key value is a
+        duplicate key as far as React is concerned: it kept the outgoing header
+        mounted, so switching child left Hannah's name sitting above Clara's
+        chart. `tests/stars-board.test.tsx` covers it.
+      */}
+      <div
+        key={`charts-${selected}`}
+        className="animate-soft-rise flex flex-col gap-3"
+      >
         {sections.map((section) => (
           <StarChartCard
             key={section.chart.id}
             section={section}
             marks={childMarks}
             todayIndex={todayIndex}
+            accent={person.avatarColor}
+            accentInk={accentInk}
             onToggle={toggle}
           />
         ))}

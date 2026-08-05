@@ -144,6 +144,39 @@ a child does this in. They come to fill in *their* stars.
 Faces rather than names on the picker: the youngest child on this chart is
 four.
 
+### Whose page this is
+
+Five children share one phone and the three charts look alike, so the failure
+that matters is not a crash — it is a star ticked on the wrong child's page,
+which is a star somebody else did not earn. A selected tab is a 70-pixel answer
+to a question the child never thought to ask, so the page answers it four times
+over:
+
+1. **The heading names them** — "Hannah's Stars", in their own colour.
+2. **The whole background is theirs** — their colour washed top to bottom, and
+   two large, faint copies of their own face behind the cards
+   ([`ChildBackdrop`](../src/components/stars/ChildBackdrop.tsx)).
+3. **The cards are tinted** with the same colour, because a thumb resting on
+   the chart covers most of the backdrop.
+4. **The tab stands proud** — the chosen face is larger and at full strength,
+   the other four step back to 45%.
+
+All five backdrop layers are rendered at once and four sit at zero opacity, so
+switching is a cross-fade between things already on screen rather than a
+photograph being fetched and decoded. The photographs are the same files the
+tabs are already showing, so it costs no extra network.
+
+The heading is the one that carries the meaning: colour alone must never be the
+signal, both for a colour-blind reader and for anyone who has not yet learned
+that green means Clara. The backdrop is `aria-hidden` decoration.
+
+One trap worth knowing, since the fix looks like a stylistic choice: the header
+and the chart list are both keyed on the child, and **their keys are prefixed
+differently on purpose**. Two siblings sharing a key value is a duplicate key
+as far as React is concerned — it kept the outgoing header mounted, so
+switching child left Hannah's name sitting above Clara's chart. Covered by
+`tests/stars-board.test.tsx`.
+
 Stars fill optimistically — the star fills on tap and the write goes out behind
 it, because a child colouring in a row should never watch a spinner between
 stars. `--color-star` is gold on every theme, for the same reason each child's

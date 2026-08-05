@@ -109,6 +109,64 @@ describe("the chart on screen", () => {
   });
 });
 
+describe("whose page this is", () => {
+  /*
+   * Five children share one phone and the three charts look alike, so a star
+   * ticked on the wrong page is a star somebody else did not earn. These are
+   * the signals that stop that happening — and the heading is the one that
+   * matters most, because it is the only one that still works for a reader who
+   * cannot tell the five colours apart.
+   */
+  function backdrop(): HTMLElement {
+    const element = document.querySelector("[data-child]");
+    if (!(element instanceof HTMLElement)) throw new Error("No backdrop");
+    return element;
+  }
+
+  it("says whose chart it is in words, not only in colour", () => {
+    renderBoard();
+    expect(
+      screen.getByRole("heading", { level: 1 }).textContent,
+    ).toMatch(/^Hannah/);
+  });
+
+  it("changes the heading and the backdrop together", async () => {
+    renderBoard();
+    expect(backdrop().getAttribute("data-child")).toBe("hannah");
+
+    await act(async () => {
+      screen.getByRole("tab", { name: /Clara/ }).click();
+    });
+
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toMatch(
+      /^Clara/,
+    );
+    expect(backdrop().getAttribute("data-child")).toBe("clara");
+  });
+
+  it("leaves no trace of the child you switched away from", () => {
+    // The header and the charts are both keyed on the child. When those two
+    // keys were the same string, React treated them as duplicate siblings and
+    // kept the outgoing header mounted — Hannah's name sat above Clara's
+    // chart, which is precisely the confusion the colour is there to prevent.
+    renderBoard();
+
+    act(() => {
+      screen.getByRole("tab", { name: /Emily/ }).click();
+    });
+
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(document.querySelectorAll("[data-child]")).toHaveLength(1);
+  });
+
+  it("keeps the backdrop out of the accessibility tree", () => {
+    renderBoard();
+    // It is decoration: the heading already carries the meaning, and five
+    // stacked layers of faces would be noise read aloud.
+    expect(backdrop().getAttribute("aria-hidden")).toBe("true");
+  });
+});
+
 describe("colouring in a star", () => {
   it("fills immediately, before the server has answered", async () => {
     renderBoard();

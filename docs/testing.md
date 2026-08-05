@@ -120,7 +120,7 @@ The transcription and the counting.
 - Stars, whole rows and perfect charts are counted right — and an empty chart
   is not "perfect"
 
-### `stars-board.test.tsx` — 13 tests
+### `stars-board.test.tsx` — 17 tests
 The chart on screen, with the Server Action mocked — it is a POST endpoint, not
 a plain function.
 
@@ -133,6 +133,12 @@ a plain function.
 - A whole row is celebrated the moment it completes, and the week's count
   follows every tap
 - A failed write says so
+- **Whose page it is, said in words** — the heading names the child, and it
+  changes together with the backdrop
+- **No trace of the child you switched away from.** The header and the charts
+  were once keyed on the same string, which React reads as duplicate sibling
+  keys: it kept the outgoing header mounted, so Hannah's name sat above Clara's
+  chart
 
 ### `pet-nights.test.tsx` — 6 tests
 The two cards, rendered:

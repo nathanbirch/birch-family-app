@@ -18,17 +18,35 @@ export function StarChartCard({
   section,
   marks,
   todayIndex,
+  accent,
+  accentInk,
   onToggle,
 }: {
   section: ChartSection;
   marks: StarMarks;
   todayIndex: number;
+  /** The child's own identifying colour, from `config/family.ts`. */
+  accent: string;
+  /** The same colour, mixed for readable type. */
+  accentInk: string;
   onToggle: (taskId: string, dayIndex: number, value: boolean) => void;
 }) {
   const totals = tally(marks, section.tasks);
 
   return (
-    <section className="app-card themed-transition p-3 sm:p-4">
+    /*
+      The card carries the child's colour too, not just the page behind it: a
+      thumb resting on the chart covers most of the backdrop, and this is the
+      surface the stars actually sit on. Tinted rather than outlined, so it
+      still reads as one of the app's cards on all ten themes.
+    */
+    <section
+      className="app-card themed-transition p-3 sm:p-4"
+      style={{
+        backgroundColor: `color-mix(in srgb, ${accent} 8%, var(--color-surface))`,
+        borderColor: `color-mix(in srgb, ${accent} 34%, var(--color-border))`,
+      }}
+    >
       <header className="mb-2 flex items-baseline justify-between gap-3 px-2">
         <div className="min-w-0">
           <h2 className="text-lg font-extrabold tracking-tight">
@@ -39,8 +57,11 @@ export function StarChartCard({
           </p>
         </div>
         <p
-          className="shrink-0 text-sm font-bold tabular-nums"
-          style={{ color: "var(--color-star-ink)" }}
+          className="shrink-0 rounded-full px-2.5 py-1 text-sm font-bold tabular-nums"
+          style={{
+            backgroundColor: `color-mix(in srgb, ${accent} 20%, transparent)`,
+            color: accentInk,
+          }}
         >
           {totals.earned}/{totals.possible}
         </p>

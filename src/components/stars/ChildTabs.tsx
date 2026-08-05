@@ -43,6 +43,13 @@ export function ChildTabs({
             aria-selected={isSelected}
             onClick={() => onSelect(child.id as ChildId)}
             className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl p-1 transition-transform active:scale-95"
+            style={{
+              // The selected child stands slightly proud of the other four.
+              // Size is the one difference a child reads before they read
+              // colour, and it survives being colour-blind.
+              transform: isSelected ? "scale(1.08)" : "scale(1)",
+              transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+            }}
           >
             <span
               className="themed-transition block w-full max-w-[4.5rem] rounded-full"
@@ -54,7 +61,10 @@ export function ChildTabs({
                 backgroundColor: isSelected
                   ? child.avatarColor
                   : "transparent",
-                opacity: isSelected ? 1 : 0.62,
+                // The four who are not chosen step back rather than merely
+                // losing their ring, so there is never a moment where two
+                // faces look equally like the page you are on.
+                opacity: isSelected ? 1 : 0.45,
               }}
             >
               <Avatar member={child} showName={false} arriving />
