@@ -31,7 +31,19 @@
  * The version bump is what makes installed devices drop the old cache — and
  * therefore the old plate-and-steering-wheel icons — on their next visit.
  */
-const CACHE_VERSION = "v3";
+/*
+ * v4: the pet photographs arrived. The bump is not strictly required — their
+ * URLs are new — but the cheapest way to be sure no device is holding a
+ * seating page that predates them.
+ */
+/*
+ * v5: `/seating` became `/rotations`, and v6: `/rotations` became `/turns`.
+ * These *are* required. Every cached page carries the tab bar, so without a
+ * bump an installed device would keep painting the old tab pointing at a URL
+ * that now only redirects — on every page, until something else happened to
+ * evict it.
+ */
+const CACHE_VERSION = "v6";
 const CACHE_NAME = `birch-family-app-${CACHE_VERSION}`;
 const APP_SHELL = "/";
 
@@ -92,10 +104,11 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Avatars are content-addressed too, so they get the same treatment: served
-  // from cache instantly, with no network round trip at all. That is what
-  // makes a repeat visit to the seating page paint faces immediately.
-  if (isHashedAvatar(url)) {
+  // Avatars and pet photographs are content-addressed too, so they get the
+  // same treatment: served from cache instantly, with no network round trip at
+  // all. That is what makes a repeat visit to the seating page paint faces —
+  // and Bella and Leia — immediately.
+  if (isHashedImage(url)) {
     event.respondWith(cacheFirst(request));
     return;
   }
@@ -104,23 +117,24 @@ self.addEventListener("fetch", (event) => {
 });
 
 /**
- * Is this an avatar whose filename carries a content hash?
+ * Is this an avatar or a pet photograph whose filename carries a content hash?
  *
- * Two shapes, because the page requests avatars through Next's image
- * optimiser rather than directly:
+ * Two shapes, because the page requests these through Next's image optimiser
+ * rather than directly:
  *
  *   /avatars/hannah-5090be3683.png
  *   /_next/image?url=%2Favatars%2Fhannah-5090be3683.png&w=384&q=75
  *
  * Both embed the hash, so both are safe to cache forever: replacing the
  * photograph produces a different URL, and the old one is never requested
- * again. `scripts/optimise-avatars.mjs` is what guarantees the hash is there.
+ * again. `scripts/optimise-avatars.mjs` and `scripts/optimise-pets.mjs` are
+ * what guarantee the hash is there.
  *
  * The hash check matters — an unhashed `/avatars/hannah.png` must NOT be
  * cached first, because that URL could later mean a different picture.
  */
-function isHashedAvatar(url) {
-  const HASHED = /\/avatars\/[^/]+-[0-9a-f]{8,}\.png$/;
+function isHashedImage(url) {
+  const HASHED = /\/(?:avatars|pets)\/[^/]+-[0-9a-f]{8,}\.png$/;
 
   if (HASHED.test(url.pathname)) return true;
 
@@ -137,9 +151,9 @@ function isHashedAvatar(url) {
  *
  * Each page is cached under **its own URL**. An earlier version stored every
  * navigation under `APP_SHELL` instead, which was harmless when the app was a
- * single page and wrong the moment it was not: visiting /seating would
+ * single page and wrong the moment it was not: visiting /turns would
  * overwrite the entry for "/", and opening the app offline would show the
- * seating board where the dashboard should be.
+ * turns board where the dashboard should be.
  *
  * The app shell is still the fallback for a page that was never visited, so a
  * cold offline navigation to /account lands on the dashboard rather than an

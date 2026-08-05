@@ -16,8 +16,11 @@ src/app/
 └── (app)/                  route group — parentheses keep it out of the URL
     ├── layout.tsx          requireUser() + the bottom tab bar
     ├── page.tsx            /          the dashboard
-    ├── seating/page.tsx    /seating   the seating rotation
+    ├── turns/page.tsx      /turns     the seating rotation, and tonight's pets
     ├── mantras/page.tsx    /mantras   the family mantras
+    ├── health/page.tsx     /health    the five healthy lists, as cards
+    ├── health/[section]/   /health/…  one list, in full
+    │   └── page.tsx
     ├── calendar/page.tsx   /calendar  the family Google Calendar
     └── account/page.tsx    /account   theme, sign out, app info
 ```
@@ -47,8 +50,13 @@ There is nothing to save because there is nothing to decide. Two devices
 looking at the app on the same day always show the same seats, and the database
 being unreachable does not change a single seat.
 
-**Stored in MongoDB** — accounts and sessions, and nothing else so far. See
-[Database](database.md).
+**Stored in MongoDB** — accounts, sessions, and the nightly pet rotation. The
+pets are the one thing on the seating page that is *not* derived, and that was
+a deliberate choice rather than an oversight: re-anchoring "who has Bella
+tonight" is something the family may want to do at 9pm, and a deploy is a poor
+way to do it. The page still degrades rather than breaks — an unreachable or
+malformed rotation falls back to the copy compiled into `config/pets.ts`. See
+[Database](database.md) and [Pets](pets.md).
 
 **Fetched, owned elsewhere** — the calendar. It is neither derived nor stored:
 Google holds it, the app reads a copy every fifteen minutes and never writes
@@ -73,6 +81,7 @@ Client components exist only where there is a specific interactive reason:
 | Component | Why it's a client component |
 |---|---|
 | `SeatingBoard` | assignments depend on the *device's* local date and must roll over at local midnight without a reload |
+| `PetNights` | same, nightly rather than weekly; the rotation it works from is read on the server and passed down |
 | `SeatingCardBadge` | same, for the dashboard's "Week 3 of 5" badge |
 | `CalendarBoard` | which day it is, and Day/Week/Month is a choice that must not cost a round trip |
 | `TimeGrid` | scrolls to the first event on mount, and ticks a "now" line once a minute |
@@ -120,8 +129,10 @@ here, strongly typed, with no logic beyond simple lookups.
 | `db.ts` | The database name and every collection name |
 | `navigation.ts` | The pages, the tab bar layout, the planned-feature cards |
 | `mantras.ts` | The family mantras, their verbatim quotes and sources |
+| `health.ts` | The five healthy lists, transcribed from the sheets on the wall |
 | `family.ts` | The seven people: names, roles, identifying colours, faces, photos |
 | `rotation.ts` | The hardcoded five-week schedule |
+| `pets.ts` | Bella and Leia: photographs, where a child's face is pinned on them, and the rotation the database is seeded from |
 | `seating.ts` | Seat coordinates, doorways, parent assignments, adjacency model, scene layout and arrival timing |
 | `calendar.ts` | Feed refresh interval, expansion window, the three views |
 | `themes.ts` | All ten themes and the token mapping |
@@ -139,11 +150,14 @@ Pure functions. Nothing here imports React.
 | `theme-storage.ts` / `parent-storage.ts` / `last-page-storage.ts` | Guarded `localStorage` access |
 | `theme-store.ts` / `parent-store.ts` | Tiny external stores for `useSyncExternalStore` |
 | `calendar/` | iCalendar reading, `RRULE` expansion, timezone conversion, grid layout, the feed fetch |
+| `pets/rotation.ts` | Which child sleeps with which animal tonight, and the rule that keeps them apart |
+| `pets/store.ts` | Reads the `petRotations` collection, falling back to the compiled default |
 | `db.ts` | The shared MongoDB client, and readable connection errors |
 | `auth/` | Sessions, users, passwords, the DAL, the sign-in/out actions |
 
-Everything outside `auth/` and `db.ts` is still pure and React-free, and is
-tested as such.
+Everything outside `auth/`, `pets/store.ts` and `db.ts` is still pure and
+React-free, and is tested as such — including `pets/rotation.ts`, which is
+deliberately split from the store beside it for exactly that reason.
 
 ### `src/components/` — the rendering
 
@@ -151,10 +165,15 @@ tested as such.
 nav/BottomNav         the tab bar; nav/NavIcon holds the icon set
 mantras/MantraCard    one mantra: ours in large type, theirs in a blockquote
 mantras/MantraOfDay   client island; today's mantra, rolls over at midnight
+health/HealthArt      the five flat drawings, and the palette they tint with
+health/HealthSectionCard  one tappable list card, picture and count
+health/HealthList     one whole list, numbered as the paper is
 auth/LoginForm        email + password, useActionState
 account/SignOutButton posts to the logout Server Action
 dashboard/SeatingCardBadge   the live "Week 3 of 5" pill
 dashboard/CalendarCardBadge  the live "next event" pill
+pets/PetNights        client island; tonight's animals, rolls over at midnight
+pets/PetCard          one animal, with tonight's child pinned on it
 
 calendar/CalendarBoard  the client island; owns the view, layout and cursor
 ├── DayView             one day in full            ─┐ list layout
@@ -220,7 +239,7 @@ Two rules keep it from being irritating, and both are load-bearing:
   link, a reload of `/account` — wins over what is in storage. Storage is a
   fallback for the app's own entry point, not an override.
 - **It only redirects once per page load.** Without that, tapping Home would
-  bounce straight back to Seats and the Home tab would be unreachable. The
+  bounce straight back to Turns and the Home tab would be unreachable. The
   guard is a module-level flag, which a fresh load resets and a client-side
   navigation does not.
 

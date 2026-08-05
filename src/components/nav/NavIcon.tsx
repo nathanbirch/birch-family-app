@@ -120,8 +120,25 @@ function CalendarIcon({ className }: IconProps) {
   );
 }
 
+/**
+ * An apple — the healthy lists.
+ *
+ * An apple rather than the obvious heart: the mantras icon already has a heart
+ * in it, and at this size two hearts on one screen are hard to tell apart. The
+ * apple also matches the drawing on the first card of the page it leads to.
+ */
+function HealthIcon({ className }: IconProps) {
+  return (
+    <svg {...SHARED} className={className} aria-hidden="true">
+      <path d="M12 8.4c1.5-1.3 3.7-1.3 5 .1 1.5 1.7 1.2 5-.3 7.5-1 1.6-2.2 2.4-3.2 2.4-.8 0-1-.4-1.5-.4s-.7.4-1.5.4c-1 0-2.2-.8-3.2-2.4-1.5-2.5-1.8-5.8-.3-7.5 1.3-1.4 3.5-1.4 5-.1Z" />
+      <path d="M12 8.4c-.6-2-.2-3.5 1-4.5M12.8 6.2c1.4-1.5 3.4-1.6 4.5-.8-.8 1.8-2.8 2.5-4.5.8Z" />
+    </svg>
+  );
+}
+
 const ICONS = {
   seats: SeatsIcon,
+  health: HealthIcon,
   home: HomeIcon,
   account: AccountIcon,
   chores: ChoresIcon,

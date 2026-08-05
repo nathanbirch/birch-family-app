@@ -30,6 +30,16 @@ export const COLLECTIONS = {
    * these, so a session can be revoked server-side by deleting the document.
    */
   sessions: "sessions",
+  /**
+   * The nightly pet rotation. One document per animal, holding the order the
+   * children take their turn in and the anchor that fixes where in it we are.
+   *
+   * This is the first collection that holds something the family can *see*
+   * rather than something the login needs, and it is in the database rather
+   * than in `src/config/pets.ts` precisely so it can be re-anchored without a
+   * deploy. See docs/pets.md.
+   */
+  petRotations: "petRotations",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];

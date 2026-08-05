@@ -7,8 +7,8 @@ import { AppMark } from "./AppMark";
 import { SwapParentsButton } from "./SwapParentsButton";
 
 /**
- * Page title, today's date, the rotation badge and the parent-swap control.
- * Stacks to two tidy rows on phones.
+ * Page title, what the page is, today's date, the rotation badge and the
+ * parent-swap control. Stacks to tidy rows on phones.
  *
  * The theme picker used to sit here too. It moved to the Account page when the
  * app grew more than one screen: it is an app-wide preference, and every
@@ -33,7 +33,7 @@ export function AppHeader({
           <div className="min-w-0">
             {/* Sized down on the narrowest phones so the title still fits. */}
             <h1 className="truncate text-base font-extrabold tracking-tight sm:text-2xl">
-              Seating Rotation
+              Whose Turn
             </h1>
             {/* Abbreviated on small screens, where header space is scarce. */}
             <p
@@ -56,6 +56,19 @@ export function AppHeader({
           />
         </div>
       </div>
+
+      {/*
+        "Whose Turn" is a short title, not a self-explanatory one, so the page
+        says what it means before it shows anything. Full width rather than
+        stacked under the date, which is a narrow column on a phone once the
+        app mark and the swap button have taken their share.
+      */}
+      <p className="text-sm sm:text-base" style={{ color: "var(--color-text-muted)" }}>
+        Two turns on two clocks: <strong style={{ color: "var(--color-text)" }}>seats</strong>{" "}
+        at the table and in the Expedition change every Monday, and{" "}
+        <strong style={{ color: "var(--color-text)" }}>Bella and Leia</strong>{" "}
+        change every night.
+      </p>
 
       <div className="flex flex-wrap items-center gap-2">
         <Pill emphasis>

@@ -80,6 +80,34 @@ Deleting a session document signs that device out immediately. That is the
 whole reason the cookie is a pointer rather than a self-contained token — see
 [Authentication](authentication.md).
 
+### `petRotations`
+
+One document per animal: who sleeps with Bella and Leia tonight. The first
+collection holding something the family can *see* rather than something the
+login needs.
+
+| Field | Type | Notes |
+|---|---|---|
+| `_id` | ObjectId | |
+| `petId` | string | `"bella"` / `"leia"` — an id from `src/config/pets.ts`. Unique index. |
+| `order` | string[] | Child ids, in the order they take their turn. **The same list for every pet.** |
+| `anchorDate` | string | `YYYY-MM-DD`, a local calendar date. |
+| `anchorChildId` | string | Who sleeps with this pet on `anchorDate`. |
+| `updatedAt` | Date | |
+
+**Indexes:** `pet_unique` — unique on `petId`. One row per animal.
+
+Two things this collection does differently, both deliberate:
+
+- **Reads are forgiving.** A missing, malformed or unsafe document does not
+  take the seating page down — `src/lib/pets/store.ts` logs it and falls back
+  to the rotation compiled into `src/config/pets.ts`.
+- **Writes are strict.** The seed refuses a configuration that would let one
+  child end up with both animals on the same night.
+
+Editing it by hand is a supported way to re-anchor the rotation. See
+[Pets](pets.md#re-anchoring) for the `updateOne` and the one rule to respect.
+
 ---
 
 ## Seeding
@@ -88,10 +116,10 @@ whole reason the cookie is a pointer rather than a self-contained token — see
 npm run db:seed
 ```
 
-Creates every index and the first login account. **Safe to run repeatedly** —
-it never overwrites an existing account, so re-running it after you have
-changed a password does not reset it. Index creation is idempotent by
-definition.
+Creates every index, the first login account, and the pet rotation. **Safe to
+run repeatedly** — it never overwrites an existing account or an existing pet
+rotation, so re-running it after you have changed a password, or re-anchored
+Bella, does not undo either. Index creation is idempotent by definition.
 
 Run it:
 

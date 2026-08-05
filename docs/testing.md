@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **487 tests across 27 files.**
+Vitest with jsdom and Testing Library. **508 tests across 27 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -208,7 +208,7 @@ The nav config that the tab bar and the dashboard are both generated from:
 - The dashboard lists every page except itself
 - Nothing is advertised as "coming soon" that already exists
 - Active-tab matching: exact for Home, sub-routes for the rest, and
-  **`/seating` must not match `/seating-plan`** — the bug a naive `startsWith`
+  **`/turns` must not match `/turns-plan`** — the bug a naive `startsWith`
   would introduce
 
 ### `stores.test.ts` — 9 tests
@@ -228,6 +228,21 @@ Reopening the app on the page you were last using:
 - The redirect does not overwrite the page it is redirecting to
 - **Home stays reachable after a restore** — the once-per-page-load guard, and
   the one behaviour that would make the feature infuriating if it broke
+
+### `health.test.tsx` — 15 tests
+The five healthy lists, where the risk is not a crash but a **quiet rewrite**.
+The words are a transcription of paper on a wall, so the tests hold it in place:
+
+- Every list is the length the sheet is, and the five come in the page's order
+- Each sheet's heading, and its first and last line, word for word
+- The lines an editor would itch to fix stay as printed — `M-F`,
+  `3x week`, and **`Remember we all make mistakes, and its ok`**
+- Typographic apostrophes only, the single change the transcription allows
+- Our own `blurb` and `intro` can never be rendered as one of their items
+- An unknown id returns `undefined`, so a mistyped URL 404s instead of quietly
+  showing the wrong sheet
+- The card links to its own list and states the count; the drawing is hidden
+  from screen readers; the list is a real `<ol>` rather than typed-in numbers
 
 ### `mantras.test.ts` — 18 tests
 The mantras config, where the risk is not a crash but a **misquotation**:
@@ -412,7 +427,7 @@ silent about it.
 - Every asset folder is skipped, `avatars/` named explicitly
 - Any trailing file extension is skipped, so a *new* asset folder needs no code
   change — the property that makes the original mistake unrepeatable
-- `/`, `/seating`, `/account`, `/login`, `/signed-out` and plausible future
+- `/`, `/turns`, `/account`, `/login`, `/signed-out` and plausible future
   pages all still run the auth check
 - A dotted path *segment* is not mistaken for an asset, so a nested page cannot
   silently lose its check
@@ -438,7 +453,7 @@ viewport), after the cluster came back up:
 
 Verified by hand against the running dev server rather than in the suite:
 
-- **The proxy's redirects.** `/`, `/seating` and `/account` each 307 to
+- **The proxy's redirects.** `/`, `/turns` and `/account` each 307 to
   `/login` when signed out (carrying `?next=`), `/login` returns 200, and
   `/manifest.webmanifest` and `/scenes/*.png` are correctly *excluded* from the
   matcher so a phone can install the app before signing in.

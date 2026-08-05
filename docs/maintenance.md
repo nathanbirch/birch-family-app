@@ -33,6 +33,38 @@ layout runs the auth check for everything beneath it.
 
 ---
 
+## Rename or move a page
+
+Done twice, for `/seating` → `/rotations` → `/turns`. It is six places, and
+the last three
+are the ones that get forgotten:
+
+1. `git mv src/app/(app)/<old> src/app/(app)/<new>`, and rename the page
+   function inside it.
+2. Update `href`, `label`, `title` and `description` in `NAV_ITEMS`
+   ([`src/config/navigation.ts`](../src/config/navigation.ts)). The tab bar and
+   the dashboard card both follow from there.
+3. Update the page's `metadata.title` and its `<h1>` — they are separate
+   strings from the nav config, deliberately, because a browser tab and a page
+   heading are not always the same words.
+4. Add a redirect to `next.config.ts` so bookmarks and home-screen shortcuts
+   keep working — one per historical path, each pointing at the new one. Use
+   `permanent: false`; see
+   [Decisions](decisions.md#seats-became-turns-url-included).
+5. Add the old path to `RENAMED_PAGES` in
+   [`src/lib/last-page-storage.ts`](../src/lib/last-page-storage.ts), or every
+   device that was last on that page opens on Home instead. Point *every*
+   historical name straight at the new one rather than chaining them, so a
+   device that skipped a rename still catches up in one launch.
+6. **Bump `CACHE_VERSION` in `public/sw.js`.** Every cached page carries the
+   tab bar, so a rename makes the whole cache stale, not just the page that
+   moved.
+
+Then `npm run check` — `navigation.test.ts`, `last-page.test.tsx` and
+`proxy-matcher.test.ts` all name real paths and will point at anything missed.
+
+---
+
 ## Change the app icon
 
 1. Replace `assets/icon-master.png` — square, white mark on the brand blue,
@@ -93,6 +125,34 @@ generated, and the hash changes every time the picture does.
 > **If it still shows the old photo**, see
 > [A replaced image still shows the old one](#a-replaced-image-still-shows-the-old-one).
 > Short version: `npm run cache:clear`, restart, hard-reload.
+
+---
+
+## Replace a pet's photo
+
+The same idea, a different folder and a different script. Drop a **cut-out**
+PNG — the animal on transparency — into **`assets/pets/`**, named after the
+pet's id (`bella.png`), then:
+
+```bash
+npm run pets:generate
+```
+
+It trims the transparent margin, centres the animal on the shared 828×552
+canvas and writes a content-hashed file to `public/pets/`. The margin is
+trimmed for you, so the master does not need cropping; the *pose* does matter,
+though — if the new photo has the animal facing the other way, re-pick
+`avatarSpot` in `src/config/pets.ts` so the child's face still lands on its
+back. See [Pets](pets.md#the-photographs).
+
+---
+
+## Fix who has which pet tonight
+
+One `updateOne` against `petRotations`, no deploy. See
+[Pets](pets.md#re-anchoring) — the one rule is that the two animals must stay
+at different places in the cycle, and the app refuses the configuration
+outright if they do not.
 
 ---
 

@@ -70,7 +70,7 @@ export default async function DashboardPage() {
                     <span className="text-lg font-bold tracking-tight">
                       {item.title}
                     </span>
-                    {item.href === "/seating" ? (
+                    {item.href === "/turns" ? (
                       <SeatingCardBadge initialDateIso={initialDateIso} />
                     ) : null}
                     {item.href === "/calendar" ? (

@@ -22,7 +22,7 @@ import { readLastPage, writeLastPage } from "@/lib/last-page-storage";
  * 2. **It only redirects once per page load**, tracked by the module-level
  *    `restored` flag below. A fresh load resets it because the module is
  *    re-evaluated; a client-side navigation does not. Without this, tapping
- *    Home would bounce you straight back to Seats and the Home tab would be
+ *    Home would bounce you straight back to Turns and the Home tab would be
  *    unreachable — the bug that makes this kind of feature infuriating.
  *
  * `replace` rather than `push`, so the entry point is not left in the history

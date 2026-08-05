@@ -18,6 +18,31 @@ const nextConfig: NextConfig = {
    * which takes a 33KB PNG avatar down to under 6KB.
    */
 
+  async redirects() {
+    return [
+      /*
+       * The page has had three names. `/seating` stopped describing it when
+       * the pets landed on it; `/rotations` was accurate but not a word anyone
+       * in this house says out loud. Bookmarks, home-screen shortcuts and
+       * anything a family member typed from memory still work.
+       *
+       * Both point straight at `/turns` rather than chaining through each
+       * other, so nobody pays two round trips for a rename they were not part
+       * of.
+       *
+       * Deliberately **temporary** (307) rather than permanent (308). A 308 is
+       * cached by the browser more or less forever, which is a bad trade
+       * whenever there is no SEO to preserve — and there is none here: the
+       * whole app is `noindex` and behind a login, so no crawler has ever seen
+       * any of these URLs. All a permanent redirect would buy is a saved round
+       * trip, at the price of a rule no device could ever be told to forget.
+       * This page having been renamed twice is the argument, not against it.
+       */
+      { source: "/seating", destination: "/turns", permanent: false },
+      { source: "/rotations", destination: "/turns", permanent: false },
+    ];
+  },
+
   async headers() {
     return [
       {
@@ -43,6 +68,19 @@ const nextConfig: NextConfig = {
            *
            * Obscurity, not a boundary. See docs/authentication.md.
            */
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noimageindex" },
+        ],
+      },
+      {
+        // Pet photographs are content-hashed by `scripts/optimise-pets.mjs`
+        // exactly as the avatars are, so they earn the same treatment for the
+        // same reasons.
+        source: "/pets/:file*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: `public, max-age=${ONE_YEAR}, immutable`,
+          },
           { key: "X-Robots-Tag", value: "noindex, nofollow, noimageindex" },
         ],
       },

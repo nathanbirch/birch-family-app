@@ -16,7 +16,7 @@ import { SESSION_COOKIE } from "@/lib/auth/session-token";
  * deleted from the `sessions` collection, or expired and swept by the TTL index
  * — is still perfectly signed. That produced an infinite loop:
  *
- *   1. GET /seating   proxy sees a valid signature, lets it through
+ *   1. GET /turns     proxy sees a valid signature, lets it through
  *   2. requireUser()  no session document, redirects to /login
  *   3. GET /login     proxy sees a valid signature, redirects to /
  *   4. GET /          requireUser() redirects to /login … forever

@@ -4,7 +4,7 @@ import type { MetadataRoute } from "next";
  * The whole app is private, so nothing here should be indexed.
  *
  * Every page already sits behind a login, which is the real protection — a
- * crawler cannot reach `/seating` any more than a stranger can. But files in
+ * crawler cannot reach `/turns` any more than a stranger can. But files in
  * `public/` are served without a session check (see
  * docs/authentication.md#what-is-not-here), and `/avatars/` holds photographs
  * of the children. Those are also served with an `X-Robots-Tag: noindex`

@@ -48,11 +48,18 @@ export function BottomNav() {
           const isHome = item.slot === "home";
 
           return (
-            <li key={item.href} className="flex-1">
+            <li key={item.href} className="min-w-0 flex-1">
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className="group flex min-h-[3.5rem] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-1.5 transition-colors"
+                /*
+                 * `px-1` rather than `px-2`, plus `min-w-0` on the `<li>` and
+                 * `truncate` on the label: on a 360px phone each tab gets
+                 * about 69px, and "Calendar" at 0.7rem is already most of it.
+                 * Together these keep a long label inside its own tab instead
+                 * of letting it shove its neighbours along the bar.
+                 */
+                className="group flex min-h-[3.5rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1.5 transition-colors"
                 style={{
                   color: active
                     ? "var(--color-primary)"
@@ -79,7 +86,7 @@ export function BottomNav() {
                   <NavIcon name={item.icon} className="h-6 w-6" />
                 </span>
                 <span
-                  className="text-[0.7rem] font-semibold leading-none"
+                  className="w-full truncate text-center text-[0.7rem] font-semibold leading-none"
                   style={{ fontWeight: active ? 700 : 600 }}
                 >
                   {item.label}

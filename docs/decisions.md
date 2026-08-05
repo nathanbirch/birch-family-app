@@ -275,3 +275,44 @@ Where a number is a genuine invariant — `6 × 430 + 420 = 3000`, or the
 adjacency counts — the test derives it rather than restating it. Editing one
 constant without the others fails the build instead of quietly drifting away
 from the documentation.
+
+---
+
+## "Seats" became "Turns", URL included
+
+The page held one thing — where everyone sits, changing on Mondays. Then it
+grew a second — which animal each child sleeps with, changing nightly — and
+"Seating Rotation", the "Seats" tab and `/seating` all described half of it.
+
+It was briefly **Rotations**, which was accurate and wrong: correct about the
+mechanism, and not a word anyone in this house says out loud. **Turns** is what
+the family already calls it, and it is the version a six-year-old reads without
+help. The tab is `Turns`, the page and card are `Whose Turn`, and the page now
+opens by saying what that means — "seats change every Monday, Bella and Leia
+change every night" — because a short title is not the same as a clear one.
+
+Three decisions inside that are not obvious:
+
+- **The route moved too, even though URLs are cheap to leave wrong.** Nobody
+  outside the family will ever see it, but the family will: the path is what
+  appears in the address bar of the installed app and in anything anyone
+  shares. A URL that contradicts the page it opens is a small, permanent lie.
+
+- **The redirects are temporary (307), not permanent (308).** A 308 is cached
+  by the browser more or less forever, and the usual reason to accept that —
+  SEO — does not exist here: the whole app is `noindex` and behind a login, so
+  no crawler has ever seen any of these URLs. All a permanent redirect would
+  buy is one saved round trip, in exchange for a rule no device could be told
+  to forget. Having renamed this page twice is the argument, not against it.
+
+- **The saved last page is migrated, not just validated.** `readLastPage()`
+  already ignored unknown paths, so a rename was *safe* without any change —
+  every device would simply have opened on Home once. `RENAMED_PAGES` in
+  `lib/last-page-storage.ts` maps both old paths **straight** to the current
+  one instead, so a device that skipped the middle name still catches up in a
+  single launch.
+
+The service-worker `CACHE_VERSION` bump that goes with each rename is the part
+most likely to be forgotten next time: **every cached page carries the tab
+bar**, so renaming one route makes every entry in the cache stale, not just the
+page that moved. See [PWA and offline](pwa-and-offline.md#shipping-an-update).

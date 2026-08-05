@@ -38,14 +38,14 @@ describe("last page storage", () => {
   });
 
   it("remembers a real page", () => {
-    expect(writeLastPage("/seating")).toBe(true);
-    expect(window.localStorage.getItem(LAST_PAGE_STORAGE_KEY)).toBe("/seating");
-    expect(readLastPage()).toBe("/seating");
+    expect(writeLastPage("/turns")).toBe(true);
+    expect(window.localStorage.getItem(LAST_PAGE_STORAGE_KEY)).toBe("/turns");
+    expect(readLastPage()).toBe("/turns");
   });
 
   it("recognises exactly the app's real pages", () => {
     expect(isKnownPage("/")).toBe(true);
-    expect(isKnownPage("/seating")).toBe(true);
+    expect(isKnownPage("/turns")).toBe(true);
     expect(isKnownPage("/account")).toBe(true);
     expect(isKnownPage("/chores")).toBe(false);
   });
@@ -61,6 +61,32 @@ describe("last page storage", () => {
     window.localStorage.setItem(LAST_PAGE_STORAGE_KEY, "/chores");
     expect(readLastPage()).toBeNull();
   });
+
+  it.each(["/seating", "/rotations"])(
+    "follows %s to where that page lives now",
+    (old) => {
+      /*
+       * This page has been renamed twice. Validation alone would be safe — an
+       * old path is simply unknown — but every device that had been on it
+       * would silently forget where it was, on the one launch after a rename.
+       *
+       * Both old names map *straight* to the current one. A device that
+       * skipped the middle name must not need two launches to catch up.
+       */
+      window.localStorage.setItem(LAST_PAGE_STORAGE_KEY, old);
+      expect(readLastPage()).toBe("/turns");
+    },
+  );
+
+  it.each(["/seating", "/rotations"])(
+    "still refuses to store %s",
+    (old) => {
+      // Migration is a courtesy on the way *out*. Nothing should be writing an
+      // old path any more, and if something does it is a bug, not a page.
+      expect(isKnownPage(old)).toBe(false);
+      expect(writeLastPage(old)).toBe(false);
+    },
+  );
 
   it("can be forgotten", () => {
     writeLastPage("/account");
@@ -81,7 +107,7 @@ describe("last page storage", () => {
       });
 
     expect(readLastPage()).toBeNull();
-    expect(writeLastPage("/seating")).toBe(false);
+    expect(writeLastPage("/turns")).toBe(false);
 
     getItem.mockRestore();
     setItem.mockRestore();
@@ -96,21 +122,21 @@ describe("reopening on the last page", () => {
   });
 
   it("reopens the saved page when the app starts at the entry point", () => {
-    writeLastPage("/seating");
+    writeLastPage("/turns");
     render(<LastPageMemory />);
-    expect(replace).toHaveBeenCalledWith("/seating");
+    expect(replace).toHaveBeenCalledWith("/turns");
   });
 
   it("does not overwrite the saved page while redirecting to it", () => {
-    writeLastPage("/seating");
+    writeLastPage("/turns");
     render(<LastPageMemory />);
-    expect(readLastPage()).toBe("/seating");
+    expect(readLastPage()).toBe("/turns");
   });
 
   it("stays put when the app is opened directly on another page", () => {
     // An explicit destination — a bookmark, a shared link, a reload — always
     // beats what happens to be in storage.
-    writeLastPage("/seating");
+    writeLastPage("/turns");
     pathname = "/account";
     render(<LastPageMemory />);
     expect(replace).not.toHaveBeenCalled();
@@ -131,12 +157,12 @@ describe("reopening on the last page", () => {
 
   it("lets you navigate to Home after being restored", () => {
     // The one that makes or breaks this feature: restoring is once per page
-    // load, so tapping Home later must not bounce straight back to Seats.
-    writeLastPage("/seating");
+    // load, so tapping Home later must not bounce straight back to Turns.
+    writeLastPage("/turns");
     const view = render(<LastPageMemory />);
     expect(replace).toHaveBeenCalledTimes(1);
 
-    pathname = "/seating";
+    pathname = "/turns";
     view.rerender(<LastPageMemory />);
     replace.mockClear();
 

@@ -38,8 +38,12 @@ export type NavItem = {
   title: string;
   /** One line on the dashboard card explaining what the page is for. */
   description: string;
-  /** Which of the three bar positions this occupies. */
-  slot: NavSlot;
+  /**
+   * Which bar position this occupies, or `null` for a page that is reached
+   * from the dashboard only. See the note on `NAV_ITEMS` — the bar is full,
+   * and a sixth tab would make every tap target too narrow to hit.
+   */
+  slot: NavSlot | null;
   /** Key into `NAV_ICONS`. */
   icon: NavIconName;
 };
@@ -49,15 +53,23 @@ export type NavIconName =
   | "mantras"
   | "home"
   | "calendar"
-  | "account";
+  | "account"
+  | "health";
 
 /**
  * The live pages.
  *
- * This is now five destinations, which is the most the bar holds — the note at
- * the top of this file about tap targets is no longer theoretical, and the
- * next page added here has to displace one of these or move the pattern to a
- * "More" sheet.
+ * The bar is full: five slots, five tabs. When Healthy arrived it became the
+ * first page with `slot: null` — it is on the dashboard, and reached from
+ * there, but it is not in the bar. That was chosen over displacing an existing
+ * tab because the four it would push against are all things you open *and
+ * close* in a few seconds (where do I sit, what's on today, sign out), whereas
+ * Healthy is a page you sit and read. It is also the honest option: squeezing
+ * a sixth tab in would take every target below the size a thumb reliably hits,
+ * which is the whole reason the limit exists.
+ *
+ * If a seventh page ever needs a home, that is the point to build the "More"
+ * sheet rather than adding a second dashboard-only page.
  *
  * Account sits at the far right rather than beside Home. It is the one tab
  * nobody opens daily, so it takes the least reachable corner and Calendar —
@@ -65,11 +77,11 @@ export type NavIconName =
  */
 export const NAV_ITEMS: readonly NavItem[] = [
   {
-    href: "/seating",
-    label: "Seats",
-    title: "Seating Rotation",
+    href: "/turns",
+    label: "Turns",
+    title: "Whose Turn",
     description:
-      "Who sits where at the dinner table and in the Expedition this week.",
+      "Whose turn for which seat this week, and for Bella and Leia tonight.",
     slot: "far-left",
     icon: "seats",
   },
@@ -96,6 +108,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
     description: "The family's Google Calendar, by day, week or month.",
     slot: "right",
     icon: "calendar",
+  },
+  {
+    href: "/health",
+    label: "Healthy",
+    title: "Healthy Birches",
+    description:
+      "The five lists off the wall: body, mind, feelings, spirit and home.",
+    slot: null,
+    icon: "health",
   },
   {
     href: "/account",
@@ -147,20 +168,26 @@ export const PLANNED_FEATURES: readonly PlannedFeature[] = [
   },
 ] as const;
 
-/** Ordered for the bar, left to right. Missing slots are simply absent. */
-export function getNavBarItems(): readonly NavItem[] {
+/**
+ * Ordered for the bar, left to right. Missing slots are simply absent, and a
+ * page with no slot at all never appears here.
+ */
+export function getNavBarItems(): readonly BarNavItem[] {
   const order: NavSlot[] = ["far-left", "left", "home", "right", "far-right"];
   return order
     .map((slot) => NAV_ITEMS.find((item) => item.slot === slot))
-    .filter((item): item is NavItem => item !== undefined);
+    .filter((item): item is BarNavItem => item !== undefined);
 }
+
+/** A page that actually has a place in the bar. */
+export type BarNavItem = NavItem & { slot: NavSlot };
 
 /**
  * Whether `href` is the page currently shown.
  *
  * Home only matches exactly — otherwise it would light up on every page, since
  * every path starts with "/". Everything else matches its own sub-tree, so a
- * future `/seating/history` still highlights Seats.
+ * future `/turns/history` still highlights Turns.
  */
 export function isActivePath(href: string, pathname: string): boolean {
   if (href === "/") return pathname === "/";

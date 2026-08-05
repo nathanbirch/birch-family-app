@@ -14,6 +14,8 @@ import { MongoClient, ObjectId } from "mongodb";
 import bcrypt from "bcryptjs";
 
 import { COLLECTIONS, DB_NAME } from "../src/config/db";
+import { DEFAULT_PET_ROTATIONS } from "../src/config/pets";
+import { findSharedNightProblem } from "../src/lib/pets/rotation";
 
 /* -------------------------------------------------------------------------- */
 /* The seed account                                                            */
@@ -76,6 +78,13 @@ async function main() {
     await sessions.createIndex({ userId: 1 }, { name: "by_user" });
     console.log(`  ✓ ${COLLECTIONS.sessions}.by_user`);
 
+    const petRotations = db.collection(COLLECTIONS.petRotations);
+    await petRotations.createIndex(
+      { petId: 1 },
+      { unique: true, name: "pet_unique" },
+    );
+    console.log(`  ✓ ${COLLECTIONS.petRotations}.pet_unique   (unique)`);
+
     /* --- Seed user ----------------------------------------------------- */
 
     const email = SEED_USER.email.trim().toLowerCase();
@@ -94,6 +103,45 @@ async function main() {
         updatedAt: now,
       });
       console.log(`\n  ✓ Created user "${email}".`);
+    }
+
+    /* --- Pet rotation --------------------------------------------------- */
+
+    /*
+     * One row per animal, written only if it is missing. Once the family has
+     * re-anchored Bella in the database, re-running the seed must not quietly
+     * drag her back to the anchor compiled into `src/config/pets.ts`.
+     *
+     * The safety check is the same function the app uses, so "nobody gets both
+     * animals on the same night" has one definition rather than two.
+     */
+    const unsafe = findSharedNightProblem(DEFAULT_PET_ROTATIONS);
+    if (unsafe) {
+      fail(`Refusing to seed an unsafe pet rotation.\n\n  ${unsafe}`);
+    }
+
+    console.log();
+    for (const config of DEFAULT_PET_ROTATIONS) {
+      const outcome = await petRotations.updateOne(
+        { petId: config.petId },
+        {
+          $setOnInsert: {
+            petId: config.petId,
+            order: [...config.order],
+            anchorDate: config.anchorDate,
+            anchorChildId: config.anchorChildId,
+            updatedAt: new Date(),
+          },
+        },
+        { upsert: true },
+      );
+
+      console.log(
+        outcome.upsertedCount > 0
+          ? `  ✓ Pet rotation for "${config.petId}" seeded ` +
+              `(${config.anchorChildId} on ${config.anchorDate}).`
+          : `  • Pet rotation for "${config.petId}" already exists — left untouched.`,
+      );
     }
 
     /* --- Summary ------------------------------------------------------- */

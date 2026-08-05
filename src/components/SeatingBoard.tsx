@@ -2,6 +2,7 @@
 
 import { useMemo, useRef } from "react";
 
+import type { PetRotationConfig } from "@/config/pets";
 import { useCurrentDate } from "@/hooks/useCurrentDate";
 import { useImagesReady } from "@/hooks/useImagesReady";
 import { useParentSwap } from "@/hooks/useParentSwap";
@@ -11,6 +12,7 @@ import { AppHeader } from "./AppHeader";
 import { DinnerTable } from "./DinnerTable";
 import { Expedition } from "./Expedition";
 import { RotationStatus } from "./RotationStatus";
+import { PetNights } from "./pets/PetNights";
 
 /**
  * The one interactive island on the page.
@@ -19,7 +21,18 @@ import { RotationStatus } from "./RotationStatus";
  * on the *device's* local date, and they must update at local midnight without
  * a reload. Everything it renders is a plain, pure component.
  */
-export function SeatingBoard({ initialDateIso }: { initialDateIso: string }) {
+export function SeatingBoard({
+  initialDateIso,
+  petRotations,
+}: {
+  initialDateIso: string;
+  /**
+   * The nightly pet rotation, read from MongoDB by the page. Passed down
+   * rather than fetched here: this component runs in the browser, and the
+   * assignments still have to be derived from the *device's* date.
+   */
+  petRotations: readonly PetRotationConfig[];
+}) {
   const date = useCurrentDate(initialDateIso);
   const { swapped, swapping, toggle } = useParentSwap();
   const status = useMemo(
@@ -69,6 +82,8 @@ export function SeatingBoard({ initialDateIso }: { initialDateIso: string }) {
           arriving={arriving}
         />
       </div>
+
+      <PetNights configs={petRotations} date={date} />
     </div>
   );
 }

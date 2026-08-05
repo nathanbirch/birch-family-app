@@ -42,7 +42,7 @@ if you do set it: anyone holding that URL can read the whole calendar.
 | `npm run build` | Production build. Also runs a full TypeScript check. |
 | `npm start` | Serves the production build. Use this to test PWA and offline behaviour. |
 | `npm run db:check` | Diagnoses the database connection layer by layer (DNS → TCP → TLS → MongoDB) and names the cause. Start here when anything database-related misbehaves. |
-| `npm run db:seed` | Creates the indexes and the first login account. Safe to re-run; never overwrites an existing account. |
+| `npm run db:seed` | Creates the indexes, the first login account and the pet rotation. Safe to re-run; never overwrites either. |
 | `npm run lint` | ESLint, using `eslint-config-next`. |
 | `npm run typecheck` | `tsc --noEmit`. |
 | `npm test` | The whole test suite, once. |
@@ -52,6 +52,7 @@ if you do set it: anyone holding that URL can read the whole calendar.
 | `npm run schedule:generate` | Development only. Searches every possible five-week schedule and prints the best, with fairness statistics. |
 | `npm run icons:generate` | Development only. Rebuilds every icon from `assets/icon-master.png`. |
 | `npm run avatars:generate` | Development only. Resizes and content-hashes the avatars from `assets/avatars/`, and rewrites `src/config/avatar-manifest.ts`. |
+| `npm run pets:generate` | Development only. Trims, centres and content-hashes the pet cut-outs from `assets/pets/`, and rewrites `src/config/pet-manifest.ts`. |
 | `npm run cache:clear` | Clears Next's optimised-image cache. Run this after replacing a photo that keeps its filename, then restart. |
 
 ## Things that will confuse you

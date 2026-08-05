@@ -1,8 +1,8 @@
 # Birch Family App
 
 A private, installable web app for the Birch family. It sits behind a login and
-currently holds two features — the weekly **seating rotation** and the
-**family mantras** — with chore charts, rewards, stars and a calendar planned.
+currently holds the weekly **seating rotation**, the **family mantras** and the
+**Healthy Birches** lists — with chore charts, rewards and stars planned.
 
 ---
 
@@ -68,14 +68,23 @@ npm start          # serve the production build locally
   seeded account. No signup page; accounts are created by the seed script.
 - **Dashboard** (`/`) — a card per page, plus honest "coming soon" cards for
   the planned features.
-- **Seating rotation** (`/seating`) — the original app. Photographs of the real
+- **Seating rotation** (`/turns`) — the original app. Photographs of the real
   dinner table and Ford Expedition with everyone on their actual seat, rotating
   the five children through a balanced five-week schedule.
+- **Tonight's pets** (`/turns`, beneath the seats) — Bella and Leia, each
+  with tonight's child pinned on them, rotating **nightly** and never landing
+  on the same child at once. The one rotation that lives in the database, so it
+  can be re-anchored without a deploy. See [Pets](docs/pets.md).
 - **Family mantras** (`/mantras`) — the phrases this family says to each other,
   each paired with the verbatim words that gave it to us, attributed and linked.
   A different one on top every morning. See [Mantras](docs/mantras.md).
+- **Healthy Birches** (`/health`) — the five lists off the wall at home, one
+  picture-card each: body, mind, emotions, spirit, and how to keep the Spirit in
+  our home. Tap a card to read the whole list. The words are a transcription of
+  the paper and stay that way. See [Healthy Birches](docs/health.md).
 - **Account** (`/account`) — who's signed in, the theme picker, sign out.
-- **Bottom tab bar** — Seats · Mantras · Home · Account.
+- **Bottom tab bar** — Turns · Mantras · Home · Account. Healthy is reached from
+  the dashboard: the bar is full, and a sixth tab is too narrow to hit.
 - Ten themes including a dark one. Installable as a PWA.
 
 ### Planned
@@ -97,6 +106,7 @@ Everything lives in **[`docs/`](docs/README.md)**:
 | [Getting started](docs/getting-started.md) | Install, run, test, build. Every npm script. |
 | [Deployment](docs/deployment.md) | Vercel setup, env vars, domains, the GitHub Pages history. |
 | [Mantras](docs/mantras.md) | The family mantras, the quoting rule, and the mantra of the day. |
+| [Healthy Birches](docs/health.md) | The five lists off the wall, the transcription rule, and the drawings. |
 | [Database](docs/database.md) | MongoDB, collections, seeding, the Atlas allowlist trap. |
 | [Authentication](docs/authentication.md) | How login works, changing the password, adding people. |
 | [Architecture](docs/architecture.md) | Routes, layout, what runs where, how data flows. |
@@ -125,7 +135,10 @@ Almost everything you would want to adjust is data, not code, and lives in
 | Pages, the tab bar, the roadmap cards | `navigation.ts` |
 | Database and collection names | `db.ts` |
 | The five-week schedule | `rotation.ts` |
+| Bella and Leia: photos, where a face is pinned | `pets.ts`, then `npm run pets:generate` |
+| Who has which pet tonight | the `petRotations` collection — see [Pets](docs/pets.md#re-anchoring) |
 | The family mantras and their quotes | `mantras.ts` |
+| The five healthy lists off the wall | `health.ts` |
 | Seat positions, parent defaults, animation timing | `seating.ts` |
 | The ten themes | `themes.ts` |
 

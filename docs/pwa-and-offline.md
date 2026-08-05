@@ -62,20 +62,22 @@ Two kinds of URL can never mean two different things, so both are served from
 cache with no network round trip at all:
 
 - `/_next/static/…` — build output, hashed by Next.
-- **Avatars** — `/avatars/hannah-5090be3683.png`, hashed by
-  `npm run avatars:generate`, whether requested directly or through
+- **Avatars and pet photographs** — `/avatars/hannah-5090be3683.png`,
+  `/pets/bella-59aec1e1b8.png`, hashed by `npm run avatars:generate` and
+  `npm run pets:generate`, whether requested directly or through
   `/_next/image?url=…`. The hash check is deliberate: an *unhashed*
   `/avatars/hannah.png` must not be cache-first, because that URL could later
   mean a different photograph.
 
-This is what makes a repeat visit to the seating page paint faces instantly.
+This is what makes a repeat visit to the seating page paint faces — and Bella
+and Leia — instantly.
 Everything else non-hashed stays network-first with a cache fallback.
 
 ### Each page is cached under its own URL
 
 Worth knowing because it was wrong until recently. The worker used to store
 every navigation under `"/"`, which was harmless while the app was a single
-page and became a bug the moment it was not: visiting `/seating` overwrote the
+page and became a bug the moment it was not: visiting `/turns` overwrote the
 entry for `"/"`, so opening the app offline showed the seating board where the
 dashboard should have been. Pages are now cached under their own URL, with the
 app shell as the fallback for a page never visited.
@@ -101,9 +103,15 @@ boundary — see [Authentication](authentication.md#what-is-not-here).
 ### Shipping an update
 
 Bump `CACHE_VERSION` in `public/sw.js`. Every device drops its old cache on the
-next visit. Currently `v3` — bumped when the app was renamed and the icons were
-redrawn, which is exactly the case that needs it: without a bump, installed
-devices keep serving the old icons forever.
+next visit. Currently `v5`.
+
+- `v3` — the app was renamed and the icons were redrawn. The case the bump
+  exists for: without it, installed devices keep serving the old icons forever.
+- `v4` — the pet photographs arrived. Belt-and-braces; their URLs were new.
+- `v5`, `v6` — `/seating` became `/rotations`, then `/turns`. Required, and
+  for a reason worth remembering: **every cached page carries the tab bar**, so
+  a rename makes every entry in the cache stale at once, not just the page that
+  moved.
 
 ### Local development caveat
 

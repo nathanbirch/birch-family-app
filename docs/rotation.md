@@ -1,5 +1,9 @@
 # Rotation
 
+The **seating** rotation: which child sits in which position, changing every
+Monday. The pets rotate on a different clock entirely — nightly, out of the
+database — and have their own doc: [Pets](pets.md).
+
 ## Start date
 
 [`src/config/app.ts`](../src/config/app.ts):

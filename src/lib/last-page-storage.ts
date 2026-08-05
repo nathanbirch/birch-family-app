@@ -20,13 +20,36 @@ export function isKnownPage(value: string): boolean {
   return NAV_ITEMS.some((item) => item.href === value);
 }
 
+/**
+ * Routes that have been renamed, and where they went.
+ *
+ * Validation alone would be *safe* without this — an unknown `/seating` is
+ * simply ignored and the app opens on Home — but it would silently forget
+ * where every existing device was, on the one launch after the rename. The
+ * server redirects the old URL too (`next.config.ts`); this is the same
+ * courtesy for the copy of it living in `localStorage`.
+ *
+ * An entry can be dropped once no device could plausibly still be holding the
+ * old value, which for an app opened most days is a matter of weeks.
+ */
+const RENAMED_PAGES: Record<string, string> = {
+  // Renamed when the pets landed on the page and "seating" described half of
+  // what was on it, then again from "rotations" to the word the family
+  // actually uses. Both map straight to the current path — an entry here is a
+  // lookup, not a chain, so a device that missed the middle name is fine.
+  "/seating": "/turns",
+  "/rotations": "/turns",
+};
+
 /** The saved page, or `null` if nothing valid is stored. */
 export function readLastPage(): string | null {
   if (typeof window === "undefined") return null;
   try {
     const stored = window.localStorage.getItem(LAST_PAGE_STORAGE_KEY);
-    if (!stored || !isKnownPage(stored)) return null;
-    return stored;
+    if (!stored) return null;
+    const current = RENAMED_PAGES[stored] ?? stored;
+    if (!isKnownPage(current)) return null;
+    return current;
   } catch {
     return null;
   }

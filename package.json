@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/start-server.mjs",
     "db:check": "node --env-file=.env scripts/check-database.mjs",
     "db:seed": "tsx --env-file=.env scripts/seed-database.ts",
     "lint": "eslint",
@@ -17,7 +17,8 @@
     "schedule:generate": "tsx scripts/generate-balanced-schedule.ts",
     "icons:generate": "node scripts/generate-icons.mjs",
     "cache:clear": "rm -rf .next/cache/images",
-    "avatars:generate": "node scripts/optimise-avatars.mjs"
+    "avatars:generate": "node scripts/optimise-avatars.mjs",
+    "pets:generate": "node scripts/optimise-pets.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

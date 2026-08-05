@@ -39,14 +39,34 @@ describe("navigation items", () => {
   });
 
   it("keeps bar labels short enough to fit a phone", () => {
-    // Past about ten characters the label wraps or truncates in a tab.
+    /*
+     * A tab is about 69px wide on a 360px phone, and "Calendar" — eight
+     * characters at 0.7rem — is already most of it. The label truncates inside
+     * its own tab rather than pushing its neighbours around, and ten is the
+     * point past which the ellipsis would start eating real letters.
+     */
     for (const item of NAV_ITEMS) {
       expect(item.label.length).toBeLessThanOrEqual(10);
     }
   });
 
   it("stays within the five destinations a bottom bar can hold", () => {
-    expect(NAV_ITEMS.length).toBeLessThanOrEqual(5);
+    // Pages with no slot are reached from the dashboard and cost the bar
+    // nothing; it is the *tabs* that have to stay at five or fewer, because
+    // past that the targets are too narrow for a thumb.
+    const tabs = NAV_ITEMS.filter((item) => item.slot !== null);
+    expect(tabs.length).toBeLessThanOrEqual(5);
+  });
+
+  it("keeps dashboard-only pages off the bar but on the dashboard", () => {
+    const offBar = NAV_ITEMS.filter((item) => item.slot === null);
+    const barHrefs = getNavBarItems().map((item) => item.href);
+    const cardHrefs = DASHBOARD_ITEMS.map((item) => item.href);
+    for (const item of offBar) {
+      expect(barHrefs).not.toContain(item.href);
+      // Otherwise the page would be unreachable by tapping anything at all.
+      expect(cardHrefs).toContain(item.href);
+    }
   });
 });
 
@@ -60,8 +80,9 @@ describe("bar ordering", () => {
     expect(slots).toContain("home");
   });
 
-  it("renders every configured page", () => {
-    expect(getNavBarItems()).toHaveLength(NAV_ITEMS.length);
+  it("renders every page that asked for a slot", () => {
+    const slotted = NAV_ITEMS.filter((item) => item.slot !== null);
+    expect(getNavBarItems()).toHaveLength(slotted.length);
   });
 });
 
@@ -95,7 +116,7 @@ describe("the sign-out escape hatch", () => {
    * It must never appear in the navigation, and must never be treated as a
    * page. It exists only to break this loop, which was a real bug:
    *
-   *   /seating -> proxy allows (valid signature) -> requireUser redirects to
+   *   /turns -> proxy allows (valid signature) -> requireUser redirects to
    *   /login -> proxy redirects to / (valid signature) -> requireUser
    *   redirects to /login -> ... ERR_TOO_MANY_REDIRECTS
    */
@@ -113,23 +134,23 @@ describe("the sign-out escape hatch", () => {
 
 describe("active tab highlighting", () => {
   it("matches a page exactly", () => {
-    expect(isActivePath("/seating", "/seating")).toBe(true);
-    expect(isActivePath("/seating", "/account")).toBe(false);
+    expect(isActivePath("/turns", "/turns")).toBe(true);
+    expect(isActivePath("/turns", "/account")).toBe(false);
   });
 
-  it("matches a page's sub-routes, so /seating/history still lights up Seats", () => {
-    expect(isActivePath("/seating", "/seating/history")).toBe(true);
+  it("matches a page's sub-routes, so /turns/history still lights up Turns", () => {
+    expect(isActivePath("/turns", "/turns/history")).toBe(true);
   });
 
-  it("does not let /seating match /seating-plan", () => {
+  it("does not let /turns match /turns-plan", () => {
     // Naive `startsWith` would wrongly claim this one.
-    expect(isActivePath("/seating", "/seating-plan")).toBe(false);
+    expect(isActivePath("/turns", "/turns-plan")).toBe(false);
   });
 
   it("only lights up Home on Home", () => {
     // Every path starts with "/", so an exact match is the only correct rule.
     expect(isActivePath("/", "/")).toBe(true);
-    expect(isActivePath("/", "/seating")).toBe(false);
+    expect(isActivePath("/", "/turns")).toBe(false);
     expect(isActivePath("/", "/account")).toBe(false);
   });
 });

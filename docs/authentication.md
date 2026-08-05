@@ -86,7 +86,7 @@ Because the two checks can *disagree*, they once deadlocked. A cookie whose
 session has been revoked — deleted from `sessions`, or expired and swept by the
 TTL index — is still perfectly signed, so:
 
-1. `GET /seating` — proxy sees a valid signature, lets it through
+1. `GET /turns` — proxy sees a valid signature, lets it through
 2. `requireUser()` — no session document, redirects to `/login`
 3. `GET /login` — proxy sees a valid signature, redirects to `/`
 4. `GET /` — `requireUser()` redirects to `/login` … forever

@@ -67,7 +67,7 @@ describe("paths the proxy must skip", () => {
 describe("paths the proxy must run on", () => {
   it.each([
     "/",
-    "/seating",
+    "/turns",
     "/account",
     "/login",
     "/signed-out",
