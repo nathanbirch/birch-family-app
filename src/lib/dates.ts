@@ -107,13 +107,6 @@ export function parseLocalMonth(value: string): Date | null {
   return new Date(year, month - 1, 1, 12, 0, 0, 0);
 }
 
-/** Machine-readable `YYYY-MM` for the month containing `date`. */
-export function toIsoMonth(date: Date): string {
-  const year = String(date.getFullYear()).padStart(4, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  return `${year}-${month}`;
-}
-
 /**
  * Whole calendar months from `from` to `to`. Negative when `to` is earlier.
  *
@@ -126,11 +119,6 @@ export function differenceInCalendarMonths(from: Date, to: Date): number {
     (to.getFullYear() - from.getFullYear()) * 12 +
     (to.getMonth() - from.getMonth())
   );
-}
-
-/** The first of the month containing `date`, at local noon. */
-export function startOfMonth(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), 1, 12, 0, 0, 0);
 }
 
 /** The first of the *next* month after `date`, at local noon. */
