@@ -83,6 +83,7 @@ CALENDAR_ICS_URL ──► fetch (cached 15 min)
 | `lib/calendar/ics.ts` | The RFC 5545 reader — unfolding, parameters, escapes |
 | `lib/calendar/recurrence.ts` | `RRULE` expansion |
 | `lib/calendar/events.ts` | Occurrences, exclusions, overrides, per-day lookup |
+| `lib/calendar/layout.ts` | Placing events on the hour grid, and resolving overlaps |
 | `lib/calendar/format.ts` | The words on screen |
 | `lib/calendar/feed.ts` | Fetch and cache. **Server only.** |
 
@@ -186,6 +187,86 @@ depending on which weekday it starts on, and a grid that changes height as you
 page makes the page jump under your thumb.
 
 Tapping a day in either grid opens it in the day view.
+
+### List or timeline
+
+Day and Week each draw two ways, switched by the toggle beside the view tabs:
+
+- **List** (default) — the stacked rows. Every title in full, no horizontal
+  compromise, reads well on a 390px screen.
+- **Timeline** — the hour grid, as Google draws it.
+
+Neither is better, which is why it is a toggle rather than a replacement. The
+list answers *what is on*; the timeline answers *what shape is the day* — where
+the gaps are, what is double-booked, whether an afternoon is actually free.
+List stays the default because it is the one that survives a phone screen
+without truncating anything.
+
+The choice persists while you move between Day and Week — it is a property of
+the calendar, not of the view you happen to be on. It is **not** saved between
+visits; add a key to `config/app.ts` and follow the `theme-storage.ts` pattern
+if that becomes annoying. Month has no time axis, so the toggle is hidden
+there rather than shown doing nothing.
+
+### The timeline
+
+`TimeGrid` draws both Day (one column) and Week (seven) — they differ only in
+column count.
+
+**All-day events sit above the axis.** An all-day event has no start time and
+nowhere to go on a time grid; stretched midnight-to-midnight it would bury the
+column behind it. They are pinned in a header row that does not scroll, so
+"Hannah's Night" stays visible however far down the day you have scrolled.
+
+**The grid opens on the first event**, not on midnight — `firstInterestingHour`
+picks an hour of context above the earliest block, falling back to 7am on an
+empty day. Without it every visit starts with six empty hours and a scroll.
+
+**A red line marks now**, on today's column only. It is a fixed red rather than
+a theme token: it is the one mark on the grid that must not be mistaken for an
+event, and every theme colours events from its own palette. It renders only
+after mount — the server has no idea what time it is on the device, and drawing
+it from the server's clock would be both wrong and a hydration mismatch.
+
+**Seven columns do not honestly fit a phone**, so the week timeline scrolls
+sideways inside its own card below `CALENDAR_WEEK_MIN_WIDTH_REM`. The *page*
+still never scrolls sideways.
+
+### Resolving overlaps
+
+The hard part of a time grid, and why `layout.ts` is a separate, pure module.
+A Monday morning with an airport run at 5:30, a flight at 7:15 and babysitting
+from 8 has three events competing for one strip of column. Drawing them on top
+of each other hides two; giving every event on the day its own column wastes
+the whole afternoon's width.
+
+Two stages:
+
+1. **Cluster.** Walk the day in start order, gathering events into runs that
+   transitively overlap. A cluster ends when an event starts after everything
+   before it has finished — so a busy morning cannot narrow a lone evening
+   event.
+2. **Pack.** Within a cluster, each event takes the leftmost column whose
+   previous occupant has already finished, and the cluster's width is split
+   between however many columns that needed.
+
+Stage 2 reuses columns, which matters: that Monday morning is three events but
+only **two** columns, because the airport run finishes at 6:30 and babysitting
+does not start until 8. A test asserts exactly that, and another brute-forces
+the real invariant — *no two overlapping events ever share a column*.
+
+Two details worth knowing:
+
+- **A 20-minute minimum slot.** It stops a short reminder rendering as an
+  unreadable hairline, and it stops a zero-length event (Google emits these for
+  some imported reminders) being treated as overlapping nothing and drawn on
+  top of its neighbour.
+- **Positions are fractions of a day, not pixels.** The component owns how tall
+  an hour is; `layout.ts` stays pure and directly testable.
+
+Events crossing midnight are clipped to each day's column and flagged
+`continuesFrom` / `continuesInto`, which is what drops the rounded corner on
+that edge so the block reads as continuing rather than ending there.
 
 ---
 

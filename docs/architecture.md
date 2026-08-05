@@ -75,6 +75,7 @@ Client components exist only where there is a specific interactive reason:
 | `SeatingBoard` | assignments depend on the *device's* local date and must roll over at local midnight without a reload |
 | `SeatingCardBadge` | same, for the dashboard's "Week 3 of 5" badge |
 | `CalendarBoard` | which day it is, and Day/Week/Month is a choice that must not cost a round trip |
+| `TimeGrid` | scrolls to the first event on mount, and ticks a "now" line once a minute |
 | `CalendarCardBadge` | same, for the dashboard's "next event" pill |
 | `BottomNav` | needs `usePathname()` to know which tab is current |
 | `LoginForm` | `useActionState` for the pending state and the error message |
@@ -137,7 +138,7 @@ Pure functions. Nothing here imports React.
 | `seating-summary.ts` | The screen-reader description of each scene |
 | `theme-storage.ts` / `parent-storage.ts` / `last-page-storage.ts` | Guarded `localStorage` access |
 | `theme-store.ts` / `parent-store.ts` | Tiny external stores for `useSyncExternalStore` |
-| `calendar/` | iCalendar reading, `RRULE` expansion, timezone conversion, the feed fetch |
+| `calendar/` | iCalendar reading, `RRULE` expansion, timezone conversion, grid layout, the feed fetch |
 | `db.ts` | The shared MongoDB client, and readable connection errors |
 | `auth/` | Sessions, users, passwords, the DAL, the sign-in/out actions |
 
@@ -155,11 +156,12 @@ account/SignOutButton posts to the logout Server Action
 dashboard/SeatingCardBadge   the live "Week 3 of 5" pill
 dashboard/CalendarCardBadge  the live "next event" pill
 
-calendar/CalendarBoard  the client island; owns the view and the cursor
-├── DayView             one day in full
-├── WeekView            seven stacked rows, Monday to Sunday
-├── MonthView           six rows of seven, with event chips
-└── EventRow            one event: title, timing, location
+calendar/CalendarBoard  the client island; owns the view, layout and cursor
+├── DayView             one day in full            ─┐ list layout
+├── WeekView            seven stacked rows          ├─ (the default)
+├── EventRow            one event: title, timing   ─┘
+├── TimeGrid            the hour grid — Day (1 column) or Week (7)
+└── MonthView           six rows of seven, with event chips
 calendar/CalendarNotice not connected, or connected and failing
 PageBackground        the soft themed shapes behind every page
 LastPageMemory        renders nothing; reopens the app on the last page used

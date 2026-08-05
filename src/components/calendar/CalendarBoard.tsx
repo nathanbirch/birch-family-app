@@ -3,8 +3,10 @@
 import { useCallback, useMemo, useState } from "react";
 
 import {
+  CALENDAR_DEFAULT_LAYOUT,
   CALENDAR_DEFAULT_VIEW,
   CALENDAR_VIEWS,
+  type CalendarLayout,
   type CalendarView,
 } from "@/config/calendar";
 import { useCurrentDate } from "@/hooks/useCurrentDate";
@@ -21,6 +23,7 @@ import {
 
 import { DayView } from "./DayView";
 import { MonthView } from "./MonthView";
+import { TimeGrid } from "./TimeGrid";
 import { WeekView } from "./WeekView";
 
 /**
@@ -59,6 +62,16 @@ export function CalendarBoard({
 
   const [view, setView] = useState<CalendarView>(CALENDAR_DEFAULT_VIEW);
 
+  /*
+   * List rows or the hour grid. Only Day and Week have a time axis to draw, so
+   * Month ignores this entirely rather than offering a toggle that does
+   * nothing. The choice is kept while you switch between Day and Week, which
+   * is what makes it feel like a property of the calendar rather than of the
+   * view you happen to be on.
+   */
+  const [layout, setLayout] = useState<CalendarLayout>(CALENDAR_DEFAULT_LAYOUT);
+  const showsTimeline = layout === "timeline" && view !== "month";
+
   /**
    * The focused day. `null` means "wherever today is", which is what keeps the
    * view correct when the app has been left open overnight: the cursor is not
@@ -69,6 +82,12 @@ export function CalendarBoard({
     () => (cursorIso ? (parseLocalDate(cursorIso) ?? today) : today),
     [cursorIso, today],
   );
+
+  /** Monday to Sunday around the cursor — the timeline's seven columns. */
+  const weekDays = useMemo(() => {
+    const monday = startOfWeekMonday(cursor);
+    return Array.from({ length: 7 }, (_, offset) => addDays(monday, offset));
+  }, [cursor]);
 
   const bounds = useMemo(
     () => ({
@@ -109,7 +128,17 @@ export function CalendarBoard({
 
   return (
     <div className="flex flex-col gap-4">
-      <ViewSwitcher view={view} onChange={setView} />
+      <div className="flex items-center gap-2">
+        <ViewSwitcher view={view} onChange={setView} />
+        {/*
+          Hidden on Month rather than disabled: there is no time axis to draw
+          on a month grid, so the control would be inapplicable rather than
+          merely unavailable.
+        */}
+        {view === "month" ? null : (
+          <LayoutToggle layout={layout} onChange={setLayout} />
+        )}
+      </div>
 
       <div className="flex items-center justify-between gap-2">
         <StepButton
@@ -142,15 +171,33 @@ export function CalendarBoard({
       </div>
 
       {view === "day" ? (
-        <DayView events={events} day={cursor} today={today} />
+        showsTimeline ? (
+          <TimeGrid
+            events={events}
+            days={[cursor]}
+            today={today}
+            onSelectDay={selectDay}
+          />
+        ) : (
+          <DayView events={events} day={cursor} today={today} />
+        )
       ) : null}
       {view === "week" ? (
-        <WeekView
-          events={events}
-          day={cursor}
-          today={today}
-          onSelectDay={selectDay}
-        />
+        showsTimeline ? (
+          <TimeGrid
+            events={events}
+            days={weekDays}
+            today={today}
+            onSelectDay={selectDay}
+          />
+        ) : (
+          <WeekView
+            events={events}
+            day={cursor}
+            today={today}
+            onSelectDay={selectDay}
+          />
+        )
       ) : null}
       {view === "month" ? (
         <MonthView
@@ -201,7 +248,7 @@ function ViewSwitcher({
     <div
       role="tablist"
       aria-label="Calendar view"
-      className="themed-transition flex gap-1 rounded-2xl p-1"
+      className="themed-transition flex flex-1 gap-1 rounded-2xl p-1"
       style={{ backgroundColor: "var(--color-surface-muted)" }}
     >
       {CALENDAR_VIEWS.map((option) => {
@@ -228,6 +275,106 @@ function ViewSwitcher({
         );
       })}
     </div>
+  );
+}
+
+/**
+ * List rows or the hour grid.
+ *
+ * Two `aria-pressed` buttons rather than a second tablist: this does not
+ * select between panels, it changes how the one panel is drawn, and a screen
+ * reader should hear a pair of toggles rather than a second set of tabs
+ * competing with Day/Week/Month.
+ *
+ * Icons carry the meaning, so each keeps a text label for assistive tech.
+ */
+function LayoutToggle({
+  layout,
+  onChange,
+}: {
+  layout: CalendarLayout;
+  onChange: (layout: CalendarLayout) => void;
+}) {
+  const options: {
+    id: CalendarLayout;
+    label: string;
+    icon: React.JSX.Element;
+  }[] = [
+    { id: "list", label: "List view", icon: <ListIcon /> },
+    { id: "timeline", label: "Timeline view", icon: <TimelineIcon /> },
+  ];
+
+  return (
+    <div
+      role="group"
+      aria-label="Layout"
+      className="themed-transition flex shrink-0 gap-1 rounded-2xl p-1"
+      style={{ backgroundColor: "var(--color-surface-muted)" }}
+    >
+      {options.map((option) => {
+        const active = option.id === layout;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            aria-pressed={active}
+            aria-label={option.label}
+            title={option.label}
+            onClick={() => onChange(option.id)}
+            className="themed-transition flex h-10 w-10 items-center justify-center rounded-xl transition-transform active:scale-90"
+            style={
+              active
+                ? {
+                    backgroundColor: "var(--color-primary)",
+                    color: "var(--color-on-primary)",
+                  }
+                : { color: "var(--color-text-muted)" }
+            }
+          >
+            {option.icon}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Stacked rows. */
+function ListIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-5 w-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M4 7h16M4 12h16M4 17h10" />
+    </svg>
+  );
+}
+
+/** An hour axis with blocks beside it. */
+function TimelineIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-5 w-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {/* The axis, then two blocks offset from each other in time. */}
+      <path d="M8 4v16" />
+      <path d="M4 7h2M4 12h2M4 17h2" />
+      <rect x="10.5" y="5.5" width="9" height="5" rx="1.4" />
+      <rect x="10.5" y="13.5" width="9" height="5" rx="1.4" />
+    </svg>
   );
 }
 

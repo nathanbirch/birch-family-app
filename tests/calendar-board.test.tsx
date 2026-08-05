@@ -30,6 +30,20 @@ function timed(title: string, day: number, hour: number): CalendarEvent {
   };
 }
 
+function allDayOn(title: string, iso: string): CalendarEvent {
+  return {
+    id: title,
+    title,
+    location: null,
+    description: null,
+    allDay: true,
+    start: Date.parse(`${iso}T00:00:00Z`),
+    end: Date.parse(`${iso}T00:00:00Z`) + 86400000,
+    startDate: iso,
+    endDate: iso,
+  };
+}
+
 function renderBoard(events: CalendarEvent[] = []) {
   return render(
     <CalendarBoard
@@ -156,6 +170,85 @@ describe("the calendar board", () => {
     renderBoard();
     const tuesday = screen.getByRole("button", { name: /Open Tuesday, 4 August|Open Tuesday, August 4/ });
     expect(within(tuesday).getByText("4")).toBeTruthy();
+  });
+});
+
+describe("the list / timeline toggle", () => {
+  /** Switch to the hour grid. */
+  function showTimeline() {
+    fireEvent.click(screen.getByRole("button", { name: "Timeline view" }));
+  }
+
+  it("starts on the list layout", () => {
+    renderBoard();
+    expect(
+      screen.getByRole("button", { name: "List view" }).getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect(screen.queryByLabelText("This week, by time")).toBeNull();
+  });
+
+  it("switches the week to the hour grid", () => {
+    renderBoard([timed("piano", 4, 15)]);
+    showTimeline();
+
+    expect(screen.getByLabelText("This week, by time")).toBeTruthy();
+    expect(screen.getByText("piano")).toBeTruthy();
+  });
+
+  it("switches the day to the hour grid", () => {
+    renderBoard([timed("piano", 4, 15)]);
+    fireEvent.click(screen.getByRole("tab", { name: "Day" }));
+    showTimeline();
+
+    expect(screen.getByLabelText("This day, by time")).toBeTruthy();
+  });
+
+  it("keeps the choice when moving between Day and Week", () => {
+    // The layout is a property of the calendar, not of the view you are on.
+    renderBoard();
+    showTimeline();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Day" }));
+    expect(screen.getByLabelText("This day, by time")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Week" }));
+    expect(screen.getByLabelText("This week, by time")).toBeTruthy();
+  });
+
+  it("goes back to the list layout", () => {
+    renderBoard([timed("piano", 4, 15)]);
+    showTimeline();
+    fireEvent.click(screen.getByRole("button", { name: "List view" }));
+
+    expect(screen.queryByLabelText("This week, by time")).toBeNull();
+    expect(screen.getByLabelText("This week")).toBeTruthy();
+  });
+
+  it("hides the toggle on Month, which has no time axis", () => {
+    renderBoard();
+    fireEvent.click(screen.getByRole("tab", { name: "Month" }));
+
+    expect(screen.queryByRole("button", { name: "Timeline view" })).toBeNull();
+  });
+
+  it("still shows all-day events, above the axis", () => {
+    renderBoard([allDayOn("Hannah's Night", "2026-08-05")]);
+    showTimeline();
+
+    // Present, but not placed on the time grid — the layout excludes it.
+    expect(screen.getByText("Hannah's Night")).toBeTruthy();
+  });
+
+  it("opens a day from a column heading", () => {
+    renderBoard([timed("swim", 8, 10)]);
+    showTimeline();
+
+    fireEvent.click(screen.getByRole("button", { name: /Open Saturday/ }));
+
+    expect(
+      screen.getByRole("tab", { name: "Day" }).getAttribute("aria-selected"),
+    ).toBe("true");
+    expect(screen.getByLabelText("This day, by time")).toBeTruthy();
   });
 });
 

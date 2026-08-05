@@ -91,6 +91,46 @@ export const CALENDAR_DEFAULT_VIEW: CalendarView = "week";
 /** Most event chips to draw in one month-grid cell before summarising. */
 export const CALENDAR_MONTH_CELL_EVENTS = 2;
 
+/* ------------------------------------------------------------------ */
+/* The timeline                                                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * How Day and Week are drawn.
+ *
+ * - `list` — the stacked rows this app started with. Reads well on a phone
+ *   held one-handed, and shows every event's title in full.
+ * - `timeline` — the hour grid, as Google Calendar draws it. Costs horizontal
+ *   room and truncates titles, but it is the only one that shows *shape*: a
+ *   free afternoon, a double-booking, a gap big enough to fit something in.
+ *
+ * Neither is better, which is exactly why this is a toggle rather than a
+ * replacement. `list` stays the default because it is the one that survives a
+ * 390px screen without compromise.
+ */
+export type CalendarLayout = "list" | "timeline";
+
+export const CALENDAR_DEFAULT_LAYOUT: CalendarLayout = "list";
+
+/** Height of one hour row, in pixels. */
+export const CALENDAR_HOUR_HEIGHT = 48;
+
+/**
+ * Where the grid scrolls to when nothing is on.
+ *
+ * 7am, so the school run is on screen without scrolling.
+ */
+export const CALENDAR_FALLBACK_HOUR = 7;
+
+/**
+ * Least width the seven-day timeline may squeeze into, in `rem`.
+ *
+ * Below this a column is too narrow for a time and any of a title, so the grid
+ * scrolls sideways *within its card* instead of shrinking further. The page
+ * itself still never scrolls sideways — see docs/accessibility.md.
+ */
+export const CALENDAR_WEEK_MIN_WIDTH_REM = 36;
+
 /*
  * Note what is *not* in this file: any code that reads the feed URL out of the
  * environment. The client bundle imports this module for `CALENDAR_VIEWS`, and

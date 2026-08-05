@@ -282,7 +282,26 @@ The fetch-and-expand pipeline, end to end against a Google-shaped feed with
   error path — including one whose underlying `Error` embeds it, since error
   text ends up in screenshots
 
-### `calendar-board.test.tsx` — 16 tests
+### `calendar-layout.test.ts` — 23 tests
+Placing events on the hour grid — the timeline's hard part:
+
+- Vertical placement as a fraction of the day, with a **20-minute minimum** so
+  a short reminder is not an unreadable hairline
+- Events crossing midnight clipped to each day's column, flagged
+  `continuesFrom` / `continuesInto`, and a day wholly inside a long event
+  filling its column
+- Overlap packing: two colliding events split into two columns; events that
+  merely *touch* share one; a busy morning does not narrow a lone evening event
+- **Column reuse** — the real Monday (airport run, flight, babysitting) is
+  three events in **two** columns, because the 6:30 finish frees a column
+  before 8
+- Longer event on the left when two start together
+- A brute-force pass over a messy day asserting the invariant the whole
+  algorithm exists for: **no two overlapping events ever share a column**
+- `firstInterestingHour` opens an hour above the earliest event, ignores a
+  block running in from yesterday, and falls back on an empty day
+
+### `calendar-board.test.tsx` — 24 tests
 The three views, rendered:
 
 - Opens on Week; Day and Month switch without a fetch
@@ -294,6 +313,15 @@ The three views, rendered:
 - An empty day says so; a truncated expansion says so
 - Every event is built from local `Date`s, so the suite is correct in any
   machine timezone
+
+The list/timeline toggle:
+
+- Starts on list; switches Day and Week to the hour grid and back
+- **The choice survives moving between Day and Week** — it is a property of the
+  calendar, not of the view
+- Hidden on Month, which has no time axis to draw
+- All-day events still render in timeline mode, above the axis rather than on it
+- A column heading opens that day, still in timeline mode
 
 ## Conventions
 
