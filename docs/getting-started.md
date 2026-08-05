@@ -14,14 +14,19 @@ Sign in with **`birchfam` / `birchfam`**.
 
 ## Setting up `.env`
 
-Two variables, both required, neither ever sent to the browser:
+Two required variables and one optional one. None is ever sent to the browser:
 
-| Variable | Where to get it |
-|---|---|
-| `MONGODB_URI` | Atlas → Cluster → Connect → Drivers. Or copy from Vercel's env settings. |
-| `SESSION_SECRET` | Generate: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"` |
+| Variable | Required | Where to get it |
+|---|---|---|
+| `MONGODB_URI` | yes | Atlas → Cluster → Connect → Drivers. Or copy from Vercel's env settings. |
+| `SESSION_SECRET` | yes | Generate: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"` |
+| `CALENDAR_ICS_URL` | no | Google Calendar → the family calendar → Settings and sharing → Integrate calendar → **Secret address in iCal format**. See [Calendar](calendar.md). |
 
 `.env` is gitignored. `.env.example` is committed as the template.
+
+Leave `CALENDAR_ICS_URL` blank and everything still runs — the Calendar page
+explains how to connect one instead of showing events. Treat it as a password
+if you do set it: anyone holding that URL can read the whole calendar.
 
 > **If anything database-related fails**, run `npm run db:check` before
 > debugging anything else. Connection failures here have several very different
