@@ -16,10 +16,8 @@ import { NAV_ITEMS, getNavBarItems } from "@/config/navigation";
 const TODAY = new Date(2026, 7, 4, 9, 0);
 
 /*
- * The board re-reads the device clock on mount, so without this the machine's
- * real date decides which day the Day view lands on — and every one of these
- * fixtures is pinned to a Tuesday in August 2026. It passed on the day it was
- * written and started failing at the next midnight.
+ * The board re-reads the device clock on mount, so the machine's real date
+ * would otherwise decide which day the Day view lands on. Freeze it.
  */
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -71,16 +69,29 @@ function renderBoard(events: CalendarEvent[] = []) {
   );
 }
 
+/** Leave the default Day view for the week. */
+function showWeek() {
+  fireEvent.click(screen.getByRole("tab", { name: "Week" }));
+}
+
 describe("the calendar board", () => {
-  it("opens on the week view", () => {
+  it("opens on the day view", () => {
     renderBoard();
     expect(
-      screen.getByRole("tab", { name: "Week" }).getAttribute("aria-selected"),
+      screen.getByRole("tab", { name: "Day" }).getAttribute("aria-selected"),
     ).toBe("true");
+  });
+
+  it("shows only today until another view is asked for", () => {
+    renderBoard([timed("piano", 4, 15), timed("swim", 8, 10)]);
+
+    expect(screen.getByText("piano")).toBeTruthy();
+    expect(screen.queryByText("swim")).toBeNull();
   });
 
   it("shows the whole Monday-to-Sunday week", () => {
     renderBoard([timed("piano", 4, 15), timed("swim", 8, 10)]);
+    showWeek();
 
     // 4 August 2026 is a Tuesday, so the week runs 3rd to 9th and holds both.
     expect(screen.getByText("piano")).toBeTruthy();
@@ -89,11 +100,15 @@ describe("the calendar board", () => {
 
   it("leaves an event in a different week out", () => {
     renderBoard([timed("piano", 4, 15), timed("dentist", 20, 10)]);
+    showWeek();
     expect(screen.queryByText("dentist")).toBeNull();
   });
 
-  it("switches to the day view and shows only that day", () => {
+  it("switches back to the day view and shows only that day", () => {
     renderBoard([timed("piano", 4, 15), timed("swim", 8, 10)]);
+
+    showWeek();
+    expect(screen.getByText("swim")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("tab", { name: "Day" }));
 
@@ -112,6 +127,7 @@ describe("the calendar board", () => {
 
   it("opens a day when one is tapped in the week view", () => {
     renderBoard([timed("swim", 8, 10)]);
+    showWeek();
 
     // Saturday the 8th.
     fireEvent.click(screen.getByRole("button", { name: /Open Saturday/ }));
@@ -124,6 +140,7 @@ describe("the calendar board", () => {
 
   it("steps forward a week and back again", () => {
     renderBoard([timed("piano", 4, 15), timed("dentist", 20, 10)]);
+    showWeek();
 
     const next = screen.getByRole("button", { name: "Next" });
     fireEvent.click(next);
@@ -155,6 +172,7 @@ describe("the calendar board", () => {
         truncated={false}
       />,
     );
+    showWeek();
 
     const previous = screen.getByRole("button", { name: "Previous" });
     const next = screen.getByRole("button", { name: "Next" });
@@ -177,12 +195,12 @@ describe("the calendar board", () => {
 
   it("shows an empty day honestly rather than blankly", () => {
     renderBoard([]);
-    fireEvent.click(screen.getByRole("tab", { name: "Day" }));
     expect(screen.getByText("Nothing on this day.")).toBeTruthy();
   });
 
   it("marks today in the week view", () => {
     renderBoard();
+    showWeek();
     const tuesday = screen.getByRole("button", { name: /Open Tuesday, 4 August|Open Tuesday, August 4/ });
     expect(within(tuesday).getByText("4")).toBeTruthy();
   });
@@ -199,11 +217,12 @@ describe("the list / timeline toggle", () => {
     expect(
       screen.getByRole("button", { name: "List view" }).getAttribute("aria-pressed"),
     ).toBe("true");
-    expect(screen.queryByLabelText("This week, by time")).toBeNull();
+    expect(screen.queryByLabelText("This day, by time")).toBeNull();
   });
 
   it("switches the week to the hour grid", () => {
     renderBoard([timed("piano", 4, 15)]);
+    showWeek();
     showTimeline();
 
     expect(screen.getByLabelText("This week, by time")).toBeTruthy();
@@ -212,7 +231,6 @@ describe("the list / timeline toggle", () => {
 
   it("switches the day to the hour grid", () => {
     renderBoard([timed("piano", 4, 15)]);
-    fireEvent.click(screen.getByRole("tab", { name: "Day" }));
     showTimeline();
 
     expect(screen.getByLabelText("This day, by time")).toBeTruthy();
@@ -222,16 +240,18 @@ describe("the list / timeline toggle", () => {
     // The layout is a property of the calendar, not of the view you are on.
     renderBoard();
     showTimeline();
+    expect(screen.getByLabelText("This day, by time")).toBeTruthy();
+
+    showWeek();
+    expect(screen.getByLabelText("This week, by time")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("tab", { name: "Day" }));
     expect(screen.getByLabelText("This day, by time")).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("tab", { name: "Week" }));
-    expect(screen.getByLabelText("This week, by time")).toBeTruthy();
   });
 
   it("goes back to the list layout", () => {
     renderBoard([timed("piano", 4, 15)]);
+    showWeek();
     showTimeline();
     fireEvent.click(screen.getByRole("button", { name: "List view" }));
 
@@ -248,6 +268,7 @@ describe("the list / timeline toggle", () => {
 
   it("still shows all-day events, above the axis", () => {
     renderBoard([allDayOn("Hannah's Night", "2026-08-05")]);
+    showWeek();
     showTimeline();
 
     // Present, but not placed on the time grid — the layout excludes it.
@@ -256,6 +277,7 @@ describe("the list / timeline toggle", () => {
 
   it("opens a day from a column heading", () => {
     renderBoard([timed("swim", 8, 10)]);
+    showWeek();
     showTimeline();
 
     fireEvent.click(screen.getByRole("button", { name: /Open Saturday/ }));

@@ -528,7 +528,6 @@ describe("the child backdrop", () => {
   /** "#a855f7" -> "rgba(168, 85, 247" — the form jsdom stores it in. */
   function asRgbPrefix(hex: string): string {
     const value = Number.parseInt(hex.slice(1), 16);
-    // eslint-disable-next-line no-bitwise
     return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}`;
   }
 
