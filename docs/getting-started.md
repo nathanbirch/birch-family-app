@@ -53,6 +53,7 @@ if you do set it: anyone holding that URL can read the whole calendar.
 | `npm run icons:generate` | Development only. Rebuilds every icon from `assets/icon-master.png`. |
 | `npm run avatars:generate` | Development only. Resizes and content-hashes the avatars from `assets/avatars/`, and rewrites `src/config/avatar-manifest.ts`. |
 | `npm run pets:generate` | Development only. Trims, centres and content-hashes the pet cut-outs from `assets/pets/`, and rewrites `src/config/pet-manifest.ts`. |
+| `npm run sound:generate` | Development only. Synthesises the star charts' celebration cheer, content-hashes it into `public/sounds/`, and rewrites `src/config/sound-manifest.ts`. Needs `ffmpeg`. |
 | `npm run cache:clear` | Clears Next's optimised-image cache. Run this after replacing a photo that keeps its filename, then restart. |
 
 ## Things that will confuse you

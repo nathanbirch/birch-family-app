@@ -49,7 +49,14 @@
  * bump an installed device would keep painting a bar with no Stars tab in it
  * on every page it had already cached.
  */
-const CACHE_VERSION = "v7";
+/*
+ * v8: the celebration sound joined the precache. Not strictly required — the
+ * filename is content-hashed, so it is a new URL either way — but a bump is
+ * what makes an already-installed device fetch it during the *install* step,
+ * rather than the first time a child happens to finish a column while the
+ * phone is offline.
+ */
+const CACHE_VERSION = "v8";
 const CACHE_NAME = `birch-family-app-${CACHE_VERSION}`;
 const APP_SHELL = "/";
 
@@ -62,6 +69,12 @@ const PRECACHE = [
   "/icons/icon-512.png",
   "/icons/icon-maskable-512.png",
   "/icons/apple-touch-icon.png",
+  /*
+   * The celebration sound. 20KB, and the one asset on the star charts that a
+   * child notices missing: confetti falls whatever the connection is doing, so
+   * silence would be the only part of the party that needed a signal.
+   */
+  "/sounds/cheer-00801d9753.mp3",
 ];
 
 self.addEventListener("install", (event) => {
@@ -110,11 +123,13 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Avatars and pet photographs are content-addressed too, so they get the
-  // same treatment: served from cache instantly, with no network round trip at
-  // all. That is what makes a repeat visit to the seating page paint faces —
-  // and Bella and Leia — immediately.
-  if (isHashedImage(url)) {
+  // Avatars, pet photographs and the cheer are content-addressed too, so they
+  // get the same treatment: served from cache instantly, with no network round
+  // trip at all. That is what makes a repeat visit to the seating page paint
+  // faces — and Bella and Leia — immediately, and it is what makes the
+  // celebration sound fire on the same frame as the confetti rather than after
+  // a round trip.
+  if (isHashedAsset(url)) {
     event.respondWith(cacheFirst(request));
     return;
   }
@@ -123,30 +138,36 @@ self.addEventListener("fetch", (event) => {
 });
 
 /**
- * Is this an avatar or a pet photograph whose filename carries a content hash?
+ * Is this an asset whose filename carries a content hash?
  *
- * Two shapes, because the page requests these through Next's image optimiser
- * rather than directly:
+ * Three families of them, all written by a generator script that guarantees
+ * the hash: avatars, pet photographs and the celebration sound.
+ *
+ * Images have two shapes, because the page requests them through Next's image
+ * optimiser rather than directly:
  *
  *   /avatars/hannah-5090be3683.png
  *   /_next/image?url=%2Favatars%2Fhannah-5090be3683.png&w=384&q=75
  *
  * Both embed the hash, so both are safe to cache forever: replacing the
  * photograph produces a different URL, and the old one is never requested
- * again. `scripts/optimise-avatars.mjs` and `scripts/optimise-pets.mjs` are
- * what guarantee the hash is there.
+ * again. The sound has only the direct shape — it is fetched by the Web Audio
+ * code, which does not go through the optimiser.
  *
  * The hash check matters — an unhashed `/avatars/hannah.png` must NOT be
  * cached first, because that URL could later mean a different picture.
  */
-function isHashedImage(url) {
-  const HASHED = /\/(?:avatars|pets)\/[^/]+-[0-9a-f]{8,}\.png$/;
+function isHashedAsset(url) {
+  const HASHED_IMAGE = /\/(?:avatars|pets)\/[^/]+-[0-9a-f]{8,}\.png$/;
+  const HASHED_SOUND = /\/sounds\/[^/]+-[0-9a-f]{8,}\.mp3$/;
 
-  if (HASHED.test(url.pathname)) return true;
+  if (HASHED_IMAGE.test(url.pathname) || HASHED_SOUND.test(url.pathname)) {
+    return true;
+  }
 
   if (url.pathname === "/_next/image") {
     const target = url.searchParams.get("url");
-    return Boolean(target) && HASHED.test(target);
+    return Boolean(target) && HASHED_IMAGE.test(target);
   }
 
   return false;

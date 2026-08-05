@@ -120,7 +120,7 @@ The transcription and the counting.
 - Stars, whole rows and perfect charts are counted right — and an empty chart
   is not "perfect"
 
-### `stars-board.test.tsx` — 23 tests
+### `stars-board.test.tsx` — 30 tests
 The chart on screen, with the Server Action mocked — it is a POST endpoint, not
 a plain function.
 
@@ -140,6 +140,11 @@ a plain function.
   page burst *replaces* the card burst rather than joining it, since the last
   star of the day is also the last star of some chart
 - Rubbing a star out celebrates nothing
+- The cheer plays at full volume for a whole day and at 60% for one chart, is
+  silent for an ordinary star, and is warmed on every tap — inside the gesture
+  iOS requires before audio may start
+- Switching the speaker off silences it and is remembered on the device, and
+  the confetti still falls: muting the room is not muting the party
 - The celebration is stated in words for anyone who cannot see paper fall, and
   the paper itself is out of the accessibility tree
 - **No trace of the child you switched away from.** The header and the charts

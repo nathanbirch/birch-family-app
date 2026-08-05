@@ -6,16 +6,16 @@ import { useState } from "react";
  * Confetti, drawn with nothing but divs.
  *
  * No library and no canvas. A canvas would need a render loop, a resize
- * observer and a reason to exist; forty absolutely-positioned rectangles
- * animated by a single CSS keyframe are handed straight to the compositor,
+ * observer and a reason to exist; a few hundred absolutely-positioned
+ * rectangles animated by one CSS keyframe are handed straight to the compositor,
  * cost nothing on the main thread while a child is still tapping stars, and —
  * the reason that settles it — work offline in an installed PWA without adding
  * a byte to the bundle that has to be cached.
  *
  * Two sizes, both driven from here:
  *
- *   `section` — one chart's column finished. Falls inside that card.
- *   `page`    — every star for one whole day. Falls across the screen.
+ *   `section` — one chart's column finished. 136 pieces, inside that card.
+ *   `page`    — every star for one whole day. 280 pieces, across the screen.
  *
  * The pieces are generated **once, when the burst mounts**, and held in state.
  * Generating them during render would reshuffle the whole burst on every
@@ -23,7 +23,7 @@ import { useState } from "react";
  * flight — which reads as a stutter rather than as falling paper.
  *
  * It is `aria-hidden`: the celebration is also announced in words by the board,
- * and five dozen decorative divs are noise read aloud. Under
+ * and a few hundred decorative divs are noise read aloud. Under
  * `prefers-reduced-motion` the pieces are hidden entirely by `globals.css`, so
  * the words are all that is left — which is the right outcome, not a
  * degraded one.
@@ -108,9 +108,23 @@ export function Confetti({
  */
 export const CONFETTI_DURATION_MS = 2600;
 
+/**
+ * How much paper falls.
+ *
+ * These started at a quarter of what they are and were quadrupled on the only
+ * evidence that counts — a family looked at it and wanted more. They are the
+ * dial to turn if it ever feels like too much or too little.
+ *
+ * The cost is a DOM node per piece, each animated purely on `transform` and
+ * `opacity`, so the browser hands them to the compositor and the main thread
+ * stays free for the child who is still tapping stars. That is what makes 280
+ * of them affordable where 280 of almost anything else would not be.
+ */
+const PIECES = { page: 280, section: 136 } as const;
+
 function makePieces(scope: ConfettiScope, colors: readonly string[]): Piece[] {
   const page = scope === "page";
-  const count = page ? 70 : 34;
+  const count = PIECES[scope];
 
   /*
    * How far a piece has to travel to leave the screen, or to cross a card.

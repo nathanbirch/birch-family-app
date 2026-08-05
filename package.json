@@ -18,7 +18,8 @@
     "icons:generate": "node scripts/generate-icons.mjs",
     "cache:clear": "rm -rf .next/cache/images",
     "avatars:generate": "node scripts/optimise-avatars.mjs",
-    "pets:generate": "node scripts/optimise-pets.mjs"
+    "pets:generate": "node scripts/optimise-pets.mjs",
+    "sound:generate": "node scripts/generate-cheer.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

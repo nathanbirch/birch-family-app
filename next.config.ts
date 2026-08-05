@@ -85,6 +85,19 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Content-hashed by `scripts/generate-cheer.mjs`, so it earns exactly
+        // what the avatars and pet photos do. Generating a different cheer
+        // changes the hash, and the old URL is simply never asked for again.
+        source: "/sounds/:file*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: `public, max-age=${ONE_YEAR}, immutable`,
+          },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+      {
         // Not content-hashed, so it must revalidate — but it may be reused
         // while it does, which keeps repeat navigations instant.
         source: "/scenes/:file*",
