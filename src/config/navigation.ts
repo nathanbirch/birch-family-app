@@ -19,8 +19,15 @@
  * to hit reliably and the pattern should change to a "More" sheet.
  */
 
-/** Which slot an item takes in the bar. Home is deliberately the centre. */
-export type NavSlot = "left" | "home" | "right";
+/**
+ * Which slot an item takes in the bar, in left-to-right order.
+ *
+ * Home keeps its own slot name because it is the anchor, not because it is
+ * always the geometric middle: with an even number of pages something has to
+ * sit off-centre. Home is placed just right of centre, which on a phone held
+ * one-handed is the easiest point on the bar to reach, not the hardest.
+ */
+export type NavSlot = "far-left" | "left" | "home" | "right" | "far-right";
 
 export type NavItem = {
   /** Route path. Must match a real page under `src/app/(app)/`. */
@@ -37,13 +44,24 @@ export type NavItem = {
   icon: NavIconName;
 };
 
-export type NavIconName = "seats" | "home" | "account";
+export type NavIconName =
+  | "seats"
+  | "mantras"
+  | "home"
+  | "calendar"
+  | "account";
 
 /**
- * The live pages, in bar order: left of centre, centre, right of centre.
+ * The live pages.
  *
- * Home sits in the middle because it is the anchor you return to, and the
- * centre is the easiest point on the bar to hit without looking.
+ * This is now five destinations, which is the most the bar holds — the note at
+ * the top of this file about tap targets is no longer theoretical, and the
+ * next page added here has to displace one of these or move the pattern to a
+ * "More" sheet.
+ *
+ * Account sits at the far right rather than beside Home. It is the one tab
+ * nobody opens daily, so it takes the least reachable corner and Calendar —
+ * which is checked constantly — takes the slot next to Home.
  */
 export const NAV_ITEMS: readonly NavItem[] = [
   {
@@ -52,8 +70,16 @@ export const NAV_ITEMS: readonly NavItem[] = [
     title: "Seating Rotation",
     description:
       "Who sits where at the dinner table and in the Expedition this week.",
-    slot: "left",
+    slot: "far-left",
     icon: "seats",
+  },
+  {
+    href: "/mantras",
+    label: "Mantras",
+    title: "Family Mantras",
+    description: "The things we say to each other, and where they came from.",
+    slot: "left",
+    icon: "mantras",
   },
   {
     href: "/",
@@ -64,11 +90,19 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: "home",
   },
   {
+    href: "/calendar",
+    label: "Calendar",
+    title: "Calendar",
+    description: "The family's Google Calendar, by day, week or month.",
+    slot: "right",
+    icon: "calendar",
+  },
+  {
     href: "/account",
     label: "Account",
     title: "Account",
     description: "Theme, sign out, and what this app is.",
-    slot: "right",
+    slot: "far-right",
     icon: "account",
   },
 ] as const;
@@ -93,12 +127,7 @@ export type PlannedFeature = {
   icon: PlannedIconName;
 };
 
-export type PlannedIconName =
-  | "chores"
-  | "rewards"
-  | "stars"
-  | "mantras"
-  | "calendar";
+export type PlannedIconName = "chores" | "rewards" | "stars";
 
 export const PLANNED_FEATURES: readonly PlannedFeature[] = [
   {
@@ -116,21 +145,11 @@ export const PLANNED_FEATURES: readonly PlannedFeature[] = [
     description: "Earned for chores, kindness and effort.",
     icon: "stars",
   },
-  {
-    title: "Family Mantras",
-    description: "The things we say to each other, written down.",
-    icon: "mantras",
-  },
-  {
-    title: "Calendar",
-    description: "The family's Google Calendar, in one glance.",
-    icon: "calendar",
-  },
 ] as const;
 
-/** Ordered for the bar: left, home, right. Missing slots are simply absent. */
+/** Ordered for the bar, left to right. Missing slots are simply absent. */
 export function getNavBarItems(): readonly NavItem[] {
-  const order: NavSlot[] = ["left", "home", "right"];
+  const order: NavSlot[] = ["far-left", "left", "home", "right", "far-right"];
   return order
     .map((slot) => NAV_ITEMS.find((item) => item.slot === slot))
     .filter((item): item is NavItem => item !== undefined);

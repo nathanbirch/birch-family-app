@@ -1,8 +1,8 @@
 # Birch Family App
 
 A private, installable web app for the Birch family. It sits behind a login and
-currently holds one feature — the weekly **seating rotation** — with chore
-charts, rewards, stars, family mantras and a calendar planned.
+currently holds two features — the weekly **seating rotation** and the
+**family mantras** — with chore charts, rewards, stars and a calendar planned.
 
 ---
 
@@ -71,13 +71,16 @@ npm start          # serve the production build locally
 - **Seating rotation** (`/seating`) — the original app. Photographs of the real
   dinner table and Ford Expedition with everyone on their actual seat, rotating
   the five children through a balanced five-week schedule.
+- **Family mantras** (`/mantras`) — the phrases this family says to each other,
+  each paired with the verbatim words that gave it to us, attributed and linked.
+  A different one on top every morning. See [Mantras](docs/mantras.md).
 - **Account** (`/account`) — who's signed in, the theme picker, sign out.
-- **Bottom tab bar** — Seats · Home · Account, with Home in the middle.
+- **Bottom tab bar** — Seats · Mantras · Home · Account.
 - Ten themes including a dark one. Installable as a PWA.
 
 ### Planned
 
-Chore charts · Rewards · Stars · Family mantras · Google Calendar.
+Chore charts · Rewards · Stars · Google Calendar.
 
 These are listed in `PLANNED_FEATURES` in
 [`src/config/navigation.ts`](src/config/navigation.ts) and rendered on the
@@ -93,6 +96,7 @@ Everything lives in **[`docs/`](docs/README.md)**:
 |---|---|
 | [Getting started](docs/getting-started.md) | Install, run, test, build. Every npm script. |
 | [Deployment](docs/deployment.md) | Vercel setup, env vars, domains, the GitHub Pages history. |
+| [Mantras](docs/mantras.md) | The family mantras, the quoting rule, and the mantra of the day. |
 | [Database](docs/database.md) | MongoDB, collections, seeding, the Atlas allowlist trap. |
 | [Authentication](docs/authentication.md) | How login works, changing the password, adding people. |
 | [Architecture](docs/architecture.md) | Routes, layout, what runs where, how data flows. |
@@ -121,6 +125,7 @@ Almost everything you would want to adjust is data, not code, and lives in
 | Pages, the tab bar, the roadmap cards | `navigation.ts` |
 | Database and collection names | `db.ts` |
 | The five-week schedule | `rotation.ts` |
+| The family mantras and their quotes | `mantras.ts` |
 | Seat positions, parent defaults, animation timing | `seating.ts` |
 | The ten themes | `themes.ts` |
 

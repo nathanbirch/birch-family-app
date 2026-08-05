@@ -137,6 +137,7 @@ Nothing about the seating rotation itself required the change.
    |---|---|
    | `MONGODB_URI` | the Atlas connection string from your local `.env` |
    | `SESSION_SECRET` | the same value as your local `.env`, or a fresh one |
+   | `CALENDAR_ICS_URL` | optional — the calendar's secret iCal address |
 
    If `SESSION_SECRET` differs from your local value, that is fine — it just
    means a session created locally is not valid on the deployed site.
@@ -178,16 +179,18 @@ a red build — which is what the old Pages workflow did.
 
 ## Environment variables
 
-Both are required. The app throws a deliberately explicit error naming the
-missing variable rather than failing obscurely.
+The first two are required, and the app throws a deliberately explicit error
+naming the missing variable rather than failing obscurely.
 
-| Variable | Used by | Effect if wrong |
-|---|---|---|
-| `MONGODB_URI` | `src/lib/db.ts` | Nobody can sign in; pages show a database error. |
-| `SESSION_SECRET` | `src/lib/auth/session-token.ts` | Every existing session is invalidated — everyone is signed out. |
+| Variable | Required | Used by | Effect if wrong |
+|---|---|---|---|
+| `MONGODB_URI` | yes | `src/lib/db.ts` | Nobody can sign in; pages show a database error. |
+| `SESSION_SECRET` | yes | `src/lib/auth/session-token.ts` | Every existing session is invalidated — everyone is signed out. |
+| `CALENDAR_ICS_URL` | no | `src/lib/calendar/feed.ts` | Unset: the Calendar page explains how to connect one. Wrong: it names the failure. |
 
-Neither is prefixed `NEXT_PUBLIC_`, so neither is ever sent to the browser.
-Never add that prefix to either of them.
+None is prefixed `NEXT_PUBLIC_`, so none is ever sent to the browser. **Never
+add that prefix to any of them** — `CALENDAR_ICS_URL` especially, since it is a
+bearer credential for the whole calendar. See [Calendar](calendar.md).
 
 ---
 

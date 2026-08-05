@@ -17,6 +17,8 @@ src/app/
     ├── layout.tsx          requireUser() + the bottom tab bar
     ├── page.tsx            /          the dashboard
     ├── seating/page.tsx    /seating   the seating rotation
+    ├── mantras/page.tsx    /mantras   the family mantras
+    ├── calendar/page.tsx   /calendar  the family Google Calendar
     └── account/page.tsx    /account   theme, sign out, app info
 ```
 
@@ -48,6 +50,13 @@ being unreachable does not change a single seat.
 **Stored in MongoDB** — accounts and sessions, and nothing else so far. See
 [Database](database.md).
 
+**Fetched, owned elsewhere** — the calendar. It is neither derived nor stored:
+Google holds it, the app reads a copy every fifteen minutes and never writes
+back. That makes it the first part of the app that can be *unavailable*, which
+is why the calendar page and the dashboard badge each sit behind their own
+`<Suspense>` boundary and degrade to an explanation rather than an error. See
+[Calendar](calendar.md).
+
 Keep new features on the right side of that line where you can. A chore *chart*
 (who is assigned what, on what cycle) may well be derivable config like the
 seating schedule; whether a chore was *done* is genuinely state and belongs in
@@ -65,6 +74,8 @@ Client components exist only where there is a specific interactive reason:
 |---|---|
 | `SeatingBoard` | assignments depend on the *device's* local date and must roll over at local midnight without a reload |
 | `SeatingCardBadge` | same, for the dashboard's "Week 3 of 5" badge |
+| `CalendarBoard` | which day it is, and Day/Week/Month is a choice that must not cost a round trip |
+| `CalendarCardBadge` | same, for the dashboard's "next event" pill |
 | `BottomNav` | needs `usePathname()` to know which tab is current |
 | `LoginForm` | `useActionState` for the pending state and the error message |
 | `SignOutButton` | `useFormStatus` for the pending state |
@@ -87,6 +98,11 @@ Two modules are split in half specifically to control what gets pulled where:
 - **`passwords.ts`** (bcrypt only) is separate from `users.ts`, so password
   hashing can be unit-tested without `server-only` or a database.
 
+A third split exists for the same reason: **`lib/calendar/feed.ts`** holds the
+only code that reads `CALENDAR_ICS_URL`, deliberately *not*
+`config/calendar.ts`, which the client bundle imports for the view list. That
+URL is a bearer credential for the whole calendar.
+
 Server-only modules import `"server-only"`, which turns "this accidentally
 ended up in the client bundle" from a silent data leak into a build error.
 
@@ -102,9 +118,11 @@ here, strongly typed, with no logic beyond simple lookups.
 | `app.ts` | App name, rotation start date, the three `localStorage` keys |
 | `db.ts` | The database name and every collection name |
 | `navigation.ts` | The pages, the tab bar layout, the planned-feature cards |
+| `mantras.ts` | The family mantras, their verbatim quotes and sources |
 | `family.ts` | The seven people: names, roles, identifying colours, faces, photos |
 | `rotation.ts` | The hardcoded five-week schedule |
 | `seating.ts` | Seat coordinates, doorways, parent assignments, adjacency model, scene layout and arrival timing |
+| `calendar.ts` | Feed refresh interval, expansion window, the three views |
 | `themes.ts` | All ten themes and the token mapping |
 
 ### `src/lib/` — the logic
@@ -119,6 +137,7 @@ Pure functions. Nothing here imports React.
 | `seating-summary.ts` | The screen-reader description of each scene |
 | `theme-storage.ts` / `parent-storage.ts` / `last-page-storage.ts` | Guarded `localStorage` access |
 | `theme-store.ts` / `parent-store.ts` | Tiny external stores for `useSyncExternalStore` |
+| `calendar/` | iCalendar reading, `RRULE` expansion, timezone conversion, the feed fetch |
 | `db.ts` | The shared MongoDB client, and readable connection errors |
 | `auth/` | Sessions, users, passwords, the DAL, the sign-in/out actions |
 
@@ -129,9 +148,19 @@ tested as such.
 
 ```
 nav/BottomNav         the tab bar; nav/NavIcon holds the icon set
+mantras/MantraCard    one mantra: ours in large type, theirs in a blockquote
+mantras/MantraOfDay   client island; today's mantra, rolls over at midnight
 auth/LoginForm        email + password, useActionState
 account/SignOutButton posts to the logout Server Action
 dashboard/SeatingCardBadge   the live "Week 3 of 5" pill
+dashboard/CalendarCardBadge  the live "next event" pill
+
+calendar/CalendarBoard  the client island; owns the view and the cursor
+├── DayView             one day in full
+├── WeekView            seven stacked rows, Monday to Sunday
+├── MonthView           six rows of seven, with event chips
+└── EventRow            one event: title, timing, location
+calendar/CalendarNotice not connected, or connected and failing
 PageBackground        the soft themed shapes behind every page
 LastPageMemory        renders nothing; reopens the app on the last page used
 

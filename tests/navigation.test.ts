@@ -27,7 +27,7 @@ describe("navigation items", () => {
   });
 
   it("puts at most one page in each side slot", () => {
-    for (const slot of ["left", "right"] as const) {
+    for (const slot of ["far-left", "left", "right", "far-right"] as const) {
       expect(NAV_ITEMS.filter((item) => item.slot === slot).length).toBeLessThanOrEqual(1);
     }
   });
@@ -51,9 +51,13 @@ describe("navigation items", () => {
 });
 
 describe("bar ordering", () => {
-  it("returns left, then home, then right", () => {
+  it("returns the slots in left-to-right order, skipping empty ones", () => {
+    const order = ["far-left", "left", "home", "right", "far-right"];
     const slots = getNavBarItems().map((item) => item.slot);
-    expect(slots).toEqual(["left", "home", "right"]);
+    // Whatever is configured, the bar must come out in bar order — and the
+    // one empty slot must simply not appear rather than leaving a gap.
+    expect(slots).toEqual([...slots].sort((a, b) => order.indexOf(a) - order.indexOf(b)));
+    expect(slots).toContain("home");
   });
 
   it("renders every configured page", () => {

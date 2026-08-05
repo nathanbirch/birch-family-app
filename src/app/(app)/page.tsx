@@ -1,11 +1,23 @@
+import { Suspense } from "react";
 import Link from "next/link";
 
 import { NavIcon } from "@/components/nav/NavIcon";
+import { CalendarCardBadge } from "@/components/dashboard/CalendarCardBadge";
 import { SeatingCardBadge } from "@/components/dashboard/SeatingCardBadge";
 import { APP_NAME } from "@/config/app";
 import { DASHBOARD_ITEMS, PLANNED_FEATURES } from "@/config/navigation";
 import { requireUser } from "@/lib/auth/dal";
+import { upcomingEvents } from "@/lib/calendar/events";
+import { loadCalendarFeed } from "@/lib/calendar/feed";
 import { toIsoDate } from "@/lib/dates";
+
+/**
+ * How many upcoming events the calendar card is given.
+ *
+ * Enough that the client can pick the right "next" one after correcting to the
+ * device's timezone, and few enough that the payload stays negligible.
+ */
+const CARD_EVENT_COUNT = 10;
 
 /**
  * The dashboard — one card per page, plus what is still to come.
@@ -60,6 +72,16 @@ export default async function DashboardPage() {
                     </span>
                     {item.href === "/seating" ? (
                       <SeatingCardBadge initialDateIso={initialDateIso} />
+                    ) : null}
+                    {item.href === "/calendar" ? (
+                      /*
+                        Behind its own boundary with an empty fallback, so a
+                        slow or unreachable Google never holds up the dashboard.
+                        The badge simply appears a moment later, or not at all.
+                      */
+                      <Suspense fallback={null}>
+                        <CalendarBadgeSlot initialDateIso={initialDateIso} />
+                      </Suspense>
                     ) : null}
                   </span>
                   <span
@@ -126,6 +148,31 @@ export default async function DashboardPage() {
         {APP_NAME}
       </p>
     </main>
+  );
+}
+
+/**
+ * Fetches just enough of the calendar to name the next event.
+ *
+ * The feed is shared with `/calendar` through Next's data cache, so on a warm
+ * cache this costs nothing. When no calendar is configured — or Google is
+ * unreachable — it renders nothing at all: the dashboard is not the place to
+ * explain a calendar problem, and the calendar page already does.
+ */
+async function CalendarBadgeSlot({
+  initialDateIso,
+}: {
+  initialDateIso: string;
+}) {
+  const now = new Date();
+  const feed = await loadCalendarFeed(now);
+  if (feed.status !== "ok") return null;
+
+  const events = upcomingEvents(feed.events, now.getTime(), CARD_EVENT_COUNT);
+  if (events.length === 0) return null;
+
+  return (
+    <CalendarCardBadge events={events} initialDateIso={initialDateIso} />
   );
 }
 

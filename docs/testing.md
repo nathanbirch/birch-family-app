@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **289 tests across 16 files.**
+Vitest with jsdom and Testing Library. **316 tests across 18 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -197,6 +197,103 @@ Reopening the app on the page you were last using:
 - The redirect does not overwrite the page it is redirecting to
 - **Home stays reachable after a restore** — the once-per-page-load guard, and
   the one behaviour that would make the feature infuriating if it broke
+
+### `mantras.test.ts` — 18 tests
+The mantras config, where the risk is not a crash but a **misquotation**:
+
+- Every quote has a named speaker, their calling, a titled source and a year
+- Sources are restricted to `churchofjesuschrist.org` / `speeches.byu.edu` —
+  a quote-aggregator URL fails, because that is how misattributions get in
+- Only the four voices this family quotes are attributable at all
+- **A mantra can never be identical to the quote beside it**, which would
+  attribute the family's own phrase to an apostle
+- No trailing ellipsis or stray quote marks — the tells of a stitched-together
+  "quote"
+- The mantra of the day: stable all day, changes at midnight, walks the whole
+  list before repeating, wraps after a full cycle, and **never indexes off the
+  front of the array for dates before 1970**
+
+### `mantra-card.test.tsx` — 9 tests
+The card, rendered:
+
+- The mantra reads before the quote, and the quote is a real `<blockquote>`
+  with a `cite` — what tells a screen reader whose voice is whose
+- Speaker and calling are named; the talk link carries `noopener`
+- Today's card is rendered **against a pinned clock**, so these do not quietly
+  start failing tomorrow
+
+### `calendar-ics.test.ts` — 26 tests
+The iCalendar reader, against the shapes a real Google feed contains:
+
+- **Line unfolding** — a folded `SUMMARY` rejoined across CRLF, LF and bare CR
+- A **colon inside a quoted parameter** (`TZID="GMT+05:30"`), which is what
+  breaks a naive `split(":")`
+- Escapes: `\n`, `\,`, `\;`, `\\` — including that `\\n` is a backslash and an
+  "n", not a line break
+- All-day vs zoned vs UTC vs floating times, and that a trailing `Z` outranks
+  any `TZID`
+- **A `VALARM`'s own `DESCRIPTION` never becomes the event's**
+- Malformed input degrades: an event with no `DTSTART` is dropped, complete
+  rubbish returns no events rather than throwing
+
+### `calendar-recurrence.test.ts` — 29 tests
+`RRULE` expansion, which is where a wrong answer is silent and a family misses
+a piano lesson:
+
+- Weekly, daily, monthly and yearly, with `INTERVAL`, `COUNT` and `UNTIL`
+- `BYDAY` ordinals (**last Friday**, **second Tuesday**), negative
+  `BYMONTHDAY`, `BYSETPOS` (**last weekday of the month**)
+- `BYDAY` × `BYMONTHDAY` intersecting — **Friday the 13th**, asserted against
+  the three real ones in 2026 rather than against the implementation
+- **`DTSTART` is always an occurrence** even when it does not match the rule,
+  and rule days *before* `DTSTART` are not
+- **Monthly skips short months**: the 31st produces nothing in February and
+  does not clamp to the 28th
+- Zone conversion either side of a daylight-saving change, and that a weekly
+  3pm event **stays at 3pm** across it (167 hours apart, same wall clock)
+- An unknown zone id degrades to a zero offset instead of throwing
+
+### `calendar-events.test.ts` — 29 tests
+Assembling occurrences, and the two mistakes that would matter most:
+
+- **All-day `DTEND` is exclusive** — a trip written to the 9th ends on the 8th
+- **An all-day date never passes through a timezone**, asserted by building the
+  same event under `Pacific/Kiritimati` and getting the same date back
+- `EXDATE` removes an occurrence; `RECURRENCE-ID` **moves** one without
+  doubling it up; a cancelled override deletes one; `RDATE` adds one
+- Every occurrence keeps the first one's duration
+- Per-day lookup: multi-day all-day events on every day they cover, events
+  running past midnight on both days, zero-length events on their own day
+- Timing text for the four cases (`3–4pm`, `from 9pm`, `until 1am`, `All day`),
+  including that an event ending **exactly at midnight** does not spill over
+
+### `calendar-feed.test.ts` — 10 tests *(Node environment)*
+The fetch-and-expand pipeline, end to end against a Google-shaped feed with
+`fetch` stubbed:
+
+- A real feed in, correct occurrences out — weekly expansion, `EXDATE`
+  exclusion and exclusive all-day `DTEND` all in one pass
+- **Unconfigured is not an error**: no variable, or a blank one, returns
+  `unconfigured` and never calls `fetch`
+- The fetch asks for Next's data cache rather than refetching per render
+- Failure paths named rather than swallowed: 404, 403, an HTML error page
+  served with a 200, and the network falling over
+- **No failure message ever contains the secret URL**, asserted across every
+  error path — including one whose underlying `Error` embeds it, since error
+  text ends up in screenshots
+
+### `calendar-board.test.tsx` — 16 tests
+The three views, rendered:
+
+- Opens on Week; Day and Month switch without a fetch
+- The week is Monday-to-Sunday, and an event in the next week is absent
+- Tapping a day in the week grid opens it in Day view
+- Stepping forward and back, and **"Back to today"** appearing only once you
+  have moved
+- The arrows **disable at the window edge** rather than paging into emptiness
+- An empty day says so; a truncated expansion says so
+- Every event is built from local `Date`s, so the suite is correct in any
+  machine timezone
 
 ## Conventions
 
