@@ -4,16 +4,102 @@
 
 | | |
 |---|---|
+| **Live URL** | <https://family.nathanbirch.one> |
 | **Repository** | <https://github.com/nathanbirch/birch-family-app> |
 | **GitHub owner** | `nathanbirch` |
-| **Branch deployed** | `main` |
+| **Branch deployed** | `main` — every push builds and goes straight to production |
 | **Host** | Vercel |
-| **Live URL** | _fill this in once the Vercel project exists_ |
+| **Vercel scope** | `nathanbirchs-projects` (your personal team) |
+| **Vercel project** | `birch-family-app` |
+| **Vercel account** | `nathantbirch@gmail.com`, signed in **with GitHub** |
+| **Registrar** | Squarespace Domains — holds `nathanbirch.one` |
+| **DNS records** | **Netlify**, not Squarespace, not Vercel — see [DNS](#dns-lives-at-netlify) |
 | **Database** | MongoDB Atlas — see [Database](database.md) |
 
-> **Update the Live URL row above** the moment the Vercel project is created,
-> and the matching row in the [README](../README.md). Future-you will look for
-> it in exactly these two places.
+---
+
+## The three links you actually need
+
+Bookmark these. Everything else in the Vercel dashboard is noise for a project
+this size.
+
+| What | Where |
+|---|---|
+| Deploys, build logs, rollbacks | <https://vercel.com/nathanbirchs-projects/birch-family-app> |
+| **Domains** | <https://vercel.com/nathanbirchs-projects/birch-family-app/settings/domains> |
+| Environment variables | <https://vercel.com/nathanbirchs-projects/birch-family-app/settings/environment-variables> |
+
+### Signing in to Vercel
+
+**Use the "Continue with GitHub" button, not an email and password.** The
+account is `nathantbirch@gmail.com`, and it exists only as a GitHub identity —
+there is no Vercel password to remember, and trying to reset one will send you
+in a circle. If GitHub lets you in and Vercel does not show the project, check
+you are in the **`nathanbirchs-projects`** scope using the team switcher at the
+top left, rather than a different team.
+
+---
+
+## The domain
+
+`family.nathanbirch.one` → this Vercel project. Set up 2026-08-04.
+
+### DNS lives at Netlify
+
+This is the part that will confuse you later, so read it slowly. Three
+different companies each own one piece:
+
+| Piece | Who | What you do there |
+|---|---|---|
+| **Registration** | Squarespace Domains | Renew the domain. Nothing else. |
+| **DNS records** | **Netlify** (`dns1–4.p01.nsone.net`) | Add, edit and delete records. |
+| **The site itself** | Vercel | Attach the domain, get the certificate. |
+
+Squarespace is only the registrar; its nameservers point at Netlify, so the
+Squarespace DNS panel is empty and editing it does nothing. **To change a DNS
+record, go to <https://app.netlify.com> → Domains (the top-level nav, not a
+site's settings) → `nathanbirch.one`.**
+
+Confirm the chain any time with:
+
+```bash
+whois nathanbirch.one | grep -i "registrar:\|name server"   # Squarespace, nsone.net
+dig +short CNAME family.nathanbirch.one                     # *.vercel-dns-017.com
+```
+
+### The live record
+
+```
+CNAME   family.nathanbirch.one   →   <hash>.vercel-dns-017.com
+```
+
+The target is generated per-domain by Vercel — read the current one off the
+[Domains page](https://vercel.com/nathanbirchs-projects/birch-family-app/settings/domains)
+rather than copying the value out of this file. Vercel issues and renews the
+TLS certificate automatically once the record resolves; there is nothing to
+install and nothing that expires.
+
+**Do not touch the apex `nathanbirch.one` A records.** They point at a
+different site of yours, on AWS, that has nothing to do with this app.
+
+### Adding another domain later
+
+1. Vercel → Domains → add the hostname. It will show you the record it wants.
+2. Netlify → Domains → `nathanbirch.one` → add that record.
+3. Wait for Vercel to go green; the certificate follows on its own.
+
+---
+
+## What was cleaned up
+
+`seating.nathanbirch.one` — the old GitHub Pages address — was deliberately
+dismantled on 2026-08-04, so there is no half-live copy of this app anywhere:
+
+- its `CNAME` record was deleted from Netlify DNS (it no longer resolves),
+- GitHub Pages was switched off for the repo and the custom domain released,
+- the build workflow and `public/CNAME` were already gone from the repo.
+
+An old bookmark to it is dead, and that is intentional.
 
 ---
 

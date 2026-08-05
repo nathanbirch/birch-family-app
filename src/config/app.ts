@@ -39,3 +39,12 @@ export const THEME_STORAGE_KEY = "birch-family-seats:theme:v1";
 
 /** Whether the two parents have been swapped out of their configured seats. */
 export const PARENTS_STORAGE_KEY = "birch-family-seats:parents-swapped:v1";
+
+/**
+ * The last page visited, reopened on the next cold start.
+ *
+ * Newer than the other two, so it carries the current app name rather than the
+ * historical `birch-family-seats:` prefix. There is nothing to preserve — the
+ * key has never shipped under another name.
+ */
+export const LAST_PAGE_STORAGE_KEY = "birch-family-app:last-page:v1";

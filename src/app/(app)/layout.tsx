@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { LastPageMemory } from "@/components/LastPageMemory";
 import { BottomNav, BottomNavSpacer } from "@/components/nav/BottomNav";
 import { PageBackground } from "@/components/PageBackground";
 import { requireUser } from "@/lib/auth/dal";
@@ -23,6 +24,11 @@ export default async function AppLayout({
 
   return (
     <>
+      {/*
+        Inside `(app)`, so it only ever records signed-in pages — and it sits
+        above the content because it renders nothing and has no layout effect.
+      */}
+      <LastPageMemory />
       <PageBackground />
       <div className="flex min-h-full w-full flex-1 flex-col">
         {children}

@@ -16,8 +16,9 @@ Everything you need to find your way back into this project after months away.
 | **GitHub owner** | `nathanbirch` |
 | **Default branch** | `main` |
 | **Package name** | `birch-family-app` |
-| **Live URL** | _not yet deployed — see [Deployment](docs/deployment.md)_ |
-| **Hosting** | Vercel (planned). Previously GitHub Pages; see below. |
+| **Live URL** | <https://family.nathanbirch.one> |
+| **Hosting** | Vercel — project [`nathanbirchs-projects/birch-family-app`](https://vercel.com/nathanbirchs-projects/birch-family-app). Previously GitHub Pages; see below. |
+| **Vercel login** | `nathantbirch@gmail.com`, **via GitHub** — see [Deployment](docs/deployment.md#signing-in-to-vercel) |
 | **Framework** | Next.js 16.2 (App Router) · React 19 · TypeScript · Tailwind 4 |
 | **Database** | MongoDB Atlas, `cluster0.pmxixtt.mongodb.net` |
 | **Database name** | `birch_family_app` — this app touches nothing else on the cluster |
