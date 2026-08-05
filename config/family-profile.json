@@ -1,0 +1,22 @@
+{
+  "$comment": "The Birch family roster, as data. Birth dates only — never ages. Anything that needs an age computes it from the current date, so this file does not go stale on a birthday. Names and ids match src/config/family.ts; keep the ids identical, because the app's rotation schedule keys off them.",
+  "familyName": "Birch",
+  "timezone": "America/Boise",
+  "$timezoneNote": "Rexburg, Idaho, which observes Mountain Time. Confirm before changing — the app's rotations and the AI's bedtime behaviour both read it.",
+  "windDownTime": "19:30",
+  "parents": [
+    { "id": "nathan", "name": "Nathan", "familyTitle": "Daddy", "birthday": "--07-16" },
+    { "id": "sarah", "name": "Sarah", "familyTitle": "Mommy", "birthday": "--12-09" }
+  ],
+  "children": [
+    { "id": "hannah", "name": "Hannah", "birthDate": "2014-12-05" },
+    { "id": "emily", "name": "Emily", "birthDate": "2016-11-22" },
+    { "id": "clara", "name": "Clara", "birthDate": "2018-04-25" },
+    { "id": "william", "name": "William", "birthDate": "2019-09-07" },
+    { "id": "james", "name": "James", "birthDate": "2021-11-19" }
+  ],
+  "pets": [
+    { "name": "Bella" },
+    { "name": "Leia" }
+  ]
+}

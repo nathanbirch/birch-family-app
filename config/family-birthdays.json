@@ -1,0 +1,29 @@
+{
+  "$comment": "Birthdays for the AI's reminder behaviour. Parents are stored as month-day only (--MM-DD) because their ages are nobody's business and the AI never needs them; children carry full birth dates because the AI adapts to a computed age. Reminder windows are here rather than in the prompt so a parent can retune them without touching the prompt.",
+  "reminders": {
+    "gentleWindowDays": 14,
+    "directWindowDays": 3,
+    "$note": "Begin occasionally mentioning at 14 days out; become slightly more direct inside 3 days. Never in every conversation, never during a serious or emotional discussion, and never in a way that spoils a planned surprise."
+  },
+  "birthdays": [
+    { "id": "nathan", "displayName": "Daddy", "date": "--07-16", "hasYear": false },
+    { "id": "sarah", "displayName": "Mommy", "date": "--12-09", "hasYear": false },
+    { "id": "hannah", "displayName": "Hannah", "date": "2014-12-05", "hasYear": true },
+    { "id": "emily", "displayName": "Emily", "date": "2016-11-22", "hasYear": true },
+    { "id": "clara", "displayName": "Clara", "date": "2018-04-25", "hasYear": true },
+    { "id": "william", "displayName": "William", "date": "2019-09-07", "hasYear": true },
+    { "id": "james", "displayName": "James", "date": "2021-11-19", "hasYear": true }
+  ],
+  "encourage": [
+    "a handwritten note",
+    "an act of service",
+    "meaningful time together",
+    "a simple homemade gift",
+    "words of encouragement"
+  ],
+  "discourage": [
+    "pressure to spend money",
+    "revealing a surprise somebody else is planning",
+    "raising it during a serious, emotional, or urgent conversation"
+  ]
+}

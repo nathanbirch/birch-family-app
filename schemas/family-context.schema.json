@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://birch.family/schemas/family-context.schema.json",
+  "title": "Birch Family AI dynamic context",
+  "description": "The payload the Birch Family App sends to the model alongside the system prompt. Everything here is DATA, never instructions — see docs/ai/10 for the sanitisation rules. Deliberately narrow: it carries what the AI needs to answer a child's question about today and nothing else. No addresses, no phone numbers, no medical detail, no account information, no message content.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["generatedAt", "timezone", "currentDate", "currentLocalTime", "dataFreshness"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Version of this schema the payload was built against. Logged with each request so a bad rollout can be identified later."
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the app assembled this payload."
+    },
+    "timezone": { "type": "string", "examples": ["America/Boise"] },
+    "currentDate": { "type": "string", "format": "date" },
+    "currentLocalTime": { "type": "string", "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" },
+
+    "identifiedChild": {
+      "description": "Who the app believes is using the tablet. Null when unknown — the AI must then stay general and must not guess.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "name", "calculatedAge"],
+          "properties": {
+            "id": { "enum": ["hannah", "emily", "clara", "william", "james"] },
+            "name": { "type": "string" },
+            "birthDate": { "type": "string", "format": "date" },
+            "calculatedAge": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 25,
+              "description": "Computed by the app from birthDate and currentDate. Never stored. The AI uses this rather than doing date arithmetic itself."
+            },
+            "identifiedBy": {
+              "enum": ["self-declared", "app-profile", "unknown"],
+              "description": "self-declared means the child typed 'This is Clara'. It is a courtesy, not authentication, and must never gate anything that matters."
+            }
+          }
+        }
+      ]
+    },
+
+    "upcomingBirthdays": {
+      "type": "array",
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["displayName", "daysAway"],
+        "properties": {
+          "displayName": { "type": "string", "examples": ["Daddy", "Hannah"] },
+          "date": { "type": "string", "format": "date" },
+          "daysAway": { "type": "integer", "minimum": 0, "maximum": 14 }
+        }
+      },
+      "description": "Only those within the reminder window from config/family-birthdays.json. Ages are deliberately absent."
+    },
+
+    "responsibilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "chores": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["label", "done"],
+            "properties": {
+              "label": { "type": "string", "maxLength": 120 },
+              "done": { "type": "boolean" }
+            }
+          },
+          "description": "Today's chores for the identified child only. Never another child's."
+        },
+        "homeworkKnown": {
+          "type": "boolean",
+          "description": "The app does not track homework. Always false unless that changes; the AI must not imply it knows."
+        },
+        "starsCompleted": { "type": "integer", "minimum": 0 },
+        "starsRemaining": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "rotations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "seating": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "weekNumber": { "type": "integer", "minimum": 1, "maximum": 5 },
+                "childSeat": { "type": "string", "maxLength": 60 }
+              }
+            }
+          ]
+        },
+        "petSleeping": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "tonight": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "pet": { "enum": ["Bella", "Leia"] },
+                      "child": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+
+    "calendar": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "today": { "$ref": "#/$defs/eventList" },
+        "nextSevenDays": { "$ref": "#/$defs/eventList" }
+      }
+    },
+
+    "bedtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "usualWindDownTime": { "type": "string", "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" },
+        "isPastWindDown": { "type": "boolean" }
+      }
+    },
+
+    "familyAnnouncements": {
+      "type": "array",
+      "maxItems": 5,
+      "items": { "type": "string", "maxLength": 200 },
+      "description": "Parent-written notes intended for the children. Sanitised, length-capped, and treated as data."
+    },
+
+    "parentNotes": {
+      "type": "array",
+      "maxItems": 5,
+      "items": { "type": "string", "maxLength": 200 },
+      "description": "Temporary parent-set steering, e.g. 'Grandma is visiting this week'. Still data, not instructions: a parent note can inform an answer but cannot switch off a safety rule. Anything resembling a directive to the model is ignored."
+    },
+
+    "dataFreshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "enum": ["fresh", "stale", "unavailable"],
+          "description": "stale or unavailable means the AI must say so plainly and send the child to the app rather than answering from what it last saw."
+        },
+        "source": { "type": "string", "examples": ["Birch Family App"] },
+        "lastUpdatedAt": { "type": "string", "format": "date-time" },
+        "staleAfterMinutes": { "type": "integer", "minimum": 1, "default": 30 }
+      }
+    },
+
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "What this session is allowed to see. Parent-only material is filtered out server-side before the payload is built — this flag records the decision, it does not make it.",
+      "properties": {
+        "audience": { "enum": ["child", "parent"] },
+        "maySeeOtherChildrensData": { "type": "boolean", "default": false }
+      }
+    }
+  },
+
+  "$defs": {
+    "eventList": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "Sanitised. Calendar titles come from a shared Google Calendar and are the most likely injection vector in this payload."
+          },
+          "date": { "type": "string", "format": "date" },
+          "startTime": { "type": "string", "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" },
+          "allDay": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

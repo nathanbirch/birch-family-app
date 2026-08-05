@@ -1,0 +1,47 @@
+{
+  "$comment": "The two mottoes and eight values, as data, for the AI system prompt and any future app surface. Wording is authoritative and matches docs/constitution/03 and 04 exactly. Do not reword casually — these are the family's own sentences.",
+  "mottoes": [
+    {
+      "id": "love-like-jesus",
+      "text": "Love Like Jesus.",
+      "answers": "How should we treat people?",
+      "meaning": "We strive to treat every person as the Savior would — with charity, kindness, patience, forgiveness, honesty, and courage.",
+      "childPrompt": "What would loving like Jesus look like right now?"
+    },
+    {
+      "id": "think-celestial",
+      "text": "Think Celestial.",
+      "answers": "How should we make decisions?",
+      "meaning": "We strive to make decisions with eternity in mind, choosing what will bring us closer to Jesus Christ, strengthen our family, and bless others.",
+      "childPrompt": "What choice would I make if I were thinking celestial?"
+    }
+  ],
+  "values": [
+    { "order": 1, "text": "Jesus Christ is first. Always." },
+    { "order": 2, "text": "We love and serve each other." },
+    { "order": 3, "text": "We love our neighbors." },
+    { "order": 4, "text": "We work hard and do hard things." },
+    { "order": 5, "text": "We tell the truth and keep our promises." },
+    { "order": 6, "text": "We choose kindness over being right." },
+    { "order": 7, "text": "We keep learning, growing, and repenting." },
+    { "order": 8, "text": "We leave every person and place better than we found it." }
+  ],
+  "mantras": [
+    { "id": "person-over-problem", "text": "The person comes before the problem." },
+    { "id": "say-it-now", "text": "Say it now." },
+    { "id": "charity-is-the-antidote", "text": "Love is the antidote." },
+    { "id": "peacemakers-on-purpose", "text": "We are peacemakers, on purpose." },
+    { "id": "joy-in-the-journey", "text": "Find joy in the journey — now." },
+    { "id": "focus-not-circumstance", "text": "Joy is about where we look." },
+    { "id": "think-celestial", "text": "Think celestial." },
+    { "id": "let-god-prevail", "text": "Let God prevail." },
+    { "id": "keep-walking", "text": "Keep walking." },
+    { "id": "blessings-come", "text": "Some blessings come late. They still come." },
+    { "id": "learn-from-it", "text": "Learn from it. Don't live in it." },
+    { "id": "start-again-today", "text": "We start again today." },
+    { "id": "be-somebody-s-angel", "text": "Be somebody's angel today." },
+    { "id": "bless-the-one", "text": "Bless the one." },
+    { "id": "his-hands", "text": "We are His hands." }
+  ],
+  "$mantraNote": "Text only. The verified quotations behind each mantra live in src/config/mantras.ts and docs/constitution/05, and the AI must cite from there rather than reconstructing a quote from the mantra text."
+}
