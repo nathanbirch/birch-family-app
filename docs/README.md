@@ -29,6 +29,24 @@ Start here if you are picking it up cold:
 | [Accessibility](accessibility.md) | What's been done and what it guarantees. |
 | [Testing](testing.md) | What each test file covers, how to run them, current coverage. |
 | [Maintenance](maintenance.md) | Recipes for common changes, plus troubleshooting. |
+
+## The family documents
+
+These are about the family rather than the software, and they are the reason the
+software exists. They change on a different clock from the code — see
+[the maintenance guide](ai/15—birch-ai-maintenance-guide.md) for what is timeless
+and what needs reviewing.
+
+| Doc | What's in it |
+|---|---|
+| [The Constitution](constitution/) | Seventeen chapters: who this family is trying to become. Start at [the preface](constitution/01—preface.md). |
+| [The AI companion](ai/01—birch-ai-purpose.md) | Fifteen documents specifying a child-appropriate AI companion — purpose, safety, the system prompt, integration, and tests. |
+| [Editorial standards](editorial/editorial-standards.md) | How the Constitution is written, and the paragraph rule that matters most. |
+| [Quotation verification](editorial/quotation-verification.md) | Every quotation traced to a primary source, and the five errors that found. |
+
+Machine-readable extracts live in [`config/`](../config/) (family profile,
+values, birthdays, AI policy) and [`schemas/`](../schemas/) (the AI's dynamic
+context payload).
 | [Decisions](decisions.md) | The non-obvious calls and why they were made. |
 
 ## The app in one paragraph

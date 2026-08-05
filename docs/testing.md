@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **508 tests across 27 files.**
+Vitest with jsdom and Testing Library. **793 tests across 41 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -20,17 +20,28 @@ can run under both.
 
 | | |
 |---|---|
-| Statements | 91.2% |
-| Branches | 80.8% |
-| Functions | 92.1% |
-| Lines | 93.4% |
+| Statements | 93.8% |
+| Branches | 83.2% |
+| Functions | 96.4% |
+| Lines | 95.6% |
 
-What is *not* covered is mostly `typeof window === "undefined"` guards,
-defensive `catch` branches that only fire in browsers that refuse storage, and
-**`lib/db.ts`** — the MongoDB connection itself, which the automated suite
-deliberately never touches. Its error *translation* is covered indirectly
-through the login action tests, and the connection is covered by
-`npm run db:check` and the browser runs described below.
+The star charts, the newest and most-used feature, sit at **98%** of statements
+and 100% of functions across `lib/stars` and `components/stars`.
+
+What is *not* covered, and why:
+
+- **`src/proxy.ts`** — the edge middleware. Its matcher is covered exhaustively
+  by `proxy-matcher.test.ts`; the handler itself needs a real edge runtime, and
+  the check it performs is deliberately duplicated by the DAL, which *is*
+  covered.
+- **The MongoDB connection in `lib/db.ts`** — the pool itself is never opened
+  by the suite. Its error *translation* and its missing-`MONGODB_URI` message
+  are covered directly (`stars-server-safety.test.ts`); the connection is
+  covered by `npm run db:check` and the browser runs described below.
+- **A handful of `typeof window === "undefined"` guards and `catch` branches**
+  in components that only fire in browsers that refuse storage. The equivalent
+  branches in the modules the star charts depend on *are* covered, in Node, by
+  `stars-server-safety.test.ts` and `months-and-storage.test.ts`.
 
 ## What each file covers
 
@@ -151,6 +162,118 @@ a plain function.
   were once keyed on the same string, which React reads as duplicate sibling
   keys: it kept the outgoing header mounted, so Hannah's name sat above Clara's
   chart
+
+### `stars-week.test.ts` — 12 tests
+Which week a star belongs to, and which date the rotation is asked about.
+Small module, disproportionate blast radius: the page renders from one of
+these answers and the Server Action re-derives the same answer to decide
+whether to accept the tick.
+
+- Every day of a week names the same Monday, Sunday included — the classic
+  `getDay()` off-by-one
+- A week key that is not a Monday is refused, so no second offset set of
+  documents can be opened for the same seven days
+- Rubbish of every shape is refused: empty, `2026-8-3`, `2026-02-30`, a full
+  ISO timestamp, a path traversal
+- **A Sunday evening still belongs to its own week.** Comparing instants rather
+  than calendar days put it *after* "Sunday" and fell back to the Monday, which
+  on the Sundays that end a month named the previous month's chore owner
+
+### `stars-tasks.test.ts` — 21 tests
+Resolving three charts and a rotation into one child's list, and the pools
+misconfigured in the ways real ones go wrong.
+
+- The same list however it is sliced: whole, by section, by chart
+- A child dropped from a pool keeps their hygiene and learning rows and simply
+  has no chore that month — what a mid-month database edit looks like from here
+- A pool of one, and a pool with more children than chores
+- Throws name the pool *and* the bad value, for whoever has to fix it
+- The countdown counts real calendar months, and never says "0 days"
+
+### `stars-marks.test.ts` — 18 tests *(Node environment)*
+The `starWeeks` store with MongoDB mocked.
+
+- **The write is a pipeline, and its shape is asserted directly**: `$map` over
+  `$range: [0, 5]`, so a missing row cannot be created as the object
+  `{ "2": true }` that a dotted `$set` path would produce
+- Rows are padded, trimmed, and coerced — `1`, `"true"`, `null` and `undefined`
+  all read back as unticked
+- A retired task is dropped rather than resurrected onto a chart
+- A duplicate-key collision retries exactly once and succeeds; anything else
+  propagates untouched
+- An unreachable database shows an empty chart, not an error
+
+### `stars-store-and-action.test.ts` — 30 tests *(Node environment)*
+The chore-rotation store and the `setStar` Server Action — one boundary
+between the database and the page, the other between the internet and the
+database.
+
+- Every way a stored pool can be malformed falls back without taking the page
+  down, and says why in the log
+- The action requires a session before anything else happens
+- **It refuses a chore that belongs to a different child this month**, and
+  accepts the same chore for the child who does have it — rendering a child's
+  own tasks is a rendering decision, not a security boundary
+- A failed write reports a message that does not leak the reason, while the
+  reason goes to the log
+
+### `stars-sound.test.ts` — 19 tests
+The cheer, against a fake Web Audio stack.
+
+- Fetched and decoded **once** however often it plays, but a fresh source each
+  time, which is what lets two celebrations overlap
+- Volume is clamped rather than blasting or inverting
+- Silent — never throwing — with no Web Audio, a construction failure, a failed
+  fetch, an undecodable file, or an autoplay policy that refuses `resume()`
+- The preference defaults to on, only the exact string `"off"` silences it, and
+  storage that throws changes neither
+
+### `stars-accessibility.test.tsx` — 40 tests
+Accessibility, kid-proofing and responsiveness, which are the same subject when
+the user is four.
+
+- Every star is a `switch` with a unique name saying task *and* day; all
+  decoration is `aria-hidden`; every control is a real `<button>`
+- **Twelve taps on one star in one frame** all ask for the same thing rather
+  than landing on a coin flip — safe only because each call carries a value
+  instead of saying "flip"
+- Switching child mid-tap files the write against the child whose chart was
+  open, not whoever is on screen when it lands
+- Marks for a child who is not on the roster, and for a task that no longer
+  exists, both render rather than throw
+- 44px tap targets, one child at a time, long labels wrapping without pushing
+  the stars off screen, and 280 vs 136 pieces of paper
+
+### `months-and-storage.test.ts` — 15 tests
+Month arithmetic and the four device preferences.
+
+- `differenceInCalendarMonths` ignores the day entirely, which is what makes
+  the chore rotation turn over at midnight on the 1st and at no other moment
+- Every preference survives a `localStorage` that throws, as Safari private
+  mode does
+- A stored theme that no longer exists, and a page that has been renamed, both
+  fall back rather than pinning a device to something broken
+
+### `stars-server-safety.test.ts` — 9 tests *(Node environment)*
+The browser-only modules, imported where there is no browser — the failure that
+happens in production, on the server, where nobody is watching a console.
+
+- Sound preference and playback are inert without a `window`
+- Atlas's opaque connection errors are translated: the TLS handshake rejection
+  that really means an IP allowlist problem, bad credentials, a paused cluster
+- A missing `MONGODB_URI` throws synchronously, and says what to do about it
+
+### `hooks-and-clearing.test.tsx` — 16 tests
+The hooks that decide *when* things happen.
+
+- `useCurrentDate` rolls over at local midnight and keeps rolling on the days
+  after — this is an installed PWA people leave open for days
+- It catches up on `visibilitychange` and `focus`, because phones freeze timers
+  in background tabs and the midnight timer may simply never fire
+- It returns the *same* `Date` object when only the time changed, so a stray
+  visibility event cannot restart every animation on the page
+- `useImagesReady` treats a broken image as settled and gives up after its
+  timeout: an empty table because one file 404'd is worse than an early walk-in
 
 ### `pet-nights.test.tsx` — 6 tests
 The two cards, rendered:

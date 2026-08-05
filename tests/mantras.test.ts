@@ -42,14 +42,35 @@ describe("attribution", () => {
     }
   });
 
-  it("only attributes quotes to the four people this family listens to", () => {
-    const voices = new Set(MANTRAS.map((mantra) => mantra.source.author));
-    expect([...voices].sort()).toEqual([
+  /*
+   * This used to assert exactly four names. That turned out to encode a
+   * mistake rather than guard against one: "When you bless the one, you bless
+   * the whole" was attributed to Sister Yee, when in her talk she is quoting a
+   * bishop who said it to her. Correcting the attribution added a fifth voice,
+   * and the four-name assertion failed — which is the test doing its job in
+   * reverse, defending the error it was written alongside.
+   *
+   * So it now allows one more thing: a speaker quoting somebody else, where the
+   * somebody else is named as the author and the talk still has to be one of
+   * the four. That keeps the real guarantee (no quote wanders in from an
+   * unknown voice) without forbidding honest second-hand attribution.
+   */
+  it("only attributes quotes to the four people this family listens to, or to someone they were quoting", () => {
+    const VOICES = [
       "Elder Jeffrey R. Holland",
       "President Russell M. Nelson",
       "President Thomas S. Monson",
       "Sister Kristin M. Yee",
-    ]);
+    ];
+    for (const mantra of MANTRAS) {
+      const { author, role } = mantra.source;
+      if (VOICES.includes(author)) continue;
+      // Anyone else must be explicitly marked as quoted by one of the four.
+      expect(role).toMatch(/^quoted by /);
+      expect(VOICES.some((voice) => role.endsWith(voice.split(" ").at(-1)!))).toBe(
+        true,
+      );
+    }
   });
 
   it("never presents the family's own words as a quotation", () => {

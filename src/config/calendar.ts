@@ -79,14 +79,13 @@ export const CALENDAR_VIEWS: readonly { id: CalendarView; label: string }[] = [
 ] as const;
 
 /**
- * Week is the default.
+ * Day is the default.
  *
- * Day is too narrow a window to answer "what's coming up", and Month on a
- * phone reduces each day to a dot you have to tap to read. Week shows seven
- * days with actual event titles on them, which is the question this page
- * exists to answer.
+ * The question this page is opened to answer is almost always "what's on
+ * today", and Day answers it without any scanning: one column, every event
+ * title in full. Week and Month are a tap away for the planning questions.
  */
-export const CALENDAR_DEFAULT_VIEW: CalendarView = "week";
+export const CALENDAR_DEFAULT_VIEW: CalendarView = "day";
 
 /** Most event chips to draw in one month-grid cell before summarising. */
 export const CALENDAR_MONTH_CELL_EVENTS = 2;

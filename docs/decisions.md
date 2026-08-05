@@ -316,3 +316,84 @@ The service-worker `CACHE_VERSION` bump that goes with each rename is the part
 most likely to be forgotten next time: **every cached page carries the tab
 bar**, so renaming one route makes every entry in the cache stale, not just the
 page that moved. See [PWA and offline](pwa-and-offline.md#shipping-an-update).
+
+---
+
+## The AI companion runs on a parent's account, in the living room
+
+The Birch Family AI Companion is specified across fifteen documents in
+[`docs/ai/`](ai/01—birch-ai-purpose.md), and it deliberately has no code in this
+repository. It runs as a ChatGPT project on **a parent's own account**, on the
+shared tablet, in the main living area, with the family present. Four
+integration architectures were compared in
+[13—birch-ai-integration-architecture.md](ai/13—birch-ai-integration-architecture.md);
+this is Option A, chosen over building it into the app.
+
+**No child gets their own account, now or later.** This is the settled shape of
+the thing rather than a stage on the way to individual accounts, and the two
+reasons for it have different lifespans.
+
+The first is age, and it does expire. ChatGPT's minimum age is 13; as of August
+2026 the Birch children are 11, 9, 8, 6 and 4, so none of them is eligible.
+Signing a child up with a false birth date was never on the table — a system
+whose first act is a lie about a child's age, in order to teach that child
+honesty, fails before it starts.
+
+The second does not expire, and it is the one that actually decides this.
+Everything the family wants here follows from one account in a shared room:
+conversations that are simply *there*, a parent nearby, and no private channel
+between a child and a machine for anybody to discover later. An individual
+account would trade all of that for features the family does not want. So when
+the age rule stops applying, nothing changes — the arrangement was never
+waiting on it.
+
+A further reason to prefer Option A is that it cannot be wrong about family
+data, because it holds none. The app stays the sole source of truth for chores,
+rotations, stars and the calendar, and the AI is instructed to say "check the
+Birch Family App" rather than guess. Every other option adds a way for the AI to
+answer confidently from data that has quietly gone stale — which is worse than
+not answering, because nobody can tell from the outside.
+
+### Why this makes the privacy design honest rather than aspirational
+
+The AI tells children that conversations on the tablet "may be visible to your
+family or others with access." On a shared account on the family tablet that is
+simply true: the history is right there, anyone can open it, and no dashboard or
+monitoring feature has to exist for it to be so.
+
+This is also why OpenAI's parental controls are not the answer, despite being the
+obvious suggestion. They work by linking a parent to a child's **own** account,
+and they explicitly do **not** let a parent read that child's conversations. They
+would buy quiet hours and content filtering at the cost of the one property this
+whole design rests on. The supervision this family wants is not a settings page;
+it is a person in the room and a history nobody has to request.
+
+The no-secrecy posture in
+[04—birch-ai-safety-and-privacy.md](ai/04—birch-ai-safety-and-privacy.md) needs
+that sentence to be a description rather than a promise. Under this arrangement
+it is one.
+
+### What this arrangement does not do
+
+It is not a parental control. Project instructions are a strong prompt and
+nothing more: a chat started outside the project is an ordinary assistant, and a
+determined child can talk a model partway out of its instructions. The spoiler
+rule, the responsibility check and the referral-to-parents behaviour are all
+defeasible.
+
+The actual control is the one the family chose anyway — a tablet in a shared
+room, a parent nearby, and the conversations about how it gets used that
+[14—technology.md](constitution/14—technology.md) is really about. The prompt
+shapes ordinary use well. It was never the boundary.
+
+### When to revisit
+
+**Not on a birthday.** Nobody ages into a different arrangement here. Revisit
+when real use shows the children reaching for something Option A cannot do —
+which is a question about what they need, not about how old they are.
+
+Building it into the app — Option D — remains the right second stage if that
+happens, and the auth, server, family data and context schema it would need
+already exist. The argument for not building it yet
+is that nobody knows what these five children will actually use it for, and a
+month of evidence beats a year of speculation.
