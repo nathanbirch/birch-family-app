@@ -1,4 +1,8 @@
-import type { NavIconName, PlannedIconName } from "@/config/navigation";
+import type {
+  DecorativeIconName,
+  NavIconName,
+  PlannedIconName,
+} from "@/config/navigation";
 
 /**
  * The app's icon set.
@@ -67,13 +71,23 @@ function AccountIcon({ className }: IconProps) {
   );
 }
 
-/** A checklist — chore charts. */
+/** A checklist — the jobs list, on a mantra card. */
 function ChoresIcon({ className }: IconProps) {
   return (
     <svg {...SHARED} className={className} aria-hidden="true">
       <rect x="4.5" y="3.5" width="15" height="17" rx="2.5" />
       <path d="M8.2 9.2l1.6 1.6 3-3M8.2 15.4l1.6 1.6 3-3" />
       <path d="M14.6 9.2h2.2M14.6 15.4h2.2" />
+    </svg>
+  );
+}
+
+/** A rosette — the weekly celebration report. */
+function ReportIcon({ className }: IconProps) {
+  return (
+    <svg {...SHARED} className={className} aria-hidden="true">
+      <circle cx="12" cy="9.2" r="5.2" />
+      <path d="m9.2 13.6-1.4 6.9 4.2-2.4 4.2 2.4-1.4-6.9" />
     </svg>
   );
 }
@@ -141,18 +155,22 @@ const ICONS = {
   health: HealthIcon,
   home: HomeIcon,
   account: AccountIcon,
-  chores: ChoresIcon,
+  report: ReportIcon,
   rewards: RewardsIcon,
   stars: StarsIcon,
+  chores: ChoresIcon,
   mantras: MantrasIcon,
   calendar: CalendarIcon,
-} satisfies Record<NavIconName | PlannedIconName, (props: IconProps) => React.JSX.Element>;
+} satisfies Record<
+  NavIconName | PlannedIconName | DecorativeIconName,
+  (props: IconProps) => React.JSX.Element
+>;
 
 export function NavIcon({
   name,
   className = "h-6 w-6",
 }: {
-  name: NavIconName | PlannedIconName;
+  name: NavIconName | PlannedIconName | DecorativeIconName;
   className?: string;
 }) {
   const Icon = ICONS[name];

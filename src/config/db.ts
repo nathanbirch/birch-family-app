@@ -40,6 +40,18 @@ export const COLLECTIONS = {
    * deploy. See docs/pets.md.
    */
   petRotations: "petRotations",
+  /**
+   * The monthly chore rotation. One document per pool, holding the children,
+   * the chores they deal round, and the month the deal is known to be right
+   * for. Same reasoning as `petRotations`: this is the half of the star charts
+   * that must be re-anchorable without a deploy. See docs/stars.md.
+   */
+  choreRotations: "choreRotations",
+  /**
+   * Ticked stars. One document per child per week — see `lib/stars/marks.ts`
+   * for why the week is the unit rather than the day or the task.
+   */
+  starWeeks: "starWeeks",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];

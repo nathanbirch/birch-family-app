@@ -13,9 +13,11 @@
 import { MongoClient, ObjectId } from "mongodb";
 import bcrypt from "bcryptjs";
 
+import { CHORE_POOLS } from "../src/config/chore-rotation";
 import { COLLECTIONS, DB_NAME } from "../src/config/db";
 import { DEFAULT_PET_ROTATIONS } from "../src/config/pets";
 import { findSharedNightProblem } from "../src/lib/pets/rotation";
+import { findChorePoolProblem } from "../src/lib/stars/rotation";
 
 /* -------------------------------------------------------------------------- */
 /* The seed account                                                            */
@@ -85,6 +87,29 @@ async function main() {
     );
     console.log(`  ✓ ${COLLECTIONS.petRotations}.pet_unique   (unique)`);
 
+    const choreRotations = db.collection(COLLECTIONS.choreRotations);
+    await choreRotations.createIndex(
+      { poolId: 1 },
+      { unique: true, name: "pool_unique" },
+    );
+    console.log(`  ✓ ${COLLECTIONS.choreRotations}.pool_unique (unique)`);
+
+    /*
+     * The star charts are read a week at a time, and written one star at a
+     * time by an upsert keyed on exactly this pair — so the unique index is
+     * not only the query's index, it is what stops two simultaneous taps from
+     * creating two documents for the same child and week.
+     */
+    const starWeeks = db.collection(COLLECTIONS.starWeeks);
+    await starWeeks.createIndex(
+      { childId: 1, weekStart: 1 },
+      { unique: true, name: "child_week_unique" },
+    );
+    console.log(`  ✓ ${COLLECTIONS.starWeeks}.child_week_unique (unique)`);
+
+    await starWeeks.createIndex({ weekStart: 1 }, { name: "by_week" });
+    console.log(`  ✓ ${COLLECTIONS.starWeeks}.by_week`);
+
     /* --- Seed user ----------------------------------------------------- */
 
     const email = SEED_USER.email.trim().toLowerCase();
@@ -141,6 +166,47 @@ async function main() {
           ? `  ✓ Pet rotation for "${config.petId}" seeded ` +
               `(${config.anchorChildId} on ${config.anchorDate}).`
           : `  • Pet rotation for "${config.petId}" already exists — left untouched.`,
+      );
+    }
+
+    /* --- Chore rotation -------------------------------------------------- */
+
+    /*
+     * One row per pool, written only if it is missing — same rule as the pets.
+     * Once the family has re-anchored or reordered a pool in the database,
+     * re-running the seed must not drag it back to what is compiled into
+     * `src/config/chore-rotation.ts`.
+     *
+     * The validity check is the function the app itself uses, so "a usable
+     * rotation" has one definition rather than two.
+     */
+    const badPools = findChorePoolProblem(CHORE_POOLS);
+    if (badPools) {
+      fail(`Refusing to seed an unusable chore rotation.\n\n  ${badPools}`);
+    }
+
+    console.log();
+    for (const pool of CHORE_POOLS) {
+      const outcome = await choreRotations.updateOne(
+        { poolId: pool.id },
+        {
+          $setOnInsert: {
+            poolId: pool.id,
+            name: pool.name,
+            children: [...pool.children],
+            chores: [...pool.chores],
+            anchorMonth: pool.anchorMonth,
+            updatedAt: new Date(),
+          },
+        },
+        { upsert: true },
+      );
+
+      console.log(
+        outcome.upsertedCount > 0
+          ? `  ✓ Chore pool "${pool.id}" seeded ` +
+              `(${pool.chores.length} chores, anchored on ${pool.anchorMonth}).`
+          : `  • Chore pool "${pool.id}" already exists — left untouched.`,
       );
     }
 

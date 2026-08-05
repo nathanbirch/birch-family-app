@@ -87,6 +87,53 @@ being quietly violated**.
   anchor dates, and two pets on different orders
 - Bad configuration throws with a message naming the pet
 
+### `chore-rotation.test.ts` — 26 tests
+The monthly chore rotation, where — as with the pets — the interesting risk is
+not a crash but a **rule being quietly violated**.
+
+- The August 2026 anchor matches the photograph of the chart, chore by chore
+- The same answer on the 1st, the 15th and the 31st, and a **different** one on
+  the 1st of the next month: it turns over at midnight on the 1st and at no
+  other moment
+- One place down the pool each month, and it runs **backwards**, so "whose was
+  the dishwasher in May?" is answerable
+- **Every child holds every chore in their pool over one cycle**, and never the
+  same chore two months running, checked across 24 months
+- The chores are shared out as evenly as the counts allow
+- The countdown counts real calendar months, including a leap February
+- The validator rejects the six ways a set of pools can go wrong: a child in two
+  pools, a chore in two pools, a chore in none, a chore that is not a task, a
+  task that is assigned rather than rotated, and a nonsense anchor month
+
+### `stars-config.test.ts` — 23 tests
+The transcription and the counting.
+
+- Unique ids, and ids free of dots — they become MongoDB field names, where a
+  dot would be read as a path separator
+- **Each child's row counts, off the three photographs**, one column at a time
+- Hannah has the cello and nobody else; every child has the same four hygiene
+  rows
+- A sample of the exact printed wording, which is what catches a well-meaning
+  tidy-up in review
+- No child is ever given a chore from the other pool
+- A row that was never ticked, or stored badly, reads back as five booleans
+- Stars, whole rows and perfect charts are counted right — and an empty chart
+  is not "perfect"
+
+### `stars-board.test.tsx` — 13 tests
+The chart on screen, with the Server Action mocked — it is a POST endpoint, not
+a plain function.
+
+- All three charts, five stars per task, one per weekday
+- The chores that child has *this month*, and not the ones they do not
+- Switching child switches the rows, chores included
+- A star **fills before the server has answered**, and only that star
+- The action is told which child, week, task and day — and is told a *value*
+  rather than "flip it", so a retry cannot undo the tap it is retrying
+- A whole row is celebrated the moment it completes, and the week's count
+  follows every tap
+- A failed write says so
+
 ### `pet-nights.test.tsx` — 6 tests
 The two cards, rendered:
 

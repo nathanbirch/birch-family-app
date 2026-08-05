@@ -82,14 +82,20 @@ npm start          # serve the production build locally
   picture-card each: body, mind, emotions, spirit, and how to keep the Spirit in
   our home. Tap a card to read the whole list. The words are a transcription of
   the paper and stay that way. See [Healthy Birches](docs/health.md).
+- **Star charts** (`/stars`) — the three charts off the fridge — chores,
+  summer learning and hygiene — merged into one page per child, with the stars
+  tappable. The chores rotate between the children on the first of every month,
+  inside age-appropriate pools, from an anchor stored in the database. See
+  [Star charts](docs/stars.md).
 - **Account** (`/account`) — who's signed in, the theme picker, sign out.
-- **Bottom tab bar** — Turns · Mantras · Home · Account. Healthy is reached from
-  the dashboard: the bar is full, and a sixth tab is too narrow to hit.
+- **Bottom tab bar** — Turns · Stars · Home · Calendar · Account. Mantras and
+  Healthy are reached from the dashboard: the bar holds five, and a sixth tab
+  is too narrow to hit.
 - Ten themes including a dark one. Installable as a PWA.
 
 ### Planned
 
-Chore charts · Rewards · Stars · Google Calendar.
+Weekly celebration report · Rewards.
 
 These are listed in `PLANNED_FEATURES` in
 [`src/config/navigation.ts`](src/config/navigation.ts) and rendered on the
@@ -106,6 +112,7 @@ Everything lives in **[`docs/`](docs/README.md)**:
 | [Getting started](docs/getting-started.md) | Install, run, test, build. Every npm script. |
 | [Deployment](docs/deployment.md) | Vercel setup, env vars, domains, the GitHub Pages history. |
 | [Mantras](docs/mantras.md) | The family mantras, the quoting rule, and the mantra of the day. |
+| [Star charts](docs/stars.md) | The three charts, the monthly chore rotation, and how a star is stored. |
 | [Healthy Birches](docs/health.md) | The five lists off the wall, the transcription rule, and the drawings. |
 | [Database](docs/database.md) | MongoDB, collections, seeding, the Atlas allowlist trap. |
 | [Authentication](docs/authentication.md) | How login works, changing the password, adding people. |

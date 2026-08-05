@@ -54,7 +54,8 @@ export type NavIconName =
   | "home"
   | "calendar"
   | "account"
-  | "health";
+  | "health"
+  | "stars";
 
 /**
  * The live pages.
@@ -68,8 +69,15 @@ export type NavIconName =
  * a sixth tab in would take every target below the size a thumb reliably hits,
  * which is the whole reason the limit exists.
  *
+ * Stars then took the second tab off Mantras rather than becoming a second
+ * dashboard-only page, by the criteria in the paragraph above: it is opened
+ * every single day by five children, several times a day, and it is the only
+ * page in the app you go to in order to *do* something rather than to read
+ * something. Mantras is a page you sit with occasionally, which is exactly the
+ * profile Healthy has, so it now sits beside it on the dashboard.
+ *
  * If a seventh page ever needs a home, that is the point to build the "More"
- * sheet rather than adding a second dashboard-only page.
+ * sheet rather than pushing a third page onto the dashboard alone.
  *
  * Account sits at the far right rather than beside Home. It is the one tab
  * nobody opens daily, so it takes the least reachable corner and Calendar —
@@ -86,11 +94,20 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: "seats",
   },
   {
+    href: "/stars",
+    label: "Stars",
+    title: "Star Charts",
+    description:
+      "Chores, learning and hygiene — every star, all in one place.",
+    slot: "left",
+    icon: "stars",
+  },
+  {
     href: "/mantras",
     label: "Mantras",
     title: "Family Mantras",
     description: "The things we say to each other, and where they came from.",
-    slot: "left",
+    slot: null,
     icon: "mantras",
   },
   {
@@ -148,23 +165,29 @@ export type PlannedFeature = {
   icon: PlannedIconName;
 };
 
-export type PlannedIconName = "chores" | "rewards" | "stars";
+export type PlannedIconName = "rewards" | "report";
+
+/**
+ * Icons that belong to no page at all.
+ *
+ * The mantra cards illustrate themselves from the same icon set, and one of
+ * them uses the checklist that used to stand for the planned Chore Charts
+ * page. The page shipped as Stars, but the drawing is still the right picture
+ * for "the jobs list", so it stays in the set under its own name rather than
+ * being deleted or pretending to be a destination.
+ */
+export type DecorativeIconName = "chores";
 
 export const PLANNED_FEATURES: readonly PlannedFeature[] = [
   {
-    title: "Chore Charts",
-    description: "Who does what, and whether it actually got done.",
-    icon: "chores",
+    title: "Weekly Report",
+    description: "Friday's celebration: confetti, and a slide for every child.",
+    icon: "report",
   },
   {
     title: "Rewards",
     description: "What all those stars add up to.",
     icon: "rewards",
-  },
-  {
-    title: "Stars",
-    description: "Earned for chores, kindness and effort.",
-    icon: "stars",
   },
 ] as const;
 

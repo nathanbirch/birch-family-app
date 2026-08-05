@@ -110,16 +110,64 @@ Editing it by hand is a supported way to re-anchor the rotation. See
 
 ---
 
+### `choreRotations`
+
+Who has which chore, and when it changes hands. One document per pool.
+
+| Field | Type | Notes |
+|---|---|---|
+| `_id` | ObjectId | |
+| `poolId` | string | `"bigs"` / `"littles"` — an id from `src/config/chore-rotation.ts`. Unique index. |
+| `name` | string | Shown when the page explains a rotation. |
+| `children` | string[] | Child ids, in the order the chores walk through them. **Reordering reassigns chores.** |
+| `chores` | string[] | Task ids from `src/config/stars.ts`, in *dealing* order — consecutive entries go to different children. |
+| `anchorMonth` | string | `YYYY-MM`. The month this deal is known to be right for. |
+| `updatedAt` | Date | |
+
+**Indexes:** `pool_unique` — unique on `poolId`.
+
+Same two rules as `petRotations`: reads fall back to the pools compiled into
+`src/config/chore-rotation.ts`, and the seed refuses to write a rotation that
+`findChorePoolProblem()` rejects — a child in two pools, a chore in none, a
+chore that is not a task at all. See [Star charts](stars.md#the-anchor) for
+re-anchoring.
+
+---
+
+### `starWeeks`
+
+Every star anybody has coloured in. One document per child per week.
+
+| Field | Type | Notes |
+|---|---|---|
+| `_id` | ObjectId | |
+| `childId` | string | A child id from `src/config/family.ts`. |
+| `weekStart` | string | `YYYY-MM-DD`, always a Monday. |
+| `marks` | object | Task id → five booleans, Monday first. A task never ticked has no key. |
+| `updatedAt` | Date | |
+
+**Indexes:** `child_week_unique` — unique on `(childId, weekStart)`, which is
+also what stops two simultaneous taps creating two documents for the same week
+— and `by_week` for reading a whole week, or a past one for the report.
+
+This is the only collection that grows steadily: five documents a week, about
+260 a year. Writes go through an aggregation pipeline update for a reason worth
+knowing before you touch them — see
+[Star charts](stars.md#ticking-a-star).
+
+---
+
 ## Seeding
 
 ```bash
 npm run db:seed
 ```
 
-Creates every index, the first login account, and the pet rotation. **Safe to
-run repeatedly** — it never overwrites an existing account or an existing pet
-rotation, so re-running it after you have changed a password, or re-anchored
-Bella, does not undo either. Index creation is idempotent by definition.
+Creates every index, the first login account, the pet rotation and the chore
+pools. **Safe to run repeatedly** — it never overwrites an existing account, pet
+rotation or chore pool, so re-running it after you have changed a password,
+re-anchored Bella or re-anchored the chores does not undo any of them. Index
+creation is idempotent by definition.
 
 Run it:
 

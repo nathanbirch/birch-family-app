@@ -21,6 +21,7 @@ Start here if you are picking it up cold:
 | [Healthy Birches](health.md) | The five lists off the wall, the transcription rule, and the drawings. |
 | [Calendar](calendar.md) | Connecting the Google Calendar, and how the iCalendar reading works. |
 | [Rotation](rotation.md) | The start date, the five-week schedule, why it isn't a simple rotation, and the fairness numbers. |
+| [Star charts](stars.md) | The three charts off the fridge, the monthly chore rotation, and how a star is stored. |
 | [Pets](pets.md) | Bella and Leia, the nightly rotation in the database, and why nobody ever gets both. |
 | [Themes](themes.md) | All ten themes, the token system, persistence, and the no-flash script. |
 | [Animation](animation.md) | The three-second arrival choreography and the parent-swap glide. |
@@ -34,12 +35,13 @@ Start here if you are picking it up cold:
 
 A private family app behind a single shared login. Signing in lands you on a
 dashboard with a card per page; a bottom tab bar moves between them, with Home
-in the middle. Today there are four real features — the **seating rotation**,
-the **family mantras**, the **calendar** and the **Healthy Birches** lists —
-plus an account page; chore charts, rewards and stars are planned, and are
-listed on the dashboard so the app itself is the roadmap. Healthy is the first
-page with a dashboard card but no tab: the bar holds five and it already had
-five. The
+in the middle. Today there are five real features — the **seating rotation**,
+the **star charts**, the **family mantras**, the **calendar** and the **Healthy
+Birches** lists — plus an account page; the weekly celebration report and
+rewards are planned, and are listed on the dashboard so the app itself is the
+roadmap. Mantras and Healthy have a dashboard card but no tab: the bar holds
+five, and Stars took the tab because five children open it several times a day.
+The
 seating is still almost entirely self-contained: seven people, two places to
 sit, the five children rotating through five numbered positions on a fixed
 five-week cycle while the two parents stay put unless you swap them. Which week
@@ -47,7 +49,10 @@ it is comes from the device's own calendar, and the family, the schedule, the
 seat coordinates and all ten themes are compiled into the app rather than
 stored anywhere. Beneath the seats, Bella and Leia rotate through the same five
 children **nightly** — and that one rotation *is* in the database, so it can be
-re-anchored without a deploy. Otherwise the database holds only accounts and
+re-anchored without a deploy. The star charts work the same way: the chores
+rotate between the children on the first of each month from an anchor stored in
+the database, and the stars they tick are the one thing in the app that
+genuinely accumulates. Otherwise the database holds only accounts and
 sessions.
 
 ## What changed when the login arrived

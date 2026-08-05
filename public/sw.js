@@ -43,7 +43,13 @@
  * that now only redirects — on every page, until something else happened to
  * evict it.
  */
-const CACHE_VERSION = "v6";
+/*
+ * v7: Stars arrived and took the tab that was Mantras'. Required for the same
+ * reason as v5 and v6 — every cached page carries the tab bar, so without a
+ * bump an installed device would keep painting a bar with no Stars tab in it
+ * on every page it had already cached.
+ */
+const CACHE_VERSION = "v7";
 const CACHE_NAME = `birch-family-app-${CACHE_VERSION}`;
 const APP_SHELL = "/";
 

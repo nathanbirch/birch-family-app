@@ -17,6 +17,7 @@ src/app/
     ├── layout.tsx          requireUser() + the bottom tab bar
     ├── page.tsx            /          the dashboard
     ├── turns/page.tsx      /turns     the seating rotation, and tonight's pets
+    ├── stars/page.tsx      /stars     the three star charts, one child at a time
     ├── mantras/page.tsx    /mantras   the family mantras
     ├── health/page.tsx     /health    the five healthy lists, as cards
     ├── health/[section]/   /health/…  one list, in full
@@ -50,7 +51,12 @@ There is nothing to save because there is nothing to decide. Two devices
 looking at the app on the same day always show the same seats, and the database
 being unreachable does not change a single seat.
 
-**Stored in MongoDB** — accounts, sessions, and the nightly pet rotation. The
+**Stored in MongoDB** — accounts, sessions, the nightly pet rotation, the
+monthly chore rotation and the ticked stars. The chores follow the pets'
+pattern exactly: the *maths* is derived from an anchor plus elapsed months, and
+only the anchor is stored, so no row per month exists anywhere. The stars
+themselves are the app's first genuinely accumulating data — see
+[Star charts](stars.md). The
 pets are the one thing on the seating page that is *not* derived, and that was
 a deliberate choice rather than an oversight: re-anchoring "who has Bella
 tonight" is something the family may want to do at 9pm, and a deploy is a poor

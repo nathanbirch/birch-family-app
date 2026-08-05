@@ -34,7 +34,11 @@
  * coming back to.
  */
 
-import type { NavIconName, PlannedIconName } from "./navigation";
+import type {
+  DecorativeIconName,
+  NavIconName,
+  PlannedIconName,
+} from "./navigation";
 
 /** Where a quote came from. Every field is required — no unsourced quotes. */
 export type MantraSource = {
@@ -59,7 +63,7 @@ export type Mantra = {
   /** The verbatim words that gave us the mantra. Never paraphrased. */
   quote: string;
   source: MantraSource;
-  icon: NavIconName | PlannedIconName;
+  icon: NavIconName | PlannedIconName | DecorativeIconName;
 };
 
 const MONSON: Omit<MantraSource, "title" | "occasion" | "url"> = {

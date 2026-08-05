@@ -83,6 +83,66 @@ export function startOfWeekMonday(date: Date): Date {
   return addDays(noon, -offset);
 }
 
+/* ------------------------------------------------------------------ */
+/* Months                                                              */
+/* ------------------------------------------------------------------ */
+
+/** Matches a plain `YYYY-MM` calendar month. */
+const ISO_MONTH = /^(\d{4})-(\d{2})$/;
+
+/**
+ * Parse a `YYYY-MM` string as the first of that month, at local noon.
+ *
+ * Months are counted, never subtracted as milliseconds, so nothing here cares
+ * that months are 28-31 days long.
+ */
+export function parseLocalMonth(value: string): Date | null {
+  const match = ISO_MONTH.exec(value.trim());
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) return null;
+
+  return new Date(year, month - 1, 1, 12, 0, 0, 0);
+}
+
+/** Machine-readable `YYYY-MM` for the month containing `date`. */
+export function toIsoMonth(date: Date): string {
+  const year = String(date.getFullYear()).padStart(4, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+/**
+ * Whole calendar months from `from` to `to`. Negative when `to` is earlier.
+ *
+ * Purely (year, month) arithmetic — the day of the month is ignored entirely,
+ * so the 31st of January to the 1st of February is one month, which is what
+ * "the rotation changes on the 1st" needs it to mean.
+ */
+export function differenceInCalendarMonths(from: Date, to: Date): number {
+  return (
+    (to.getFullYear() - from.getFullYear()) * 12 +
+    (to.getMonth() - from.getMonth())
+  );
+}
+
+/** The first of the month containing `date`, at local noon. */
+export function startOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1, 12, 0, 0, 0);
+}
+
+/** The first of the *next* month after `date`, at local noon. */
+export function startOfNextMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 1, 12, 0, 0, 0);
+}
+
+/** e.g. "August 2026". */
+export function formatMonthYear(date: Date): string {
+  return format(date, { month: "long", year: "numeric" });
+}
+
 /** The next local midnight after `date`, used to schedule the day-change tick. */
 export function nextLocalMidnight(date: Date): Date {
   const next = new Date(
