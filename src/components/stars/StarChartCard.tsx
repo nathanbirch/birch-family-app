@@ -4,6 +4,7 @@ import { STAR_DAY_LABELS } from "@/config/stars";
 import type { ChartSection } from "@/lib/stars/tasks";
 import { rowFor, tally, type StarMarks } from "@/lib/stars/counting";
 
+import { Confetti } from "./Confetti";
 import { StarRow } from "./StarRow";
 
 /**
@@ -20,6 +21,8 @@ export function StarChartCard({
   todayIndex,
   accent,
   accentInk,
+  celebration,
+  celebrationColors,
   onToggle,
 }: {
   section: ChartSection;
@@ -29,6 +32,13 @@ export function StarChartCard({
   accent: string;
   /** The same colour, mixed for readable type. */
   accentInk: string;
+  /**
+   * The id of a burst to throw over this card, or `null`. An id rather than a
+   * boolean so two celebrations in a row remount the confetti and start it
+   * over, instead of the second one being a no-op.
+   */
+  celebration: number | null;
+  celebrationColors: readonly string[];
   onToggle: (taskId: string, dayIndex: number, value: boolean) => void;
 }) {
   const totals = tally(marks, section.tasks);
@@ -41,12 +51,20 @@ export function StarChartCard({
       still reads as one of the app's cards on all ten themes.
     */
     <section
-      className="app-card themed-transition p-3 sm:p-4"
+      // `relative` is what the confetti overlay is positioned against, so the
+      // paper falls inside this card rather than down the whole page.
+      className={`app-card themed-transition relative p-3 sm:p-4${
+        celebration === null ? "" : " celebrate-pulse"
+      }`}
       style={{
         backgroundColor: `color-mix(in srgb, ${accent} 8%, var(--color-surface))`,
         borderColor: `color-mix(in srgb, ${accent} 34%, var(--color-border))`,
       }}
     >
+      {celebration === null ? null : (
+        <Confetti key={celebration} scope="section" colors={celebrationColors} />
+      )}
+
       <header className="mb-2 flex items-baseline justify-between gap-3 px-2">
         <div className="min-w-0">
           <h2 className="text-lg font-extrabold tracking-tight">

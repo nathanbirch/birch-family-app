@@ -9,7 +9,12 @@
  * for one child and rejected for them a tap later.
  */
 
-import { startOfWeekMonday, toIsoDate, parseLocalDate, addDays } from "@/lib/dates";
+import {
+  differenceInCalendarDays,
+  parseLocalDate,
+  startOfWeekMonday,
+  toIsoDate,
+} from "@/lib/dates";
 
 /** The `YYYY-MM-DD` Monday that identifies the week containing `date`. */
 export function getWeekStartIso(date: Date): string {
@@ -35,9 +40,17 @@ export function parseWeekStart(value: string): Date | null {
  * current one, use today — the chart shows who has the chore *now*. For any
  * other week, use its Monday, so looking back at a past week is stable and
  * does not shift as the months go by.
+ *
+ * Whole *calendar days* decide that, not instants. Comparing the two dates
+ * directly looked equivalent and was not: every date this app builds is
+ * anchored at local noon, so a Sunday evening is later than "Sunday" and fell
+ * outside its own week. It only ever mattered on the handful of Sundays that
+ * end a month, and it would have shown the previous month's owner for an
+ * evening — which is exactly the class of bug that never reproduces when you
+ * go looking for it.
  */
 export function referenceDateFor(weekStart: Date, now: Date): Date {
   const monday = startOfWeekMonday(weekStart);
-  const sunday = addDays(monday, 6);
-  return now >= monday && now <= sunday ? now : monday;
+  const offset = differenceInCalendarDays(monday, now);
+  return offset >= 0 && offset <= 6 ? now : monday;
 }

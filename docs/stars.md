@@ -182,6 +182,52 @@ it, because a child colouring in a row should never watch a spinner between
 stars. `--color-star` is gold on every theme, for the same reason each child's
 avatar colour ignores the theme: it has to look like the sticker on the fridge.
 
+## Confetti
+
+Thrown at **columns, not rows**. A row is one job done five days running,
+which takes until Friday; a column is everything owed for one day — the thing a
+child finishes, notices themselves finishing, and can be congratulated for
+while they are still holding the phone.
+
+Two sizes, because they are two different achievements:
+
+| Finished | What happens |
+|---|---|
+| One chart's column — every chore, or every learning task, for one day | Confetti falls inside that card, and the card gives a small jump |
+| The whole column — every star that child owes that day | Confetti falls across the entire screen |
+
+The bigger one *replaces* the smaller rather than joining it: the last star of
+the day is also the last star of some chart, so both would otherwise fire at
+once.
+
+It only ever fires on the way **up**. Rubbing out a star to correct a mistake
+is not an achievement, and unticking then reticking is not a way to farm
+confetti.
+
+Implementation notes worth having before you touch
+[`Confetti.tsx`](../src/components/stars/Confetti.tsx):
+
+- **No library, no canvas.** Seventy absolutely-positioned divs animated by one
+  CSS keyframe go straight to the compositor, cost nothing on the main thread
+  while a child is still tapping, and — the point that settles it — work
+  offline in the installed PWA without adding a byte that has to be cached.
+- **The pieces are generated once, on mount**, and held in state. Generating
+  them during render reshuffles the whole burst on every unrelated re-render,
+  of which there are plenty while a transition is in flight, and it reads as a
+  stutter rather than as falling paper.
+- **The fall distance is in pixels, not percent.** A percentage inside
+  `translate3d()` resolves against the element's own box, not its container, so
+  `105%` moved each piece about thirteen pixels. The page burst measures the
+  viewport; a card's burst uses a fixed distance and lets the overlay clip
+  whatever overshoots.
+- **A burst is identified by an id, not a boolean**, so finishing two columns
+  in a row remounts the confetti and starts it over instead of being a no-op.
+
+Under `prefers-reduced-motion` the paper is hidden outright. Nothing is lost:
+every celebration is also announced in words in a `role="status"` line, which
+is what a screen reader hears in any case — the confetti is `aria-hidden`
+decoration.
+
 ## A week that straddles a month
 
 Chores change hands on the 1st; the chart's week runs Monday to Friday. So a
@@ -215,6 +261,6 @@ To add a task:
 - **Editing from the app** — a parent renaming a chore, or moving one to a
   different child for the rest of the rotation, stored as an override on top of
   the compiled label and the computed owner.
-- **The weekly report** — Friday's celebration: confetti, a slide per child,
+- **The weekly report** — Friday's celebration: a slide per child,
   how many stars they earned and which charts they were perfect on.
   [`counting.ts`](../src/lib/stars/counting.ts) already computes what it needs.
