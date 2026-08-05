@@ -15,8 +15,13 @@
  *                         occasion, the date, and a link to the source.
  *
  * The quotes below were each checked word-for-word against the talk on
- * churchofjesuschrist.org (and speeches.byu.edu for the BYU devotional) on
- * 2026-08-04. **If you add one, go and read it in the original first.** Putting
+ * churchofjesuschrist.org (and speeches.byu.edu for the BYU devotional), most
+ * recently on 2026-08-05. That re-check found three real errors — two quotes
+ * attributed to Sister Yee that she was herself quoting from somebody else, and
+ * a missing word — so the rule below is not theoretical. The full record is in
+ * `docs/editorial/quotation-verification.md`.
+ *
+ * **If you add one, go and read it in the original first.** Putting
  * words in a living person's mouth — or a dead prophet's — because they sounded
  * about right is the one mistake this file must never make. Where a quote is
  * trimmed, it is trimmed at a sentence boundary and never re-stitched, so what
@@ -30,8 +35,9 @@
  * WHO WE LISTEN TO
  * ---------------------------------------------------------------------------
  * President Thomas S. Monson (1927–2018), President Russell M. Nelson, Sister
- * Kristin M. Yee, and President Jeffrey R. Holland — the four the family keeps
- * coming back to.
+ * Kristin M. Yee, and Elder Jeffrey R. Holland — the four the family keeps
+ * coming back to. Each is named with the calling they held *when they said it*,
+ * which is why President Nelson appears under two different roles below.
  */
 
 import type {
@@ -74,6 +80,18 @@ const MONSON: Omit<MantraSource, "title" | "occasion" | "url"> = {
 const NELSON: Omit<MantraSource, "title" | "occasion" | "url"> = {
   author: "President Russell M. Nelson",
   role: "President of the Church",
+};
+
+/**
+ * The same man, earlier. He became President of the Church in January 2018, so
+ * anything he said before that is quoted under the calling he actually held —
+ * see `Joy and Spiritual Survival`, October 2016, below. Getting this wrong is
+ * a small anachronism rather than a misquote, but the file's whole point is
+ * that we do not guess.
+ */
+const NELSON_TWELVE: Omit<MantraSource, "title" | "occasion" | "url"> = {
+  author: "President Russell M. Nelson",
+  role: "President of the Quorum of the Twelve Apostles",
 };
 
 const YEE: Omit<MantraSource, "title" | "occasion" | "url"> = {
@@ -133,7 +151,7 @@ export const MANTRAS: readonly Mantra[] = [
     quote:
       "The joy we feel has little to do with the circumstances of our lives and everything to do with the focus of our lives.",
     source: {
-      ...NELSON,
+      ...NELSON_TWELVE,
       title: "Joy and Spiritual Survival",
       occasion: "October 2016 general conference",
       url: "https://www.churchofjesuschrist.org/study/general-conference/2016/10/joy-and-spiritual-survival?lang=eng",
@@ -250,8 +268,14 @@ export const MANTRAS: readonly Mantra[] = [
     text: "Be somebody’s angel today.",
     meaning:
       "Sitting by the new kid. Shovelling the neighbour’s walk before they wake up. Most of the help God sends arrives wearing boots.",
+    /*
+     * Quoted from "But when we speak of..." rather than from "not all angels",
+     * because in the original that clause is mid-sentence and lowercase.
+     * Starting there would mean silently promoting a lowercase word to a
+     * capital, which is the one liberty the rule above does not allow.
+     */
     quote:
-      "Not all angels are from the other side of the veil. Some of them we walk with and talk with—here, now, every day.",
+      "But when we speak of those who are instruments in the hand of God, we are reminded that not all angels are from the other side of the veil. Some of them we walk with and talk with—here, now, every day.",
     source: {
       author: "Elder Jeffrey R. Holland",
       role: "Quorum of the Twelve Apostles",
@@ -266,9 +290,18 @@ export const MANTRAS: readonly Mantra[] = [
     text: "Bless the one.",
     meaning:
       "You cannot fix everything for everyone. You can notice one person today and do one real thing for them — and that is how a family, a ward and a town get better.",
-    quote: "When we bless the one, we bless the whole.",
+    /*
+     * Not Sister Yee's sentence, and not in the first person. Checked against
+     * the talk on 2026-08-05: it is in note 14, where she is quoting somebody
+     * else — "A wise bishop once said to me, when I was an overwhelmed Young
+     * Women president of 53 young women, 'When you bless the one, you bless the
+     * whole.'" The words are the bishop's; her talk is where we found them.
+     * See docs/editorial/quotation-verification.md.
+     */
+    quote: "When you bless the one, you bless the whole.",
     source: {
-      ...YEE,
+      author: "An unnamed bishop",
+      role: "quoted by Sister Kristin M. Yee",
       title:
         "Ministering—“That Ye Love One Another; as I Have Loved You”",
       occasion: "April 2026 general conference",
@@ -296,12 +329,20 @@ export const MANTRAS: readonly Mantra[] = [
     text: "We start again today.",
     meaning:
       "Repentance is not a punishment in this house; it is the fresh start. Nobody is stuck being the version of themselves they were yesterday.",
-    quote: "Repentance is the pathway to purity, and purity brings power.",
+    /*
+     * Sister Yee says this in "The Joy of Our Redemption" (October 2024), but
+     * she is quoting the prophet and says so: "Our prophet has said: ..." The
+     * sentence is President Nelson's, from April 2019 — and the original opens
+     * with "Daily", which the version we had been using dropped. That word is
+     * the whole argument of his talk, so it goes back in.
+     * See docs/editorial/quotation-verification.md.
+     */
+    quote: "Daily repentance is the pathway to purity, and purity brings power.",
     source: {
-      ...YEE,
-      title: "The Joy of Our Redemption",
-      occasion: "October 2024 general conference",
-      url: "https://www.churchofjesuschrist.org/study/general-conference/2024/10/32yee?lang=eng",
+      ...NELSON,
+      title: "We Can Do Better and Be Better",
+      occasion: "April 2019 general conference",
+      url: "https://www.churchofjesuschrist.org/study/general-conference/2019/04/36nelson?lang=eng",
     },
     icon: "stars",
   },
