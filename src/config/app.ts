@@ -48,3 +48,12 @@ export const PARENTS_STORAGE_KEY = "birch-family-seats:parents-swapped:v1";
  * key has never shipped under another name.
  */
 export const LAST_PAGE_STORAGE_KEY = "birch-family-app:last-page:v1";
+
+/**
+ * Whether the star charts cheer out loud when a column is finished.
+ *
+ * Per device rather than per family: the phone on the kitchen counter should
+ * celebrate, the one in a quiet room at bedtime should not, and neither should
+ * decide for the other. Defaults to on when the key is absent.
+ */
+export const SOUND_STORAGE_KEY = "birch-family-app:sound:v1";

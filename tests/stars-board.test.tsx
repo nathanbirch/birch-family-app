@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { StarsBoard } from "@/components/stars/StarsBoard";
 import { CHORE_POOLS } from "@/config/chore-rotation";
+import { SOUND_STORAGE_KEY } from "@/config/app";
 import { CHILD_IDS } from "@/config/family";
 import type { StarMarks, WeekMarks } from "@/lib/stars/counting";
 import { getTasksForChild } from "@/lib/stars/tasks";
@@ -14,6 +15,15 @@ import { getTasksForChild } from "@/lib/stars/tasks";
  */
 const setStar = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/stars/actions", () => ({ setStar }));
+
+/*
+ * jsdom has no Web Audio, so the real module would silently do nothing and
+ * these tests could not tell "did not play" from "could not play". Mocked, so
+ * the volume the board *asks* for is what is asserted.
+ */
+const playCheer = vi.hoisted(() => vi.fn());
+const primeCheer = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/stars/cheer", () => ({ playCheer, primeCheer }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
 }));
@@ -57,6 +67,8 @@ function escapeRegExp(value: string): string {
 
 beforeEach(() => {
   setStar.mockReset();
+  playCheer.mockReset();
+  primeCheer.mockReset();
   // A promise that never settles: the optimistic state is what a child sees
   // while the write is in flight, and that is what most of these assert.
   setStar.mockReturnValue(new Promise(() => {}));
@@ -389,6 +401,114 @@ describe("celebrating a finished column", () => {
     expect(
       document.querySelector("[data-confetti]")?.getAttribute("aria-hidden"),
     ).toBe("true");
+  });
+});
+
+describe("the cheering", () => {
+  const WEDNESDAY = 2;
+
+  /** Everything Hannah owes on Wednesday, bar the very last star. */
+  function wholeDayButOne(): StarMarks {
+    const tasks = getTasksForChild(CHORE_POOLS, AUGUST, "hannah");
+    const marks: StarMarks = {};
+    for (const task of tasks.slice(0, -1)) {
+      marks[task.id] = [false, false, true, false, false];
+    }
+    return marks;
+  }
+
+  function finishTheDay() {
+    const tasks = getTasksForChild(CHORE_POOLS, AUGUST, "hannah");
+    return starsFor(tasks[tasks.length - 1].label)[WEDNESDAY];
+  }
+
+  it("plays at full volume for a whole day", async () => {
+    const marks = blankWeek();
+    marks.hannah = wholeDayButOne();
+    renderBoard(marks);
+
+    await act(async () => {
+      finishTheDay().click();
+    });
+
+    expect(playCheer).toHaveBeenCalledWith(1);
+  });
+
+  it("is quieter for one chart, so the two do not sound alike", async () => {
+    const marks = blankWeek();
+    const hygiene = getTasksForChild(CHORE_POOLS, AUGUST, "hannah").filter(
+      (task) => task.chart === "hygiene",
+    );
+    const partial: StarMarks = {};
+    for (const task of hygiene.slice(0, -1)) {
+      partial[task.id] = [false, false, true, false, false];
+    }
+    marks.hannah = partial;
+    renderBoard(marks);
+
+    await act(async () => {
+      starsFor(hygiene[hygiene.length - 1].label)[WEDNESDAY].click();
+    });
+
+    expect(playCheer).toHaveBeenCalledWith(0.6);
+  });
+
+  it("says nothing for an ordinary star", async () => {
+    renderBoard();
+
+    await act(async () => {
+      starsFor("Piano practice")[WEDNESDAY].click();
+    });
+
+    expect(playCheer).not.toHaveBeenCalled();
+  });
+
+  it("warms the audio on every tap, inside the gesture iOS requires", async () => {
+    renderBoard();
+
+    await act(async () => {
+      starsFor("Piano practice")[0].click();
+    });
+
+    expect(primeCheer).toHaveBeenCalled();
+  });
+
+  it("stays silent once the speaker is switched off", async () => {
+    const marks = blankWeek();
+    marks.hannah = wholeDayButOne();
+    renderBoard(marks);
+
+    await act(async () => {
+      screen.getByRole("switch", { name: /Turn the cheering off/ }).click();
+    });
+
+    await act(async () => {
+      finishTheDay().click();
+    });
+
+    expect(playCheer).not.toHaveBeenCalled();
+    // …and the confetti still falls. Muting the room is not muting the party.
+    expect(document.querySelector("[data-confetti]")).not.toBeNull();
+  });
+
+  it("remembers the choice on this device", async () => {
+    renderBoard();
+
+    await act(async () => {
+      screen.getByRole("switch", { name: /Turn the cheering off/ }).click();
+    });
+
+    expect(window.localStorage.getItem(SOUND_STORAGE_KEY)).toBe("off");
+    expect(
+      screen.getByRole("switch", { name: /Turn the cheering on/ }),
+    ).toBeTruthy();
+  });
+
+  it("starts on, for a device that has never said otherwise", () => {
+    renderBoard();
+    expect(
+      screen.getByRole("switch", { name: /Turn the cheering off/ }),
+    ).toBeTruthy();
   });
 });
 

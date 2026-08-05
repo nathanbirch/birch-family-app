@@ -6,6 +6,7 @@ import {
   useOptimistic,
   useRef,
   useState,
+  useSyncExternalStore,
   useTransition,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -27,7 +28,14 @@ import {
   parseLocalDate,
   startOfWeekMonday,
 } from "@/lib/dates";
+import {
+  getServerSoundOnSnapshot,
+  getSoundOnSnapshot,
+  setSoundOn,
+  subscribeToSoundOn,
+} from "@/lib/sound-store";
 import { setStar } from "@/lib/stars/actions";
+import { playCheer, primeCheer } from "@/lib/stars/cheer";
 import {
   isColumnComplete,
   rowFor,
@@ -45,6 +53,7 @@ import { Avatar } from "../Avatar";
 import { ChildBackdrop } from "./ChildBackdrop";
 import { ChildTabs } from "./ChildTabs";
 import { Confetti, CONFETTI_DURATION_MS } from "./Confetti";
+import { SoundToggle } from "./SoundToggle";
 import { StarChartCard } from "./StarChartCard";
 
 /**
@@ -82,6 +91,18 @@ export function StarsBoard({
   const [selected, setSelected] = useState<ChildId>(CHILD_IDS[0]);
   const [error, setError] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
+  /*
+   * The device's own preference, straight out of `localStorage` via an
+   * external store — the same mechanism the theme and the parent swap use, and
+   * for the same reason: the value genuinely lives outside React, and reading
+   * it this way keeps the server's first render and the client's in step
+   * without an effect that re-renders the page a beat after it appears.
+   */
+  const soundOn = useSyncExternalStore(
+    subscribeToSoundOn,
+    getSoundOnSnapshot,
+    getServerSoundOnSnapshot,
+  );
   const [, startTransition] = useTransition();
 
   const celebrationTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -232,6 +253,12 @@ export function StarsBoard({
 
   function throwConfetti(scope: CelebrationScope, message: string) {
     if (celebrationTimer.current) clearTimeout(celebrationTimer.current);
+
+    // A card's celebration is quieter than the whole day's — the same clip,
+    // turned down, so finishing one chart does not sound like finishing
+    // everything.
+    if (soundOn) playCheer(scope === "page" ? 1 : 0.6);
+
     // The id is what remounts `<Confetti>`, so finishing two columns in a row
     // throws a second burst rather than leaving the first one hanging.
     burstId.current += 1;
@@ -244,6 +271,15 @@ export function StarsBoard({
 
   function toggle(taskId: string, dayIndex: number, value: boolean) {
     setError(null);
+
+    /*
+     * Warm the sound on every tap, not just the ones that celebrate. This is
+     * inside a user gesture, which is the only place iOS will let an
+     * AudioContext start, and it means the file is fetched and decoded long
+     * before any column is finished — so the cheer lands on the same frame as
+     * the confetti instead of a beat behind it.
+     */
+    if (soundOn) primeCheer();
 
     // Only ever on the way *up*. Rubbing out a star to correct a mistake is
     // not an achievement, and unticking then reticking should not be a way to
@@ -312,6 +348,17 @@ export function StarsBoard({
             {getChoreCountdownLabel(reference)}
           </p>
         </div>
+
+        <SoundToggle
+          on={soundOn}
+          onChange={(next) => {
+            setSoundOn(next);
+            // Turning it *on* is itself a gesture, so the file can be fetched
+            // and the context resumed right here — the first celebration after
+            // switching it on is then in time, rather than the one after that.
+            if (next) primeCheer();
+          }}
+        />
       </header>
 
       <ChildTabs selected={selected} totals={totals} onSelect={setSelected} />

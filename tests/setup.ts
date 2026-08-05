@@ -2,6 +2,7 @@ import { afterEach, beforeEach } from "vitest";
 import { cleanup } from "@testing-library/react";
 
 import { resetParentsSwappedCache } from "@/lib/parent-store";
+import { resetSoundCache } from "@/lib/sound-store";
 import { resetThemeCache } from "@/lib/theme-store";
 
 /*
@@ -34,6 +35,7 @@ beforeEach(() => {
   // browser; each test starts from a clean slate.
   resetThemeCache();
   resetParentsSwappedCache();
+  resetSoundCache();
 });
 
 afterEach(() => {
@@ -42,5 +44,6 @@ afterEach(() => {
   window.localStorage.clear();
   resetThemeCache();
   resetParentsSwappedCache();
+  resetSoundCache();
   document.documentElement.removeAttribute("data-theme");
 });

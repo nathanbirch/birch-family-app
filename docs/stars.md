@@ -223,6 +223,49 @@ Implementation notes worth having before you touch
 - **A burst is identified by an id, not a boolean**, so finishing two columns
   in a row remounts the confetti and starts it over instead of being a no-op.
 
+### How much paper
+
+280 pieces for the whole-day burst, 136 for a card's. Both started at a quarter
+of that and were quadrupled on the only evidence that counts — the family
+looked at it and wanted more. `PIECES` in `Confetti.tsx` is the dial.
+
+### The sound
+
+A 1.6-second clip of children clapping and shouting "yay", played through the
+Web Audio API — full volume for the whole day, 60% for a single chart, so the
+two celebrations do not sound alike.
+
+It is **synthesised, not recorded**:
+[`scripts/generate-cheer.mjs`](../scripts/generate-cheer.mjs) builds it from
+132 clap transients and six formant-synthesised child voices, then a few delay
+taps for the room. `npm run sound:generate` regenerates it. Three reasons it is
+made rather than downloaded: no stock licence covers "a family app", it comes
+out at 20KB so it can be precached and work offline, and everything in the
+script is seeded so re-running produces a byte-identical file and therefore the
+same content hash.
+
+It is a *stylised* cheer and does not pretend otherwise. **Recording the actual
+children would be better**, and swapping one in is deliberately easy: put a
+1.5-second mono file at `public/sounds/cheer-<hash>.mp3`, point `CHEER_SOUND`
+in `src/config/sound-manifest.ts` at it, and update the filename in `sw.js`'s
+`PRECACHE`. Nothing else knows where the sound comes from.
+
+Web Audio rather than an `<audio>` element for one reason that matters: finish
+a chart's column and then the whole day a second later, and a single `<audio>`
+element cuts the first cheer off mid-clap. A decoded buffer can be started as
+often as you like, overlapping.
+
+Every failure in [`cheer.ts`](../src/lib/stars/cheer.ts) is silent — no Web
+Audio, a phone on silent, an autoplay policy that refuses. The star is already
+ticked and the confetti is already falling; the sound is the part that is
+allowed to just not happen.
+
+The speaker button in the header turns it off, per device and remembered in
+`localStorage` — the phone on the kitchen counter should cheer, the one in a
+quiet room at bedtime should not, and neither should decide for the other. It
+sits next to the child's name rather than on the account page because the
+moment you want it is the moment it has just gone off.
+
 Under `prefers-reduced-motion` the paper is hidden outright. Nothing is lost:
 every celebration is also announced in words in a `role="status"` line, which
 is what a screen reader hears in any case — the confetti is `aria-hidden`
