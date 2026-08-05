@@ -114,9 +114,10 @@ export async function setStarMark(
   const collection = await starWeeks();
   const existing = `$marks.${taskId}`;
 
-  await collection.updateOne(
-    { childId, weekStart },
-    [
+  const update = () =>
+    collection.updateOne(
+      { childId, weekStart },
+      [
       {
         $set: {
           marks: {
@@ -152,8 +153,36 @@ export async function setStarMark(
           updatedAt: "$$NOW",
         },
       },
-    ],
-    { upsert: true },
+      ],
+      { upsert: true },
+    );
+
+  /*
+   * An upsert that has to insert can lose a race with another upsert that is
+   * inserting the same document, and the `child_week_unique` index turns that
+   * into a duplicate-key error rather than a silent second row. It is a real
+   * scenario here — two children tapping their first star of the week on the
+   * same phone within a few milliseconds of each other, or one child
+   * double-tapping.
+   *
+   * The retry is the standard remedy, and it is guaranteed to succeed: the
+   * document the loser collided with now exists, so the second attempt takes
+   * the update path instead of the insert path. Once is enough for exactly
+   * that reason — a second collision cannot happen.
+   */
+  try {
+    await update();
+  } catch (error) {
+    if (!isDuplicateKey(error)) throw error;
+    await update();
+  }
+}
+
+function isDuplicateKey(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === 11000
   );
 }
 

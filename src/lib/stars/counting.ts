@@ -42,6 +42,44 @@ export function isRowComplete(row: readonly boolean[]): boolean {
   return countRow(row) === STAR_DAY_COUNT;
 }
 
+/**
+ * A whole *column*: every one of these tasks ticked on one day.
+ *
+ * The rows are what the paper chart rewards; the columns are what a child
+ * actually does — "everything I owe for Wednesday". That is the thing worth
+ * throwing confetti at, so it needs saying in one place that the chart, the
+ * celebration and (later) the report can all agree on.
+ *
+ * An empty set is never complete, for the same reason an empty chart is never
+ * perfect: there was nothing to finish.
+ */
+export function isColumnComplete(
+  marks: StarMarks,
+  tasks: readonly StarTask[],
+  dayIndex: number,
+): boolean {
+  if (tasks.length === 0) return false;
+  return tasks.every((task) => rowFor(marks, task.id)[dayIndex] === true);
+}
+
+/**
+ * `marks` with one star changed. Pure — it never touches the original.
+ *
+ * Used both by the optimistic reducer on the board and by the celebration
+ * check, so "what the chart will look like a moment from now" is computed one
+ * way rather than two.
+ */
+export function withMark(
+  marks: StarMarks,
+  taskId: string,
+  dayIndex: number,
+  value: boolean,
+): StarMarks {
+  const row = [...rowFor(marks, taskId)];
+  row[dayIndex] = value;
+  return { ...marks, [taskId]: row };
+}
+
 export type StarTally = {
   earned: number;
   possible: number;

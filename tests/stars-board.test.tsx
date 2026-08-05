@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StarsBoard } from "@/components/stars/StarsBoard";
 import { CHORE_POOLS } from "@/config/chore-rotation";
 import { CHILD_IDS } from "@/config/family";
-import type { WeekMarks } from "@/lib/stars/counting";
+import type { StarMarks, WeekMarks } from "@/lib/stars/counting";
+import { getTasksForChild } from "@/lib/stars/tasks";
 
 /*
  * The Server Action cannot run in jsdom — it is a POST endpoint, not a plain
@@ -20,6 +21,9 @@ vi.mock("next/navigation", () => ({
 /** Monday of the week the charts were photographed, and the Tuesday after it. */
 const WEEK_START = "2026-08-03";
 const TUESDAY = "2026-08-04";
+
+/** The same Tuesday as a Date, for asking the rotation what Hannah has. */
+const AUGUST = new Date(2026, 7, 4, 12, 0, 0, 0);
 
 function blankWeek(): WeekMarks {
   return Object.fromEntries(CHILD_IDS.map((id) => [id, {}])) as WeekMarks;
@@ -252,6 +256,139 @@ describe("colouring in a star", () => {
 
     const status = await screen.findByRole("status");
     expect(status.textContent).toContain("That star could not be saved.");
+  });
+});
+
+describe("celebrating a finished column", () => {
+  /*
+   * Confetti is thrown at columns, not rows: a row takes until Friday, a
+   * column is everything owed for one day. The two sizes are two different
+   * achievements, so these tests are mostly about not confusing them.
+   */
+  const WEDNESDAY = 2;
+
+  function confetti(): string[] {
+    return Array.from(document.querySelectorAll("[data-confetti]")).map(
+      (node) => node.getAttribute("data-confetti") ?? "",
+    );
+  }
+
+  /** Every task on one chart ticked on Wednesday, bar one. */
+  function allButOneOn(chart: "chores" | "learning" | "hygiene"): StarMarks {
+    const tasks = getTasksForChild(CHORE_POOLS, AUGUST, "hannah").filter(
+      (task) => task.chart === chart,
+    );
+    const marks: StarMarks = {};
+    for (const task of tasks.slice(0, -1)) {
+      marks[task.id] = [false, false, true, false, false];
+    }
+    return marks;
+  }
+
+  /** Everything Hannah owes on Wednesday, bar the very last star. */
+  function wholeDayButOne(): StarMarks {
+    const tasks = getTasksForChild(CHORE_POOLS, AUGUST, "hannah");
+    const marks: StarMarks = {};
+    for (const task of tasks.slice(0, -1)) {
+      marks[task.id] = [false, false, true, false, false];
+    }
+    return marks;
+  }
+
+  /** The label of the last task on a chart — the star that completes it. */
+  function lastLabelOn(chart: "chores" | "learning" | "hygiene"): string {
+    const tasks = getTasksForChild(CHORE_POOLS, AUGUST, "hannah").filter(
+      (task) => task.chart === chart,
+    );
+    return tasks[tasks.length - 1].label;
+  }
+
+  it("throws nothing on an ordinary star", async () => {
+    renderBoard();
+
+    await act(async () => {
+      starsFor("Piano practice")[WEDNESDAY].click();
+    });
+
+    expect(confetti()).toEqual([]);
+  });
+
+  it("showers the card when one chart's column is finished", async () => {
+    const marks = blankWeek();
+    marks.hannah = allButOneOn("hygiene");
+    renderBoard(marks);
+
+    await act(async () => {
+      starsFor(lastLabelOn("hygiene"))[WEDNESDAY].click();
+    });
+
+    expect(confetti()).toEqual(["section"]);
+    // …over the chart that was finished, and no other.
+    const burst = document.querySelector("[data-confetti='section']");
+    expect(burst?.closest("section")?.textContent).toContain("Hygiene Chart");
+  });
+
+  it("showers the whole page when the whole day is finished", async () => {
+    const marks = blankWeek();
+    marks.hannah = wholeDayButOne();
+    renderBoard(marks);
+
+    const tasks = getTasksForChild(CHORE_POOLS, AUGUST, "hannah");
+    await act(async () => {
+      starsFor(tasks[tasks.length - 1].label)[WEDNESDAY].click();
+    });
+
+    // The bigger celebration replaces the smaller one rather than joining it:
+    // the last star of the day is also the last star of some chart.
+    expect(confetti()).toEqual(["page"]);
+  });
+
+  it("says what was finished, for anyone who cannot see paper fall", async () => {
+    const marks = blankWeek();
+    marks.hannah = wholeDayButOne();
+    renderBoard(marks);
+
+    const tasks = getTasksForChild(CHORE_POOLS, AUGUST, "hannah");
+    await act(async () => {
+      starsFor(tasks[tasks.length - 1].label)[WEDNESDAY].click();
+    });
+
+    const status = screen.getByRole("status");
+    expect(status.textContent).toContain("Hannah finished everything for Wednesday");
+  });
+
+  it("throws nothing when a star is rubbed out", async () => {
+    const marks = blankWeek();
+    const complete = allButOneOn("hygiene");
+    const last = getTasksForChild(CHORE_POOLS, AUGUST, "hannah")
+      .filter((task) => task.chart === "hygiene")
+      .at(-1)!;
+    complete[last.id] = [false, false, true, false, false];
+    marks.hannah = complete;
+    renderBoard(marks);
+
+    // Unticking leaves the column incomplete; re-ticking it must not be a way
+    // to farm confetti either, but that is the *next* tap — this asserts the
+    // rub-out itself is silent.
+    await act(async () => {
+      starsFor(last.label)[WEDNESDAY].click();
+    });
+
+    expect(confetti()).toEqual([]);
+  });
+
+  it("keeps the paper out of the accessibility tree", async () => {
+    const marks = blankWeek();
+    marks.hannah = allButOneOn("hygiene");
+    renderBoard(marks);
+
+    await act(async () => {
+      starsFor(lastLabelOn("hygiene"))[WEDNESDAY].click();
+    });
+
+    expect(
+      document.querySelector("[data-confetti]")?.getAttribute("aria-hidden"),
+    ).toBe("true");
   });
 });
 

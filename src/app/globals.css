@@ -285,6 +285,61 @@ body,
   border-radius: 0.75rem;
 }
 
+/*
+ * Falling confetti — one keyframe, driven per piece by three custom properties
+ * set inline (see `components/stars/Confetti.tsx`).
+ *
+ * `translate3d` rather than `top`/`left` keeps every piece on the compositor,
+ * so seventy of them fall without touching the main thread while a child is
+ * still tapping stars. The opacity ramp is deliberately lopsided: paper should
+ * appear at once and disappear gradually, not fade in.
+ */
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--confetti-drift), var(--confetti-fall), 0)
+      rotate(var(--confetti-spin));
+    opacity: 0;
+  }
+}
+
+.confetti-piece {
+  animation-name: confetti-fall;
+  animation-timing-function: cubic-bezier(0.25, 0.6, 0.5, 1);
+  animation-fill-mode: both;
+  will-change: transform, opacity;
+}
+
+/*
+ * The card that just had its column finished, jumping slightly. Runs alongside
+ * the confetti and is the part that still reads on a small phone, where the
+ * paper falls past quickly.
+ */
+@keyframes celebrate-pulse {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.022);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.celebrate-pulse {
+  animation: celebrate-pulse 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html,
   body,
@@ -298,8 +353,18 @@ body,
   .seat-swap-arc,
   .animate-soft-rise,
   .animate-soft-fade,
-  .star-pop {
+  .star-pop,
+  .celebrate-pulse {
     animation: none;
+  }
+
+  /*
+   * No falling paper at all, rather than paper that appears and hangs there.
+   * The celebration is announced in words as well, so nothing is lost — see
+   * `components/stars/Confetti.tsx`.
+   */
+  .confetti-piece {
+    display: none;
   }
 
   /* …and visible, since the animation that would have revealed them is gone. */

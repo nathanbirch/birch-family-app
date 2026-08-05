@@ -1,11 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
+import {
+  useEffect,
+  useMemo,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { useRouter } from "next/navigation";
 
 import type { ChorePool } from "@/config/chore-rotation";
 import { CHILD_IDS, getPerson, type ChildId } from "@/config/family";
-import { STAR_DAY_COUNT } from "@/config/stars";
+import {
+  STAR_DAY_COUNT,
+  STAR_DAY_NAMES,
+  getChart,
+  getStarTask,
+  type ChartId,
+} from "@/config/stars";
 import { useCurrentDate } from "@/hooks/useCurrentDate";
 import {
   addDays,
@@ -15,7 +28,14 @@ import {
   startOfWeekMonday,
 } from "@/lib/dates";
 import { setStar } from "@/lib/stars/actions";
-import { rowFor, tally, type WeekMarks } from "@/lib/stars/counting";
+import {
+  isColumnComplete,
+  rowFor,
+  tally,
+  withMark,
+  type StarMarks,
+  type WeekMarks,
+} from "@/lib/stars/counting";
 import { getChoreCountdownLabel } from "@/lib/stars/rotation";
 import { getChartSectionsForChild, getTasksForChild } from "@/lib/stars/tasks";
 import { getWeekStartIso, referenceDateFor } from "@/lib/stars/week";
@@ -24,6 +44,7 @@ import { Avatar } from "../Avatar";
 
 import { ChildBackdrop } from "./ChildBackdrop";
 import { ChildTabs } from "./ChildTabs";
+import { Confetti, CONFETTI_DURATION_MS } from "./Confetti";
 import { StarChartCard } from "./StarChartCard";
 
 /**
@@ -60,7 +81,23 @@ export function StarsBoard({
   const date = useCurrentDate(initialDateIso);
   const [selected, setSelected] = useState<ChildId>(CHILD_IDS[0]);
   const [error, setError] = useState<string | null>(null);
+  const [celebration, setCelebration] = useState<Celebration | null>(null);
   const [, startTransition] = useTransition();
+
+  const celebrationTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+  const burstId = useRef(0);
+
+  // A burst outlives the tap that caused it, so it has to be cancelled if the
+  // page is left in the meantime — otherwise the timeout fires into an
+  // unmounted component.
+  useEffect(
+    () => () => {
+      if (celebrationTimer.current) clearTimeout(celebrationTimer.current);
+    },
+    [],
+  );
 
   /*
    * Optimistic ticking. The star fills the instant it is tapped and the write
@@ -122,14 +159,103 @@ export function StarsBoard({
     return counts;
   }, [optimistic, pools, reference]);
 
-  const childMarks = optimistic[selected] ?? {};
+  // Memoised because `?? {}` would hand a brand-new object to the tally below
+  // on every render, defeating its own memo.
+  const childMarks = useMemo(
+    () => optimistic[selected] ?? {},
+    [optimistic, selected],
+  );
   const weekTotal = useMemo(
     () => tally(childMarks, getTasksForChild(pools, reference, selected)),
     [childMarks, pools, reference, selected],
   );
 
+  const person = getPerson(selected);
+  /*
+   * The child's own colour, mixed with the theme's text colour so it keeps its
+   * contrast on all ten themes — their identifying hue, still readable as
+   * type. Same trick as `--color-star-ink`; see globals.css.
+   */
+  const accentInk = `color-mix(in srgb, ${person.avatarColor} 62%, var(--color-text))`;
+
+  /* --- The celebration -------------------------------------------------- */
+
+  /**
+   * Confetti is thrown at *columns*, not rows.
+   *
+   * A row is one job done five days running, which takes until Friday. A
+   * column is everything owed for one day — and that is the thing a child
+   * finishes, notices themselves finishing, and can be congratulated for while
+   * they are still holding the phone. Two sizes, because the two are not the
+   * same achievement: one chart's column showers that card, and *every* star
+   * for the day showers the whole screen.
+   *
+   * The check runs against what the chart is about to look like rather than
+   * what it looks like now, which is why `withMark` exists — the optimistic
+   * update has not committed yet at this point.
+   */
+  const celebrationColors = useMemo(
+    () => [
+      person.avatarColor,
+      person.avatarColorDark,
+      "#f5b301",
+      "#ffd970",
+      "#ffffff",
+    ],
+    [person],
+  );
+
+  function celebrateIfFinished(
+    marks: StarMarks,
+    taskId: string,
+    dayIndex: number,
+  ) {
+    const day = STAR_DAY_NAMES[dayIndex];
+    const tasks = getTasksForChild(pools, reference, selected);
+
+    if (isColumnComplete(marks, tasks, dayIndex)) {
+      throwConfetti("page", `${person.name} finished everything for ${day}!`);
+      return;
+    }
+
+    const chartId = getStarTask(taskId)?.chart;
+    if (!chartId) return;
+
+    const onThisChart = tasks.filter((task) => task.chart === chartId);
+    if (isColumnComplete(marks, onThisChart, dayIndex)) {
+      throwConfetti(
+        chartId,
+        `${day}: ${shortChartName(getChart(chartId).title)} all done!`,
+      );
+    }
+  }
+
+  function throwConfetti(scope: CelebrationScope, message: string) {
+    if (celebrationTimer.current) clearTimeout(celebrationTimer.current);
+    // The id is what remounts `<Confetti>`, so finishing two columns in a row
+    // throws a second burst rather than leaving the first one hanging.
+    burstId.current += 1;
+    setCelebration({ id: burstId.current, scope, message });
+    celebrationTimer.current = setTimeout(
+      () => setCelebration(null),
+      CONFETTI_DURATION_MS,
+    );
+  }
+
   function toggle(taskId: string, dayIndex: number, value: boolean) {
     setError(null);
+
+    // Only ever on the way *up*. Rubbing out a star to correct a mistake is
+    // not an achievement, and unticking then reticking should not be a way to
+    // farm confetti.
+    if (value) {
+      celebrateIfFinished(
+        withMark(childMarks, taskId, dayIndex, true),
+        taskId,
+        dayIndex,
+      );
+    }
+
     startTransition(async () => {
       applyOptimistic({ childId: selected, taskId, dayIndex, value });
       const result = await setStar({
@@ -143,17 +269,22 @@ export function StarsBoard({
     });
   }
 
-  const person = getPerson(selected);
-  /*
-   * The child's own colour, mixed with the theme's text colour so it keeps its
-   * contrast on all ten themes — their identifying hue, still readable as
-   * type. Same trick as `--color-star-ink`; see globals.css.
-   */
-  const accentInk = `color-mix(in srgb, ${person.avatarColor} 62%, var(--color-text))`;
-
   return (
     <div className="flex flex-col gap-4">
       <ChildBackdrop selected={selected} />
+
+      {/*
+        The whole-day burst. Rendered here rather than inside a card because it
+        falls across the entire screen — it is fixed-position, so it is the one
+        piece of this page that escapes the column the rest of it lives in.
+      */}
+      {celebration?.scope === "page" ? (
+        <Confetti
+          key={celebration.id}
+          scope="page"
+          colors={celebrationColors}
+        />
+      ) : null}
 
       {/*
         Keyed on the child, so the whole header — face, name, colour — is
@@ -184,6 +315,25 @@ export function StarsBoard({
       </header>
 
       <ChildTabs selected={selected} totals={totals} onSelect={setSelected} />
+
+      {/*
+        The celebration in words. It carries the whole message on its own,
+        which is what makes the confetti safe to switch off entirely under
+        `prefers-reduced-motion` — and it is what a screen reader hears.
+      */}
+      {celebration ? (
+        <p
+          role="status"
+          className="animate-soft-rise rounded-2xl px-4 py-2 text-center text-base font-extrabold"
+          style={{
+            backgroundColor:
+              "color-mix(in srgb, var(--color-star) 26%, var(--color-surface))",
+            color: "var(--color-star-ink)",
+          }}
+        >
+          🎉 {celebration.message}
+        </p>
+      ) : null}
 
       <p
         className="themed-transition rounded-2xl px-4 py-2 text-center text-sm font-bold"
@@ -237,6 +387,10 @@ export function StarsBoard({
             todayIndex={todayIndex}
             accent={person.avatarColor}
             accentInk={accentInk}
+            celebration={
+              celebration?.scope === section.chart.id ? celebration.id : null
+            }
+            celebrationColors={celebrationColors}
             onToggle={toggle}
           />
         ))}
@@ -251,3 +405,18 @@ type StarPatch = {
   dayIndex: number;
   value: boolean;
 };
+
+/** Which confetti to throw: one chart's card, or the whole screen. */
+type CelebrationScope = ChartId | "page";
+
+type Celebration = {
+  /** Bumped per burst, so a second one remounts rather than merging. */
+  id: number;
+  scope: CelebrationScope;
+  message: string;
+};
+
+/** "Our Family Chore Chart" -> "Chore Chart". The card headings do this too. */
+function shortChartName(title: string): string {
+  return title.replace(/^Our Family /, "");
+}

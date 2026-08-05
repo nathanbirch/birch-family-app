@@ -120,7 +120,7 @@ The transcription and the counting.
 - Stars, whole rows and perfect charts are counted right — and an empty chart
   is not "perfect"
 
-### `stars-board.test.tsx` — 17 tests
+### `stars-board.test.tsx` — 23 tests
 The chart on screen, with the Server Action mocked — it is a POST endpoint, not
 a plain function.
 
@@ -135,6 +135,13 @@ a plain function.
 - A failed write says so
 - **Whose page it is, said in words** — the heading names the child, and it
   changes together with the backdrop
+- **Confetti lands on the right thing**: nothing for an ordinary star, the
+  card for a finished chart column, the whole page for a finished day — and the
+  page burst *replaces* the card burst rather than joining it, since the last
+  star of the day is also the last star of some chart
+- Rubbing a star out celebrates nothing
+- The celebration is stated in words for anyone who cannot see paper fall, and
+  the paper itself is out of the accessibility tree
 - **No trace of the child you switched away from.** The header and the charts
   were once keyed on the same string, which React reads as duplicate sibling
   keys: it kept the outgoing header mounted, so Hannah's name sat above Clara's
