@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **316 tests across 18 files.**
+Vitest with jsdom and Testing Library. **487 tests across 27 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -20,10 +20,10 @@ can run under both.
 
 | | |
 |---|---|
-| Statements | 92.7% |
+| Statements | 91.2% |
 | Branches | 80.8% |
-| Functions | 94.6% |
-| Lines | 94.1% |
+| Functions | 92.1% |
+| Lines | 93.4% |
 
 What is *not* covered is mostly `typeof window === "undefined"` guards,
 defensive `catch` branches that only fire in browsers that refuse storage, and
@@ -67,6 +67,37 @@ Every hard fairness rule, plus the measured statistics.
 - **A naive clockwise rotation is shown to score worse** — the thing this
   schedule exists to avoid
 - Adjacency counts are re-derived and asserted, not copied
+
+### `pet-rotation.test.ts` — 18 tests
+The nightly rotation, where the interesting risk is not a crash but a **rule
+being quietly violated**.
+
+- Both anchors match what the family said: Hannah had Bella and William had
+  Leia on the night of 4 August 2026
+- One child down the order each night, wrapping after five
+- The same answer at 00:00, 07:00, 12:00, 19:00 and 23:00 — a rotation that
+  turned over at some hour other than midnight would show one child at bedtime
+  and a different one at breakfast
+- It runs **backwards**, so past nights are answerable
+- No slip across a daylight-saving boundary
+- **Nobody gets both animals on the same night, simulated for five years** —
+  and separately proved structurally by the offset argument
+- The safety check rejects the three ways a configuration can go wrong: two
+  pets on the same child, two pets the same distance apart via *different*
+  anchor dates, and two pets on different orders
+- Bad configuration throws with a message naming the pet
+
+### `pet-nights.test.tsx` — 6 tests
+The two cards, rendered:
+
+- The child the rotation names is the child pinned to that animal, tonight and
+  the night after
+- **Every night of a full cycle, through the rendered output** — the wiring is
+  as capable of breaking the one-child-one-animal rule as the maths is
+- Whose turn it is tomorrow is stated on the card
+- Each pet's photograph is the optimised, content-hashed file, and the hashed
+  filename survives `next/image`'s rewrite
+- The avatar lands at the spot configured for that animal
 
 ### `seating.test.ts` — 30 tests
 Geometry and configuration.
@@ -249,6 +280,14 @@ a piano lesson:
   and rule days *before* `DTSTART` are not
 - **Monthly skips short months**: the 31st produces nothing in February and
   does not clamp to the 28th
+- **Occurrences in `DTSTART`'s own period** — the regression suite for a bug
+  that lost real events: expansion began at the period *after* `DTSTART`, so
+  `FREQ=WEEKLY;BYDAY=MO,TU,WE,TH` starting on a Monday emitted only that Monday
+  and jumped a week. Covered for week, month and year, plus that `DTSTART` is
+  still never emitted twice
+- **Long-lived series reach the window** — a daily rule running since 2010 and a
+  weekly one since 2015 both arrive at an August 2026 window, guarding the
+  period cap that would otherwise drop them silently
 - Zone conversion either side of a daylight-saving change, and that a weekly
   3pm event **stays at 3pm** across it (167 hours apart, same wall clock)
 - An unknown zone id degrades to a zero offset instead of throwing

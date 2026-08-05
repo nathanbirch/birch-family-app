@@ -93,6 +93,60 @@ describe("expandRrule", () => {
     ]);
   });
 
+  /*
+   * The regression suite for a bug that lost real events off the family
+   * calendar: expansion used to begin at the period *after* DTSTART, so any
+   * rule naming several days per period silently dropped the ones sharing
+   * DTSTART's own week, month or year. Nothing errored; the events were just
+   * absent.
+   */
+  it("emits the rest of DTSTART's own week", () => {
+    // The exact rule from the real feed: babysitting Monday to Thursday,
+    // beginning on the Monday. All four days belong to that first week.
+    expect(
+      occurrences("2026-08-03 08:00", "FREQ=WEEKLY;WKST=SU;COUNT=4;BYDAY=MO,TU,WE,TH", [
+        "2026-08-01",
+        "2026-08-31",
+      ]),
+    ).toEqual(["2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06"]);
+  });
+
+  it("emits later days of the first week when DTSTART is mid-week", () => {
+    // Starting Tuesday, the same week's Thursday still counts.
+    expect(
+      occurrences("2026-08-04 08:00", "FREQ=WEEKLY;BYDAY=MO,TU,TH", [
+        "2026-08-01",
+        "2026-08-14",
+      ]),
+    ).toEqual(["2026-08-04", "2026-08-06", "2026-08-10", "2026-08-11", "2026-08-13"]);
+  });
+
+  it("emits the rest of DTSTART's own month", () => {
+    expect(
+      occurrences("2026-08-01", "FREQ=MONTHLY;BYMONTHDAY=1,15", [
+        "2026-08-01",
+        "2026-09-30",
+      ]),
+    ).toEqual(["2026-08-01", "2026-08-15", "2026-09-01", "2026-09-15"]);
+  });
+
+  it("emits the rest of DTSTART's own year", () => {
+    expect(
+      occurrences("2026-03-15", "FREQ=YEARLY;BYMONTH=3,9", ["2026-01-01", "2027-06-01"]),
+    ).toEqual(["2026-03-15", "2026-09-15", "2027-03-15"]);
+  });
+
+  it("still does not emit DTSTART twice", () => {
+    // Period 0 regenerates DTSTART as a candidate; it must be filtered, not
+    // counted again — which COUNT would otherwise reveal by coming up short.
+    const dates = occurrences("2026-08-03 08:00", "FREQ=WEEKLY;BYDAY=MO;COUNT=3", [
+      "2026-08-01",
+      "2026-09-30",
+    ]);
+    expect(dates).toEqual(["2026-08-03", "2026-08-10", "2026-08-17"]);
+    expect(new Set(dates).size).toBe(dates.length);
+  });
+
   it("repeats weekly", () => {
     expect(
       occurrences("2026-08-04 15:00", "FREQ=WEEKLY", ["2026-08-01", "2026-08-31"]),
@@ -282,5 +336,34 @@ describe("zone conversion", () => {
   it("falls back to a zero offset for a zone id Intl does not know", () => {
     // Outlook-sourced calendars can carry Windows zone names.
     expect(zoneOffsetMs(Date.UTC(2026, 7, 4), "Mountain Standard Time")).toBe(0);
+  });
+});
+
+describe("long-lived series", () => {
+  it("reaches a window years after a daily series began", () => {
+    // The period walk starts at DTSTART, so a series running since 2010 has to
+    // be stepped through to get here. Too small a cap and it never arrives —
+    // and, like every bug in this file, it fails by showing nothing at all.
+    const dates = expandRrule({
+      start: { year: 2010, month: 1, day: 1, hour: 8, minute: 0, second: 0 },
+      rule: parseRrule("FREQ=DAILY"),
+      windowStart: { year: 2026, month: 8, day: 3, hour: 0, minute: 0, second: 0 },
+      windowEnd: { year: 2026, month: 8, day: 5, hour: 23, minute: 59, second: 59 },
+      limit: 100,
+    });
+
+    expect(dates).toHaveLength(3);
+    expect(dates[0]).toMatchObject({ year: 2026, month: 8, day: 3 });
+  });
+
+  it("reaches the window for a weekly series from a decade ago", () => {
+    const dates = expandRrule({
+      start: { year: 2015, month: 6, day: 1, hour: 8, minute: 0, second: 0 },
+      rule: parseRrule("FREQ=WEEKLY;BYDAY=MO"),
+      windowStart: { year: 2026, month: 8, day: 1, hour: 0, minute: 0, second: 0 },
+      windowEnd: { year: 2026, month: 8, day: 31, hour: 23, minute: 59, second: 59 },
+      limit: 100,
+    });
+    expect(dates.length).toBeGreaterThanOrEqual(4);
   });
 });

@@ -272,12 +272,37 @@ export function expandRrule(options: ExpandOptions): Civil[] {
   // An unsupported or absent FREQ means there is nothing to walk forward.
   if (!rule.freq) return results;
 
-  // Enough periods to cross the window under any sane INTERVAL, with room to
-  // spare, so a rule whose early periods contribute nothing still reaches the
-  // window. Also the backstop against a rule that never terminates.
-  const maxPeriods = 2000;
+  /*
+   * A backstop against a rule that never terminates — nothing more.
+   *
+   * The walk normally ends on its own: it breaks as soon as a period starts
+   * past the window, and `INTERVAL` is forced to at least 1 so the cursor
+   * always advances. This only catches the pathological case.
+   *
+   * It has to be generous, because the walk begins at DTSTART and a long-lived
+   * series has to be stepped through to reach the window. At 2000 a daily
+   * event started more than five and a half years ago would run out of periods
+   * before arriving, and — like the period-0 bug above — would simply not
+   * appear, with nothing logged. 20,000 covers a daily series running since
+   * the 1970s, and costs nothing on a feed that terminates normally.
+   */
+  const maxPeriods = 20_000;
 
-  let period = 1;
+  /*
+   * Period 0 is DTSTART's *own* week, month or year, and it is not optional.
+   *
+   * A rule can name several days per period — "every Mon, Tue, Wed, Thu",
+   * "the 1st and the 15th" — and the ones falling after DTSTART within its own
+   * period are genuine occurrences. Starting the walk at period 1 skips them:
+   * a babysitting series beginning Monday with BYDAY=MO,TU,WE,TH emitted
+   * Monday and then jumped a week, silently losing that Tuesday, Wednesday and
+   * Thursday. Nothing errored — three real events simply were not there.
+   *
+   * Re-emitting DTSTART is not a risk: it was emitted above, and the
+   * `candidateMs <= startMs` guard below drops it along with anything else in
+   * the period that precedes it.
+   */
+  let period = 0;
   while (period <= maxPeriods) {
     if (rule.count !== null && emitted >= rule.count) break;
     if (results.length >= limit) break;

@@ -129,6 +129,18 @@ Not supported, because Google's own UI cannot create them: `SECONDLY`,
 `BYSECOND`. An unsupported `FREQ` yields the first occurrence only — a visible
 gap rather than a wrong answer.
 
+**Expansion starts at `DTSTART`'s own period, not the next one.** This is
+worth stating because getting it wrong is invisible. A rule naming several days
+per period — `FREQ=WEEKLY;BYDAY=MO,TU,WE,TH` — has genuine occurrences in the
+same week it begins. Skipping that period drops them with nothing logged and no
+error: the events are simply not there. Four tests cover it (week, month, year,
+and that `DTSTART` is still not emitted twice).
+
+The period walk also begins at `DTSTART` and steps forward to reach the window,
+so the safety cap has to be generous enough for a long-running series to arrive.
+At 20,000 a daily event started in the 1970s still gets here; too low a cap
+fails the same silent way.
+
 Two behaviours that look like bugs and are not:
 
 - **`DTSTART` is always an occurrence**, even when it does not match the rule.
