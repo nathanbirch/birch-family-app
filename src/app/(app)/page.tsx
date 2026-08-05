@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { NavIcon } from "@/components/nav/NavIcon";
 import { CalendarCardBadge } from "@/components/dashboard/CalendarCardBadge";
+import { MottoBanner } from "@/components/motto/MottoBanner";
 import { SeatingCardBadge } from "@/components/dashboard/SeatingCardBadge";
 import { APP_NAME } from "@/config/app";
 import { DASHBOARD_ITEMS, PLANNED_FEATURES } from "@/config/navigation";
@@ -44,7 +45,15 @@ export default async function DashboardPage() {
         </h1>
       </header>
 
-      <section aria-labelledby="pages-heading">
+      {/*
+        Above the page cards, and the only filled panel on the screen. The
+        motto is what the family is working on this week; it should be read
+        before anybody decides where they are going next, so it sits between
+        the greeting and the navigation rather than below either.
+      */}
+      <MottoBanner initialDateIso={initialDateIso} />
+
+      <section aria-labelledby="pages-heading" className="mt-8">
         <h2 id="pages-heading" className="sr-only">
           Pages
         </h2>
