@@ -120,6 +120,29 @@ transform**: it contains the theme picker, whose mobile bottom sheet is
 `position: fixed`, and any transformed ancestor would become that sheet's
 containing block and pin it to the header instead of the viewport.
 
+## The one thing that loops
+
+The line at the top of this page — nothing loops, nothing moves once the
+arrival settles — held until the weekly report arrived. It is a page whose
+whole purpose is a sequence of reveals, so it does move, and it moves for as
+long as somebody is watching it: slides turning every eight seconds, a total
+counting itself up, and confetti at the end.
+
+That is not a rule being broken so much as a different kind of page. It is
+reached deliberately, once a week, and everything on it is the content rather
+than decoration around the content. The rules it *does* keep are the ones that
+matter: everything is `transform`/`opacity` so it stays on the compositor, and
+under reduced motion every reveal is simply already there.
+
+The mechanism is worth knowing before touching it. Each element on a slide
+carries a `--reveal-delay` and a `both`-filled animation, so it is invisible
+*until* its delay elapses — which is why `globals.css` switches those classes
+off explicitly under `prefers-reduced-motion` rather than relying on the global
+duration override. That override touches `animation-duration` and not
+`animation-delay`, so without the explicit rule a slide would sit blank for its
+whole choreography and then snap into existence. See [the weekly
+report](report.md#reduced-motion).
+
 ## Reduced motion
 
 Under `prefers-reduced-motion: reduce`, every animation and transition above is

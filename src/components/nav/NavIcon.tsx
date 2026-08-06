@@ -150,9 +150,27 @@ function HealthIcon({ className }: IconProps) {
   );
 }
 
+/**
+ * A lightbulb — the Bored Page.
+ *
+ * The obvious drawing is a bored face, and it is the wrong one: the card is
+ * offering an idea, not sympathy, and a glum face on the dashboard is a small
+ * daily suggestion that being bored is a state to sit in. A bulb is what the
+ * page actually hands over.
+ */
+function BoredIcon({ className }: IconProps) {
+  return (
+    <svg {...SHARED} className={className} aria-hidden="true">
+      <path d="M12 3.2a6.3 6.3 0 0 0-3.6 11.5c.6.4.9 1 .9 1.7v.4h5.4v-.4c0-.7.3-1.3.9-1.7A6.3 6.3 0 0 0 12 3.2Z" />
+      <path d="M9.7 19.2h4.6M10.4 21.4h3.2" />
+    </svg>
+  );
+}
+
 const ICONS = {
   seats: SeatsIcon,
   health: HealthIcon,
+  bored: BoredIcon,
   home: HomeIcon,
   account: AccountIcon,
   report: ReportIcon,

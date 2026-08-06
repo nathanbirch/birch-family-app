@@ -82,6 +82,87 @@ export const getWeekMarks = cache(
 );
 
 /**
+ * Several weeks at once, keyed by `weekStart` — what the report list needs.
+ *
+ * The list shows ten finished weeks with a total against each, which is ten
+ * calls to `getWeekMarks` and ten round trips, on a page where every one of
+ * them is on the critical path. This is the same read with `$in` instead:
+ * fifty small documents, one trip.
+ *
+ * Not `cache()`d, because the argument is an array and `cache()` keys on
+ * identity — two callers asking for the same ten weeks would miss each other
+ * anyway. The page asks once.
+ *
+ * Every requested week comes back, in the same forgiving shape as
+ * `getWeekMarks`: a week nobody ticked is a blank week rather than a missing
+ * key, so the caller never has to check.
+ */
+export async function getMarksForWeeks(
+  weekStarts: readonly string[],
+): Promise<Record<string, WeekMarks>> {
+  const weeks: Record<string, WeekMarks> = {};
+  for (const weekStart of weekStarts) weeks[weekStart] = blankWeek();
+  if (weekStarts.length === 0) return weeks;
+
+  let documents: StarWeekDocument[];
+  try {
+    const collection = await starWeeks();
+    documents = await collection
+      .find({ weekStart: { $in: [...weekStarts] } })
+      .toArray();
+  } catch (error) {
+    reportDegraded("stars");
+    console.warn(
+      `[stars] Could not read marks for ${weekStarts.length} week(s): ` +
+        `${describe(error)}. Showing empty reports.`,
+    );
+    return weeks;
+  }
+
+  for (const document of documents) {
+    if (!isChildId(document.childId)) continue;
+    const week = weeks[document.weekStart];
+    if (!week) continue;
+    week[document.childId] = normaliseMarks(document.marks);
+  }
+  return weeks;
+}
+
+/**
+ * Every week anybody has ever ticked a star in, newest first.
+ *
+ * `distinct` rather than an aggregation with `$skip`/`$limit`, because the
+ * answer is small and stays small: one string per week the family has used the
+ * app, so 52 a year and about 500 bytes. Paging that in the database would be
+ * a round trip per page to save nothing at all, and the page needs the total
+ * count anyway to draw the pager.
+ *
+ * If this ever stops being true — a decade in, or if weeks start being stored
+ * per child per day — the change is a `$group`/`$sort`/`$facet` pipeline here
+ * and nowhere else.
+ */
+export const listStarWeekStarts = cache(async (): Promise<string[]> => {
+  try {
+    const collection = await starWeeks();
+    const weeks = await collection.distinct("weekStart");
+    return weeks
+      .filter((week): week is string => typeof week === "string")
+      .sort()
+      .reverse();
+  } catch (error) {
+    // The caller still shows the latest finished week — see
+    // `reportableWeeks()` — so an unreachable database costs the *history*,
+    // not the page.
+    reportDegraded("stars");
+    console.warn(
+      `[stars] Could not list the weeks with stars in them: ` +
+        `${describe(error)}. Showing only the latest report.`,
+    );
+    return [];
+  }
+});
+
+/**
  * Tick or untick one star.
  *
  * ---------------------------------------------------------------------------

@@ -104,6 +104,22 @@ nothing to go stale, and two phones always agree.
 
 ---
 
+## A weekly report is derived too, and it ends on a number nobody earned
+
+There is no `reports` collection. A report is the week's `starWeeks` documents
+counted through the same functions the live chart counts with, so it cannot
+drift from the charts, a star corrected on Saturday is in Sunday's report, and
+there is nothing to publish on a Monday morning.
+
+The other half of the decision is editorial rather than technical. The ceremony
+runs youngest first and finishes on the **family's** total. Five slides of
+individual numbers is five children being ranked whether or not anybody says
+so — the eldest has the most rows on her chart and the four-year-old cannot
+win. The family total is the only number on the page that goes up when somebody
+else does well. See [the weekly report](report.md).
+
+---
+
 ## The schedule is a Latin square, not a rotation
 
 A clockwise shift satisfies the coverage rule but moves the whole group

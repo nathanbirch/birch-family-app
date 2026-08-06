@@ -12,16 +12,26 @@
 export function SoundToggle({
   on,
   onChange,
+  labels = { on: "Turn the cheering off", off: "Turn the cheering on" },
 }: {
   on: boolean;
   onChange: (next: boolean) => void;
+  /**
+   * What the switch says it will do, in each state.
+   *
+   * The same button and the same stored preference silence the ceremony music
+   * on the weekly report, where "turn the cheering off" would be describing
+   * the wrong sound. It is one preference on purpose — a family that has
+   * turned this phone's noises off has turned them off.
+   */
+  labels?: { on: string; off: string };
 }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
-      aria-label={on ? "Turn the cheering off" : "Turn the cheering on"}
+      aria-label={on ? labels.on : labels.off}
       onClick={() => onChange(!on)}
       className="themed-transition flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform active:scale-90"
       style={{

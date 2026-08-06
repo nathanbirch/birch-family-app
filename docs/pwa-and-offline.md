@@ -56,6 +56,14 @@ runtime on first visit.
 Nothing else is needed offline: the family, the seats, the schedule and all ten
 themes are compiled into the app, and the fonts are a system stack.
 
+Two sounds, and only one of them is precached. The star charts' 20KB cheer is,
+because confetti falls whatever the connection is doing and silence would be
+the only part of that celebration that needed a signal. The weekly report's
+300KB fanfare is **not**: it is fifteen times the size, for one page that is
+opened once a week, and nobody opens the weekly report in a driveway. It is
+cached on first play like any other same-origin asset, so the second viewing is
+offline anyway.
+
 ### Content-addressed things are cache-first
 
 Two kinds of URL can never mean two different things, so both are served from

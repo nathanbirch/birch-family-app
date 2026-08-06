@@ -28,6 +28,20 @@
  * The proxy's *instant* is meaningless and must never be formatted, compared
  * against `Date.now()`, or serialised. `generatedAt` in the response comes
  * from `toOffsetIso()` below, which is built from the real instant.
+ *
+ * ---------------------------------------------------------------------------
+ * IT IS NO LONGER ONLY THE API'S
+ * ---------------------------------------------------------------------------
+ * The weekly report's two pages use it as well, for exactly the same reason:
+ * they decide on the *server* which week has finished, and from Sunday teatime
+ * onwards a UTC clock would already have published a report for a week that,
+ * in Rexburg, has not ended. Any page that has to make a calendar decision
+ * without a browser belongs here rather than reaching for `new Date()`.
+ *
+ * That makes the name slightly wrong — this is the family's clock and not the
+ * family API's — and it stays put anyway, because moving it would touch every
+ * import in the API for a filename. If a third caller turns up, move it to
+ * `lib/family-time.ts` and leave a re-export behind.
  */
 
 import { zoneOffsetMs } from "@/lib/calendar/civil";

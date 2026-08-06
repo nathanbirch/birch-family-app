@@ -256,9 +256,24 @@ element cuts the first cheer off mid-clap. A decoded buffer can be started as
 often as you like, overlapping.
 
 Every failure in [`cheer.ts`](../src/lib/stars/cheer.ts) is silent — no Web
-Audio, a phone on silent, an autoplay policy that refuses. The star is already
-ticked and the confetti is already falling; the sound is the part that is
-allowed to just not happen.
+Audio, an autoplay policy that refuses, a file that will not decode. The star
+is already ticked and the confetti is already falling; the sound is the part
+that is allowed to just not happen.
+
+**The iPhone silent switch.** For a while the cheer did not work on any iPhone,
+and looked from the code like it was never running: iOS puts Web Audio on the
+`ambient` audio session, `ambient` is precisely what the hardware ring/silent
+switch mutes, and most phones sit on silent most of the time. Everything ran,
+decoded and started correctly and made no sound. `cheer.ts` now claims the
+`playback` session — the category native apps use, which the switch does not
+mute — through Safari's [Audio Session
+API](https://w3c.github.io/audio-session/), feature-detected because no other
+browser has it. The cost is that `playback` pauses other audio, so finishing a
+column stops music playing on the same phone. `transient` would not, and is the
+better description of a cheer, but `playback` is the value with a track record
+of actually clearing the switch. It is a one-word change in `cheer.ts` if the
+music stopping proves the bigger annoyance — test it with the switch flicked to
+silent, which is the only way to tell.
 
 The speaker button in the header turns it off, per device and remembered in
 `localStorage` — the phone on the kitchen counter should cheer, the one in a
@@ -299,11 +314,19 @@ To add a task:
    `choreRotations` document.
 3. Update the counts in `tests/stars-config.test.ts`.
 
+## What the week adds up to
+
+Every finished week is read back as an award ceremony at `/report` — a slide
+per child, their charts one at a time, their total, and a nickel a star. It
+stores nothing of its own: it is these same `starWeeks` documents counted
+through [`counting.ts`](../src/lib/stars/counting.ts), so a star corrected on
+Saturday morning is in Sunday's report. See [the weekly report](report.md).
+
 ## Still to come
 
 - **Editing from the app** — a parent renaming a chore, or moving one to a
   different child for the rest of the rotation, stored as an override on top of
   the compiled label and the computed owner.
-- **The weekly report** — Friday's celebration: a slide per child,
-  how many stars they earned and which charts they were perfect on.
-  [`counting.ts`](../src/lib/stars/counting.ts) already computes what it needs.
+- **Rewards** — what the money in the report has actually been paid out
+  against. The report says what a week was *worth*; nothing yet records what
+  changed hands.

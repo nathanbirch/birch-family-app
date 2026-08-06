@@ -22,6 +22,12 @@ src/app/
     ├── health/page.tsx     /health    the five healthy lists, as cards
     ├── health/[section]/   /health/…  one list, in full
     │   └── page.tsx
+    ├── bored/page.tsx      /bored     inside, outside, or earn some money
+    ├── bored/[category]/   /bored/…   one category's ideas, as a grid
+    │   └── page.tsx
+    ├── report/page.tsx     /report    the weekly reports, newest first
+    ├── report/[week]/      /report/…  one week's award ceremony
+    │   └── page.tsx
     ├── calendar/page.tsx   /calendar  the family Google Calendar
     └── account/page.tsx    /account   theme, sign out, app info
 ```
@@ -56,7 +62,10 @@ monthly chore rotation and the ticked stars. The chores follow the pets'
 pattern exactly: the *maths* is derived from an anchor plus elapsed months, and
 only the anchor is stored, so no row per month exists anywhere. The stars
 themselves are the app's first genuinely accumulating data — see
-[Star charts](stars.md). The
+[Star charts](stars.md). The weekly report is then *derived from stored data*:
+it adds no collection of its own and is `starWeeks` read back through the same
+counting the chart uses, which is why it can never disagree with it — see
+[Weekly report](report.md). The
 pets are the one thing on the seating page that is *not* derived, and that was
 a deliberate choice rather than an oversight: re-anchoring "who has Bella
 tonight" is something the family may want to do at 9pm, and a deploy is a poor

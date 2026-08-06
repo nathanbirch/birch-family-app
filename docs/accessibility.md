@@ -49,6 +49,20 @@ Under `prefers-reduced-motion: reduce`, all of it is switched off: the arrival,
 the swap glide and arc, the card entrances, and the theme transition. People
 are simply in their seats already.
 
+The weekly report is the exception to "nothing loops" — it is a ceremony, and
+it runs. Under reduced motion every reveal on it is present from the start,
+the totals are simply their numbers, and the confetti does not fall. Because
+those reveals are *delayed* animations, they are switched off explicitly rather
+than through the global duration override; see
+[the weekly report](report.md#reduced-motion).
+
+The ceremony also turns its slides over on a timer. It can be dragged, tabbed
+and arrow-keyed at any point, every award is reachable from the rail, and the
+slide on stage is announced in a `role="status"` line — so nothing there is
+only available to somebody who can watch it happen. Slides that are off stage
+are `aria-hidden` **and** `inert`, so the tab order never leaves the stage for
+a card nobody can see.
+
 ## Structure
 
 - One `<h1>` (the app name), `<h2>` per card, `<h3>` inside the descriptions.

@@ -22,12 +22,14 @@ Start here if you are picking it up cold:
 | [Calendar](calendar.md) | Connecting the Google Calendar, and how the iCalendar reading works. |
 | [Rotation](rotation.md) | The start date, the five-week schedule, why it isn't a simple rotation, and the fairness numbers. |
 | [Star charts](stars.md) | The three charts off the fridge, the monthly chore rotation, and how a star is stored. |
+| [Weekly report](report.md) | Monday's award ceremony: how a week is counted, what a star is worth, and the fanfare. |
 | [Pets](pets.md) | Bella and Leia, the nightly rotation in the database, and why nobody ever gets both. |
 | [Themes](themes.md) | All ten themes, the token system, persistence, and the no-flash script. |
 | [Animation](animation.md) | The three-second arrival choreography and the parent-swap glide. |
 | [PWA and offline](pwa-and-offline.md) | Installing on each platform, the service worker, icons. |
 | [Accessibility](accessibility.md) | What's been done and what it guarantees. |
 | [Testing](testing.md) | What each test file covers, how to run them, current coverage. |
+| [The Bored Page](bored.md) | Three pictures for a bored child, and what a Dad Buck is worth. |
 | [Maintenance](maintenance.md) | Recipes for common changes, plus troubleshooting. |
 | [Family-context API](family-api/README.md) | The read-only endpoint the private Birch Family Custom GPT calls, and everything that guards it. |
 

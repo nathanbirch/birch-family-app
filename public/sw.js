@@ -56,7 +56,22 @@
  * rather than the first time a child happens to finish a column while the
  * phone is offline.
  */
-const CACHE_VERSION = "v8";
+/*
+ * v9: the weekly report arrived, as a card on the dashboard. Required for the
+ * same reason as v5-v7, one level down: a device with a cached dashboard would
+ * keep painting a "Coming soon: Weekly Report" tile over a page that now
+ * exists, and navigations are network-first but the *cached* copy is what an
+ * offline phone gets.
+ *
+ * The ceremony music is deliberately NOT in the precache below. It is 300KB —
+ * fifteen times the cheer — and it is wanted on one page, once a week, that
+ * nobody opens in a driveway. The service worker caches it on first play like
+ * any other same-origin asset, so the second viewing is offline anyway. That
+ * is the right trade: the cheer is precached because silence would be the only
+ * part of the celebration that needed a signal; the report simply does not
+ * open offline before it has ever been opened online.
+ */
+const CACHE_VERSION = "v9";
 const CACHE_NAME = `birch-family-app-${CACHE_VERSION}`;
 const APP_SHELL = "/";
 

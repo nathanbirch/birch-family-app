@@ -20,6 +20,7 @@
     "avatars:generate": "node scripts/optimise-avatars.mjs",
     "pets:generate": "node scripts/optimise-pets.mjs",
     "sound:generate": "node scripts/generate-cheer.mjs",
+    "music:generate": "node scripts/generate-fanfare.mjs",
     "api:openapi": "tsx scripts/generate-openapi.ts",
     "api:key": "node -e \"console.log(require('crypto').randomBytes(32).toString('base64url'))\"",
     "api:probe": "node scripts/family-api-probe.mjs"

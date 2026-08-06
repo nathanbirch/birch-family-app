@@ -1,4 +1,10 @@
 import { CHEER_SOUND } from "@/config/sound-manifest";
+import {
+  getAudioContext,
+  loadSample,
+  primeSample,
+  resetAudioForTests,
+} from "@/lib/audio";
 
 /**
  * Playing the celebration sound.
@@ -15,71 +21,37 @@ import { CHEER_SOUND } from "@/config/sound-manifest";
  * It also gives a real gain node, which is what lets a card's celebration be
  * quieter than the whole day's without shipping two files.
  *
- * ---------------------------------------------------------------------------
- * EVERY FAILURE HERE IS SILENT, ON PURPOSE
- * ---------------------------------------------------------------------------
- * A browser with no Web Audio, a phone on silent, an autoplay policy that
- * refuses, a file that will not decode — none of these are worth a message on
- * a child's chart. The star is already ticked and the confetti is already
- * falling; the sound is the one part of this that is allowed to just not
- * happen.
+ * The context, the iOS session workaround and the decoded buffer all live in
+ * `lib/audio.ts`, shared with the report's fanfare — see the note at the top
+ * of that file for why there is only one context. What is left here is the
+ * cheer itself.
+ *
+ * Every failure is silent, on purpose. The star is already ticked and the
+ * confetti is already falling; the sound is the one part of this that is
+ * allowed to just not happen.
  */
-
-let context: AudioContext | null = null;
-let buffer: Promise<AudioBuffer | null> | null = null;
-
-type AudioContextConstructor = new () => AudioContext;
-
-function getContext(): AudioContext | null {
-  if (typeof window === "undefined") return null;
-
-  const Ctor: AudioContextConstructor | undefined =
-    window.AudioContext ??
-    (window as unknown as { webkitAudioContext?: AudioContextConstructor })
-      .webkitAudioContext;
-  if (!Ctor) return null;
-
-  try {
-    context ??= new Ctor();
-  } catch {
-    return null;
-  }
-  return context;
-}
-
-function getBuffer(ctx: AudioContext): Promise<AudioBuffer | null> {
-  buffer ??= fetch(CHEER_SOUND)
-    .then((response) => response.arrayBuffer())
-    .then((bytes) => ctx.decodeAudioData(bytes))
-    .catch(() => null);
-  return buffer;
-}
 
 /**
  * Fetch and decode ahead of time, from inside a user gesture.
  *
- * Called on *every* star tap rather than only on the ones that celebrate. Two
- * reasons: the first tap of a session warms the file long before any column is
- * finished, so the cheer lands on the same frame as the confetti rather than a
- * beat behind it — and iOS only lets an AudioContext leave the `suspended`
- * state inside a gesture, so this is also where that happens.
+ * Called on *every* star tap rather than only on the ones that celebrate: the
+ * first tap of a session warms the file long before any column is finished, so
+ * the cheer lands on the same frame as the confetti rather than a beat behind
+ * it.
  */
 export function primeCheer(): void {
-  const ctx = getContext();
-  if (!ctx) return;
-  if (ctx.state === "suspended") void ctx.resume().catch(() => {});
-  void getBuffer(ctx);
+  primeSample(CHEER_SOUND);
 }
 
 /** Play it. `volume` is 0-1; a card's celebration is quieter than the day's. */
 export function playCheer(volume: number): void {
-  const ctx = getContext();
+  const ctx = getAudioContext();
   if (!ctx) return;
 
   void (async () => {
     try {
       if (ctx.state === "suspended") await ctx.resume();
-      const decoded = await getBuffer(ctx);
+      const decoded = await loadSample(ctx, CHEER_SOUND);
       if (!decoded) return;
 
       const source = ctx.createBufferSource();
@@ -98,6 +70,5 @@ export function playCheer(volume: number): void {
 
 /** Test seam: forget the context and the decoded buffer. */
 export function resetCheerForTests(): void {
-  context = null;
-  buffer = null;
+  resetAudioForTests();
 }

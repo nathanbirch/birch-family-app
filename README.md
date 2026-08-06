@@ -87,6 +87,11 @@ npm start          # serve the production build locally
   tappable. The chores rotate between the children on the first of every month,
   inside age-appropriate pools, from an anchor stored in the database. See
   [Star charts](docs/stars.md).
+- **Bored?** (`/bored`) — what to do when there is nothing to do. Three
+  pictures — Inside, Outside, Money — then a grid of pictures behind each.
+  Almost wordless on purpose: the child most likely to be bored is the one
+  least able to read their way out of it. The Money list prices jobs in **Dad
+  Bucks** (`Đ`). See [The Bored Page](docs/bored.md).
 - **Account** (`/account`) — who's signed in, the theme picker, sign out.
 - **Bottom tab bar** — Turns · Stars · Home · Calendar · Account. Mantras and
   Healthy are reached from the dashboard: the bar holds five, and a sixth tab
@@ -132,6 +137,7 @@ Everything lives in **[`docs/`](docs/README.md)**:
 | [Accessibility](docs/accessibility.md) | What's been done and what it guarantees. |
 | [Testing](docs/testing.md) | What each test file covers, and current coverage. |
 | [Maintenance](docs/maintenance.md) | Recipes for common changes, plus troubleshooting. |
+| [The Bored Page](docs/bored.md) | Three pictures for a bored child, and the Dad Bucks price list. |
 | [Decisions](docs/decisions.md) | The non-obvious calls and why. |
 | [Family-context API](docs/family-api/README.md) | The read-only endpoint the private Birch Family Custom GPT calls. Off by default. |
 
@@ -154,6 +160,7 @@ Almost everything you would want to adjust is data, not code, and lives in
 | Who has which pet tonight | the `petRotations` collection — see [Pets](docs/pets.md#re-anchoring) |
 | The family mantras and their quotes | `mantras.ts` |
 | The five healthy lists off the wall | `health.ts` |
+| Things to do when bored, and Dad Bucks prices | `bored.ts` |
 | Seat positions, parent defaults, animation timing | `seating.ts` |
 | The ten themes | `themes.ts` |
 

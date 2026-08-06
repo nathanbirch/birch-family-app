@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **793 tests across 41 files.**
+Vitest with jsdom and Testing Library. **1,129 tests across 55 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -20,13 +20,20 @@ can run under both.
 
 | | |
 |---|---|
-| Statements | 93.8% |
-| Branches | 83.2% |
-| Functions | 96.4% |
-| Lines | 95.6% |
+| Statements | 88.7% |
+| Branches | 79.8% |
+| Functions | 91.8% |
+| Lines | 90.5% |
 
-The star charts, the newest and most-used feature, sit at **98%** of statements
-and 100% of functions across `lib/stars` and `components/stars`.
+The star charts sit at **98%** of statements and 100% of functions across
+`lib/stars` and `components/stars`; the weekly report is at 94% across
+`components/report`, with `lib/stars/report.ts` — the arithmetic every slide is
+built from — at 100%.
+
+The aggregate is dragged down by files that are deliberately not unit-tested:
+`proxy.ts` and the two API route handlers are thin wiring over modules that are
+covered thoroughly, and they are exercised against a real server instead (see
+the bottom of this page).
 
 What is *not* covered, and why:
 
@@ -227,6 +234,60 @@ The cheer, against a fake Web Audio stack.
   fetch, an undecodable file, or an autoplay policy that refuses `resume()`
 - The preference defaults to on, only the exact string `"off"` silences it, and
   storage that throws changes neither
+
+### `stars-report.test.ts` — 21 tests
+The weekly report's arithmetic, which stores nothing and therefore has to be
+right every time it is recomputed.
+
+- The ceremony runs youngest first, and every child gets exactly one slide
+- A chart is only "perfect" when every star on it was earned, and an empty
+  chart never is
+- **The report offers exactly the stars the live chart offers** — a report that
+  inflated the denominator would quietly turn a perfect week into 90%
+- **A week that has not finished is not reportable**, nor is one in October;
+  the latest one holds for seven days and then steps once, at midnight on a
+  Monday
+- The latest week is listed even when nobody ticked a star in it, because
+  "nobody earned anything" is a true report rather than a missing one
+- Money is counted in cents and never prints a floating-point tail
+- The praise on a thin week is neither a lie nor a telling off
+
+### `report-store.test.ts` — 9 tests *(Node environment)*
+The two reads the report adds to `starWeeks`, with MongoDB mocked.
+
+- Eleven weeks are one `$in` query, not eleven round trips
+- Every requested week comes back, so a week nobody ticked is a blank week
+  rather than a missing key
+- A document for a week nobody asked about is ignored
+- An unreachable database costs the *history*, not the page
+
+### `report-ceremony.test.tsx` — 17 tests
+The award ceremony driving itself, and being driven.
+
+- It waits on the title card and does not turn over until it has been started
+- A child's slide holds for its whole choreography plus five seconds, then
+  moves on — and the finale **stops** rather than looping, because a loop would
+  take the ending away
+- Dragging turns the slide past a fifth of the width, snaps back below it, and
+  **leaves a vertical scroll alone**, which is what stops this being the one
+  page in the app that cannot be scrolled
+- A swipe starts the slides but never the music; only a button does that
+- A device that has turned the sound off still gets the ceremony
+- Leaving the page takes the music with it — otherwise the fanfare plays on
+  over the star charts
+- Off-stage slides are `aria-hidden` and `inert`
+
+### `report-music.test.ts` — 12 tests
+The fanfare, against a fake Web Audio stack. Everything here is about a *long*
+sound, which fails differently from a short one.
+
+- It loops, fades in, and fades out before stopping the source — cutting a
+  sustained note dead is an audible click
+- Starting it while it is playing is a no-op, so a slide turning cannot stack a
+  second copy on top of the first
+- **A stop that overtakes a start** — tap Start, leave immediately — does not
+  leave an orphaned source playing to nobody
+- One AudioContext, shared with the cheer
 
 ### `stars-accessibility.test.tsx` — 40 tests
 Accessibility, kid-proofing and responsiveness, which are the same subject when
@@ -588,6 +649,21 @@ worth knowing about from here, because they are unusual:
   `config/stars.ts` passes through unchanged. The second half is the one that
   matters — a sanitiser that quietly mangles "Feed Bella" is a bug nobody finds
   for months.
+
+### `bored.test.tsx` — 61 tests
+The Bored Page, where the interesting risk is not a crash but **a picture that
+never arrives**. `BoredArt` returns null for an unknown id rather than throwing
+— the right runtime behaviour, since a gap on a page beats a blank page on the
+one page a child opens when they are already fed up — which means a typo'd id
+would ship silently as an empty square with a word under it. On the page whose
+whole premise is that the word is optional.
+
+So the suite walks every idea in the config and asserts a drawing exists, and
+walks every drawing and asserts an idea still uses it. It also pins the page's
+one design rule — every label four words or fewer, every category title one
+word — which is what cut "Do a load of laundry" down to "Do a load". Plus the
+Dad Bucks contract: cheapest first, no gap wider than two, and the five prices
+the family had already set.
 
 ## Conventions
 

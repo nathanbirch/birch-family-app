@@ -340,6 +340,160 @@ body,
   animation: celebrate-pulse 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+/* ---------------------------------------------------------------- */
+/* The award ceremony                                                */
+/* ---------------------------------------------------------------- */
+
+/*
+ * The weekly report is a sequence of reveals rather than a page that appears,
+ * so nearly everything on a slide is one of these three, staggered by a
+ * `--reveal-delay` set inline per element.
+ *
+ * They are `both`-filled, which means an element is invisible *until* its
+ * delay elapses — that is the whole mechanism, and it is also why the
+ * reduced-motion block below has to switch them off explicitly rather than
+ * relying on the global duration override. A 1.8s delay with a 0.001ms
+ * duration is still 1.8 seconds of nothing.
+ */
+@keyframes reveal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/*
+ * The three chart lines come in from alternating sides, which is what makes a
+ * list of three numbers feel like a scoreboard being filled in rather than a
+ * paragraph loading.
+ */
+@keyframes reveal-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes reveal-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* The grand total, landing hard. */
+@keyframes reveal-punch {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) rotate(-6deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.14) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+.reveal-rise,
+.reveal-left,
+.reveal-right,
+.reveal-punch {
+  animation-delay: var(--reveal-delay, 0ms);
+  animation-fill-mode: both;
+}
+
+.reveal-rise {
+  animation-name: reveal-rise;
+  animation-duration: 520ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-left {
+  animation-name: reveal-slide-left;
+  animation-duration: 560ms;
+  animation-timing-function: cubic-bezier(0.18, 1.1, 0.4, 1);
+}
+
+.reveal-right {
+  animation-name: reveal-slide-right;
+  animation-duration: 560ms;
+  animation-timing-function: cubic-bezier(0.18, 1.1, 0.4, 1);
+}
+
+.reveal-punch {
+  animation-name: reveal-punch;
+  animation-duration: 680ms;
+  animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/*
+ * The bar under the rail, showing how long is left on this slide. Its duration
+ * is set inline from the same constant that drives the auto-advance timer, so
+ * the bar arrives at the end exactly as the slide turns.
+ */
+@keyframes rail-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.rail-progress {
+  transform-origin: left center;
+  animation-name: rail-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+/* A slow, wide sweep across the money badge. Gold should look like gold. */
+@keyframes coin-shine {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  55%,
+  100% {
+    transform: translateX(320%) skewX(-18deg);
+  }
+}
+
+.coin-shine {
+  animation: coin-shine 2600ms ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * Every reveal is simply already there. This has to be spelled out — see the
+   * note above `reveal-rise`: the global duration override does not touch
+   * `animation-delay`, so without this a slide would sit blank for its whole
+   * choreography and then snap into existence.
+   */
+  .reveal-rise,
+  .reveal-left,
+  .reveal-right,
+  .reveal-punch,
+  .rail-progress,
+  .coin-shine {
+    animation: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html,
   body,

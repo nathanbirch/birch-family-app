@@ -55,7 +55,9 @@ export type NavIconName =
   | "calendar"
   | "account"
   | "health"
-  | "stars";
+  | "bored"
+  | "stars"
+  | "report";
 
 /**
  * The live pages.
@@ -78,6 +80,42 @@ export type NavIconName =
  *
  * If a seventh page ever needs a home, that is the point to build the "More"
  * sheet rather than pushing a third page onto the dashboard alone.
+ *
+ * ---------------------------------------------------------------------------
+ * THAT POINT HAS NOW ARRIVED, AND THE SHEET STILL IS NOT BUILT
+ * ---------------------------------------------------------------------------
+ * Bored is the third dashboard-only page, which is exactly the threshold the
+ * paragraph above names. It shipped without the sheet anyway, deliberately, and
+ * the reasoning is worth writing down rather than leaving as an oversight:
+ *
+ * The dashboard is not a consolation prize for Bored — it is the better home
+ * for it. The bar is for the pages you open with an intention already formed
+ * ("where do I sit", "what's on today"). A bored child has no intention; they
+ * have opened the app precisely because they do not know what they want. The
+ * home screen is where they land, so the card is already in front of them
+ * without a tap, and a "More" sheet would put it one tap *further* away than
+ * it is now.
+ *
+ * So the rule stands and the count is real — three is where a "More" sheet
+ * becomes the right answer. The next page to need a home is the one that
+ * should build it, and by then there will be four candidates to put in it
+ * rather than three, which makes the sheet easier to justify and better to
+ * design. See docs/bored.md.
+ *
+ * ---------------------------------------------------------------------------
+ * THE FOURTH ONE HAS NOW ARRIVED TOO, AND STILL NO SHEET
+ * ---------------------------------------------------------------------------
+ * Weekly Report is the fourth dashboard-only page. It has the profile the
+ * paragraph above describes for a sheet — but it also has a shape none of the
+ * others do: it is looked at *once a week*, on a Monday, and never twice. A
+ * tab (or a slot in a sheet) is for somewhere you go repeatedly; a card on the
+ * home screen is exactly right for somewhere you go when it is new, because
+ * the home screen is where you land and the card is already in front of you.
+ *
+ * The sheet is therefore still unbuilt, and this is now the second page in a
+ * row to have said so. That is worth reading as a warning: if a *fifth*
+ * dashboard-only page turns up and the reasoning has to be written a third
+ * time, the reasoning is wrong and the sheet is overdue.
  *
  * Account sits at the far right rather than beside Home. It is the one tab
  * nobody opens daily, so it takes the least reachable corner and Calendar —
@@ -136,6 +174,22 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: "health",
   },
   {
+    href: "/bored",
+    label: "Bored",
+    title: "Bored?",
+    description: "Inside, outside, or earn some Dad Bucks.",
+    slot: null,
+    icon: "bored",
+  },
+  {
+    href: "/report",
+    label: "Report",
+    title: "Weekly Report",
+    description: "Last week's award ceremony: every star, and what it was worth.",
+    slot: null,
+    icon: "report",
+  },
+  {
     href: "/account",
     label: "Account",
     title: "Account",
@@ -165,7 +219,12 @@ export type PlannedFeature = {
   icon: PlannedIconName;
 };
 
-export type PlannedIconName = "rewards" | "report";
+/*
+ * `report` used to live here. It moved to `NavIconName` when the weekly report
+ * stopped being a promise on the dashboard and became a page — the drawing did
+ * not change, only what it points at.
+ */
+export type PlannedIconName = "rewards";
 
 /**
  * Icons that belong to no page at all.
@@ -180,13 +239,8 @@ export type DecorativeIconName = "chores";
 
 export const PLANNED_FEATURES: readonly PlannedFeature[] = [
   {
-    title: "Weekly Report",
-    description: "Friday's celebration: confetti, and a slide for every child.",
-    icon: "report",
-  },
-  {
     title: "Rewards",
-    description: "What all those stars add up to.",
+    description: "What all those stars add up to, and what has been paid out.",
     icon: "rewards",
   },
 ] as const;

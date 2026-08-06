@@ -63,6 +63,28 @@ class FakeAudioContext {
   }
 }
 
+/**
+ * What a real `fetch` for the sound resolves to.
+ *
+ * `ok` is here rather than left off because the code now checks it, and a mock
+ * without it would make every test pass through the failure branch — which is
+ * the sort of green suite that proves nothing.
+ */
+function okResponse(): Response {
+  return {
+    ok: true,
+    status: 200,
+    arrayBuffer: async () => new ArrayBuffer(8),
+  } as unknown as Response;
+}
+
+/** Safari's Audio Session API, which no test environment has. */
+function installAudioSession(): { type: string } {
+  const session = { type: "auto" };
+  (navigator as unknown as { audioSession: unknown }).audioSession = session;
+  return session;
+}
+
 function installAudio(): typeof FakeAudioContext {
   FakeAudioContext.instances = [];
   (window as unknown as { AudioContext: unknown }).AudioContext =
@@ -88,10 +110,7 @@ beforeEach(() => {
   resetCheerForTests();
   resetSoundCache();
   window.localStorage.clear();
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async () => ({ arrayBuffer: async () => new ArrayBuffer(8) })),
-  );
+  vi.stubGlobal("fetch", vi.fn(async () => okResponse()));
 });
 
 afterEach(() => {
@@ -99,6 +118,7 @@ afterEach(() => {
   delete (window as unknown as { AudioContext?: unknown }).AudioContext;
   delete (window as unknown as { webkitAudioContext?: unknown })
     .webkitAudioContext;
+  delete (navigator as unknown as { audioSession?: unknown }).audioSession;
   resetCheerForTests();
 });
 
@@ -314,6 +334,47 @@ describe("playing the cheer", () => {
     expect(Audio.instances[0].createBufferSource).not.toHaveBeenCalled();
   });
 
+  it("stays silent when the server answers with something that is not the file", async () => {
+    // The failure this guards: `arrayBuffer()` on a 404 page resolves quite
+    // happily, so without the `ok` check the bytes of an HTML error reach the
+    // decoder.
+    const Audio = installAudio();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: false,
+        status: 404,
+        arrayBuffer: async () => new ArrayBuffer(512),
+      })),
+    );
+
+    playCheer(1);
+    await settle();
+
+    expect(Audio.instances[0].decodeAudioData).not.toHaveBeenCalled();
+    expect(Audio.instances[0].createBufferSource).not.toHaveBeenCalled();
+  });
+
+  it("tries again after a failure, so one bad moment is not the whole session", async () => {
+    const Audio = installAudio();
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValue(okResponse());
+    vi.stubGlobal("fetch", fetchMock);
+
+    playCheer(1);
+    await settle();
+    expect(Audio.instances[0].createBufferSource).not.toHaveBeenCalled();
+
+    // The next celebration, on a phone that has found the network again.
+    playCheer(1);
+    await settle();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(Audio.instances[0].lastSource.start).toHaveBeenCalled();
+  });
+
   it("stays silent when the file cannot be decoded", async () => {
     // A subclass rather than a patched prototype: the fake declares
     // `decodeAudioData` as an instance field, so a prototype assignment is
@@ -359,5 +420,72 @@ describe("playing the cheer", () => {
     await settle();
     // One source from the first play, none from the refused one.
     expect(context.createBufferSource).toHaveBeenCalledTimes(1);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* The iPhone silent switch                                            */
+/* ------------------------------------------------------------------ */
+
+describe("the audio session", () => {
+  /*
+   * The whole reason the cheer appeared not to work. iOS puts Web Audio on the
+   * `ambient` session by default, and `ambient` is the category the hardware
+   * ring/silent switch mutes — so every line below ran correctly and made no
+   * sound. See the note in `lib/stars/cheer.ts`.
+   */
+  it("claims playback, which is the category the silent switch does not mute", () => {
+    const session = installAudioSession();
+    installAudio();
+
+    primeCheer();
+
+    expect(session.type).toBe("playback");
+  });
+
+  it("claims it before the context is built, not after", () => {
+    const session = installAudioSession();
+    const seen: string[] = [];
+    class RecordingAudioContext extends FakeAudioContext {
+      constructor() {
+        super();
+        seen.push(session.type);
+      }
+    }
+    FakeAudioContext.instances = [];
+    (window as unknown as { AudioContext: unknown }).AudioContext =
+      RecordingAudioContext;
+
+    primeCheer();
+
+    expect(seen).toEqual(["playback"]);
+  });
+
+  it("plays anyway in a browser with no audio session at all", async () => {
+    // Every browser but Safari, including the one the tests run in.
+    const Audio = installAudio();
+
+    expect(() => playCheer(1)).not.toThrow();
+    await settle();
+
+    expect(Audio.instances[0].lastSource.start).toHaveBeenCalled();
+  });
+
+  it("plays anyway when setting the type is refused", async () => {
+    // A draft spec is allowed to reject a value this file thinks is valid.
+    Object.defineProperty(navigator, "audioSession", {
+      configurable: true,
+      get: () => ({
+        set type(_value: string) {
+          throw new TypeError("unsupported session type");
+        },
+      }),
+    });
+    const Audio = installAudio();
+
+    expect(() => playCheer(1)).not.toThrow();
+    await settle();
+
+    expect(Audio.instances[0].lastSource.start).toHaveBeenCalled();
   });
 });
