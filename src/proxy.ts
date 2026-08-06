@@ -86,5 +86,21 @@ export const config = {
    * including the family photographs. That was already true of the scene photos
    * and icons. See docs/authentication.md#what-is-not-here.
    */
-  matcher: ["/((?!_next/|.*\\.[a-zA-Z0-9]+$).*)"],
+  /*
+   * ---------------------------------------------------------------------------
+   * WHY `api/family/` IS EXCLUDED
+   * ---------------------------------------------------------------------------
+   * That route family authenticates with a bearer token, not with the session
+   * cookie. Left in the matcher, every call from the Custom GPT would arrive
+   * with no cookie, be judged signed-out, and be answered with a 307 to
+   * `/login` — so ChatGPT would follow the redirect and receive an HTML login
+   * page with a 200 on it, which is the worst possible failure: it looks like
+   * success and contains no data.
+   *
+   * Excluding it is not a hole. The route handlers under `api/family/` fail
+   * closed on their own — see `src/lib/family-api/handler.ts`, where the kill
+   * switches and the bearer check run before anything else. This proxy was
+   * never their boundary and must not pretend to be.
+   */
+  matcher: ["/((?!_next/|api/family/|.*\\.[a-zA-Z0-9]+$).*)"],
 };

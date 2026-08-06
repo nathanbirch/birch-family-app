@@ -29,6 +29,7 @@ Start here if you are picking it up cold:
 | [Accessibility](accessibility.md) | What's been done and what it guarantees. |
 | [Testing](testing.md) | What each test file covers, how to run them, current coverage. |
 | [Maintenance](maintenance.md) | Recipes for common changes, plus troubleshooting. |
+| [Family-context API](family-api/README.md) | The read-only endpoint the private Birch Family Custom GPT calls, and everything that guards it. |
 
 ## The family documents
 

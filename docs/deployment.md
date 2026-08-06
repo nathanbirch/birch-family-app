@@ -187,10 +187,26 @@ naming the missing variable rather than failing obscurely.
 | `MONGODB_URI` | yes | `src/lib/db.ts` | Nobody can sign in; pages show a database error. |
 | `SESSION_SECRET` | yes | `src/lib/auth/session-token.ts` | Every existing session is invalidated — everyone is signed out. |
 | `CALENDAR_ICS_URL` | no | `src/lib/calendar/feed.ts` | Unset: the Calendar page explains how to connect one. Wrong: it names the failure. |
+| `BIRCH_FAMILY_API_ENABLED` | no | `src/lib/family-api/config.ts` | Anything but the exact string `true` keeps the family-context API closed — 503 on every request. This is the default and the safe state. |
+| `BIRCH_FAMILY_API_KEY` | no | `src/lib/family-api/auth.ts` | Unset or shorter than 43 characters: the family-context API authenticates nobody. Never affects the app itself. |
+| `BIRCH_FAMILY_API_KEY_NEXT` | no | `src/lib/family-api/auth.ts` | The incoming key during a rotation. Both are accepted while both are set. |
+| `BIRCH_FAMILY_API_DENY_ALL` | no | `src/lib/family-api/config.ts` | `true` refuses every family-context API request before authentication. The panic switch. |
 
 None is prefixed `NEXT_PUBLIC_`, so none is ever sent to the browser. **Never
 add that prefix to any of them** — `CALENDAR_ICS_URL` especially, since it is a
-bearer credential for the whole calendar. See [Calendar](calendar.md).
+bearer credential for the whole calendar, and `BIRCH_FAMILY_API_KEY`, which is one
+for the family-context endpoint. See [Calendar](calendar.md) and
+[family-context API security](family-api/security.md).
+
+The `BIRCH_FAMILY_API_*` variables are all optional and the feature is off without them,
+so a clone or a preview deployment that never sets them behaves exactly as the
+app did before the API existed. Half a dozen further `BIRCH_FAMILY_API_*` variables tune
+the rate limits; they are documented in `.env.example` and in
+[the runbook](family-api/operations-runbook.md#lower-every-rate-limit-fast).
+
+**Set the ChatGPT variables for Production only.** A preview deployment
+carrying the same key is a second copy of the endpoint on a URL nobody is
+watching.
 
 ---
 

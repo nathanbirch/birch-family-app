@@ -6,6 +6,7 @@ import type { Collection, ObjectId } from "mongodb";
 import { COLLECTIONS } from "@/config/db";
 import { CHILD_IDS, type ChildId } from "@/config/family";
 import { STAR_DAY_COUNT, isStarTaskId } from "@/config/stars";
+import { reportDegraded } from "@/lib/data-health";
 import { getCollection } from "@/lib/db";
 
 import type { StarMarks, WeekMarks } from "./counting";
@@ -59,6 +60,12 @@ export const getWeekMarks = cache(
       // An unreachable database must not blank the page — the chart still
       // renders, with nothing ticked, and the tick itself will report its own
       // failure when somebody tries.
+      //
+      // Recorded as well as logged, because a blank week and a week nobody has
+      // ticked are the same object, and an API answering "you have done
+      // nothing today" needs to be able to tell them apart. See
+      // `lib/data-health.ts`.
+      reportDegraded("stars");
       console.warn(
         `[stars] Could not read marks for the week of ${weekStart}: ` +
           `${describe(error)}. Showing an empty chart.`,

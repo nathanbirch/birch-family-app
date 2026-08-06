@@ -11,6 +11,7 @@ import {
 } from "@/config/chore-rotation";
 import { COLLECTIONS } from "@/config/db";
 import { CHILD_IDS } from "@/config/family";
+import { reportDegraded } from "@/lib/data-health";
 import { getCollection } from "@/lib/db";
 
 import { findChorePoolProblem } from "./rotation";
@@ -104,6 +105,10 @@ export const getChorePools = cache(async (): Promise<readonly ChorePool[]> => {
 });
 
 function fallback(reason: string, error?: unknown): readonly ChorePool[] {
+  // Also recorded — see `lib/data-health.ts`. The compiled pools are usually
+  // right, but "usually right" is not something an assistant should present as
+  // certain.
+  reportDegraded("chores");
   console.warn(
     `[stars] Falling back to the pools compiled into ` +
       `config/chore-rotation.ts: ${reason}.` +

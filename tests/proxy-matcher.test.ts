@@ -51,6 +51,19 @@ describe("paths the proxy must skip", () => {
     expect(runsOn(pathname)).toBe(false);
   });
 
+  it.each([
+    "/api/family/v1/family-context",
+    "/api/family/v1/health",
+  ])("skips %s, which authenticates with a bearer token instead", (pathname) => {
+    /*
+     * Left in the matcher, a call from ChatGPT — which carries no session
+     * cookie — would be redirected to /login and answered with an HTML page
+     * and a 200. The route handlers do their own fail-closed authentication;
+     * see src/lib/family-api/handler.ts.
+     */
+    expect(runsOn(pathname)).toBe(false);
+  });
+
   it("skips any file extension, including ones not invented yet", () => {
     // The point of the pattern: a new asset folder needs no code change.
     for (const path of [
@@ -75,6 +88,10 @@ describe("paths the proxy must run on", () => {
     "/chores",
     "/rewards/history",
     "/calendar",
+    // The ChatGPT exclusion is narrow: it must not open up `/api` generally,
+    // or a future cookie-authenticated route would ship without its check.
+    "/api/anything-else",
+    "/api/family-adjacent",
   ])("runs on %s", (pathname) => {
     expect(runsOn(pathname)).toBe(true);
   });

@@ -52,6 +52,21 @@ export const COLLECTIONS = {
    * for why the week is the unit rather than the day or the task.
    */
   starWeeks: "starWeeks",
+  /**
+   * Daily request counters for the read-only family-context API — one
+   * document per counter per day, holding an integer and a TTL.
+   *
+   * This is the only collection in the app that exists for a *limit* rather
+   * than for something the family can see. It is here rather than in memory
+   * because the ceilings it enforces are the ones that bound the bill, and a
+   * per-instance counter bounds nothing on a platform that runs several
+   * instances. See `lib/family-api/usage.ts`, which explains why this is the
+   * cheapest durable store available without adding Redis.
+   *
+   * Documents expire on their own via a TTL index, so nothing accumulates and
+   * there is nothing to prune by hand.
+   */
+  familyApiUsage: "familyApiUsage",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];

@@ -565,6 +565,30 @@ The list/timeline toggle:
 - All-day events still render in timeline mode, above the axis rather than on it
 - A column heading opens that day, still in timeline mode
 
+### The family-context API — 9 files *(Node environment)*
+
+`family-api-auth`, `family-api-sanitise`, `family-api-time`,
+`family-api-family`, `family-api-context`, `family-api-rate-limit`,
+`family-api-route`, `family-api-openapi`, `family-api-data-health`.
+
+Covered in detail in [docs/family-api/testing.md](family-api/testing.md). The three
+worth knowing about from here, because they are unusual:
+
+- **`family-api-context`** serialises the whole response and greps it for
+  seventeen forbidden strings — `_id`, `password`, `mongodb`, `@`, `street` and
+  the rest. A *future* field that leaks one of them fails this test even though
+  nobody wrote a test for that field.
+- **`family-api-openapi`** compares the committed Action schema byte for byte
+  against what the generator produces, so `npm run check` fails if somebody
+  changes the response shape without running `npm run api:openapi`. It also
+  asserts the route modules export exactly `GET` and `HEAD`, which is what
+  makes "there is no write endpoint" a checked property rather than a promise.
+- **`family-api-sanitise`** tests the injection filter from *both* directions: the
+  attack shapes are removed, and every real star-chart label in
+  `config/stars.ts` passes through unchanged. The second half is the one that
+  matters — a sanitiser that quietly mangles "Feed Bella" is a bug nobody finds
+  for months.
+
 ## Conventions
 
 - `tests/setup.ts` clears `localStorage` and both store caches between tests,

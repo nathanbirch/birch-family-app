@@ -3,7 +3,23 @@
 How the AI gets — or does not get — the family's current data. Four options,
 compared against what this repository actually is.
 
-> **Decided: Option A.** The companion runs as a ChatGPT project on a parent's
+> **Superseded in part — Option C was built after all.** The read-only
+> family-context API in [`docs/family-api/`](../family-api/README.md) is Option C,
+> reached by GPT Action from a private Custom GPT rather than by an arbitrary
+> platform call. The comparison below is unchanged and still worth reading: its
+> objection to Option C — a public endpoint serving children's data,
+> authenticated by a credential that has to sit inside a consumer AI product —
+> is exactly right, has not been engineered away, and is
+> [threat 1](../family-api/threat-model.md) at a residual risk of Medium. What
+> changed is how the family weighed that against Option A being deflating and
+> Option D being a great deal of software. The reasoning for the reversal is in
+> [decisions.md](../decisions.md#the-gpt-action-was-built-anyway--option-c-reversed).
+>
+> Everything in *Design requirements for Stage 2* below was applied to it:
+> read-only context, least privilege, strict server-side projection, sanitised
+> data, rate limiting, a hard ceiling, and graceful degradation to Mode A.
+
+> **Originally decided: Option A.** The companion runs as a ChatGPT project on a parent's
 > own account, on the shared tablet in the main living area, with the family
 > present and everyone having access. **No child gets an individual account at
 > any age** — the shared family account is the design, not a stage. Option D

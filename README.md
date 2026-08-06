@@ -93,6 +93,13 @@ npm start          # serve the production build locally
   is too narrow to hit.
 - Ten themes including a dark one. Installable as a PWA.
 
+- **Family-context API** (`/api/family/v1/family-context`) — an
+  authenticated, read-only endpoint that lets a private Custom GPT, on the
+  family's existing ChatGPT subscription, answer questions about today's chores,
+  stars, calendar, rotations and birthdays. **Off unless
+  `BIRCH_FAMILY_API_ENABLED=true`.** No OpenAI developer API, no model bill,
+  no write path. See [ChatGPT API](docs/family-api/README.md).
+
 ### Planned
 
 Weekly celebration report · Rewards.
@@ -126,6 +133,7 @@ Everything lives in **[`docs/`](docs/README.md)**:
 | [Testing](docs/testing.md) | What each test file covers, and current coverage. |
 | [Maintenance](docs/maintenance.md) | Recipes for common changes, plus troubleshooting. |
 | [Decisions](docs/decisions.md) | The non-obvious calls and why. |
+| [Family-context API](docs/family-api/README.md) | The read-only endpoint the private Birch Family Custom GPT calls. Off by default. |
 
 ---
 

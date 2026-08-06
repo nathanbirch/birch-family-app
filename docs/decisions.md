@@ -397,3 +397,61 @@ happens, and the auth, server, family data and context schema it would need
 already exist. The argument for not building it yet
 is that nobody knows what these five children will actually use it for, and a
 month of evidence beats a year of speculation.
+
+---
+
+## The GPT Action was built anyway — Option C, reversed
+
+**This reverses the paragraph above.** The read-only family-context API in
+[`docs/family-api/`](family-api/README.md) is Option C from
+[13—birch-ai-integration-architecture.md](ai/13—birch-ai-integration-architecture.md),
+which that document evaluated and rejected as *"all the security cost of Option
+D with less of the benefit."* It has now been built, as a GPT Action called by a
+private Custom GPT on the family's existing ChatGPT subscription.
+
+Recording the reversal rather than quietly editing the old page, because the
+original reasoning has not become wrong and the next person to read it deserves
+both halves.
+
+**What the objection got right, and still gets right.** It really does mean a
+public internet-facing endpoint serving children's data. The credential really
+does live inside a ChatGPT Action configuration on a parent's account, which is
+not a secret manager, and anyone who can open that GPT's editor can read it.
+That is the irreducible cost, it has not been engineered away, and it is
+[threat 1](family-api/threat-model.md) with a residual risk of Medium.
+
+**What changed.** Not the risk — the weighting. Option A is honest and it is
+also deflating: "check the app" is the right answer and it is the answer to
+almost every question a child actually asks. Option D, the version with no new
+endpoint, is a chat interface, a streaming implementation, error states, a
+retention policy and a model bill, and the family is not ready to own that. The
+Action sits between them: it costs one endpoint and no model bill, and it uses
+the subscription that is already paid for.
+
+**What was kept from the original argument.** All of it that could be:
+
+- **Read-only, structurally.** The route modules export `GET` and `HEAD` and
+  nothing else. The AI cannot write a star, a chore or a calendar event, which
+  was a non-negotiable in the Option D requirements and is enforced here by the
+  absence of code rather than by a check.
+- **Least privilege.** A separate credential granting this one endpoint. A
+  projection that names every field it emits, so no database document can leak
+  through it.
+- **The staleness objection answered rather than inherited.** Option B was
+  rejected because it degrades *silently*. This API carries `generatedAt`,
+  `lastUpdatedAt`, a freshness status and a list of degraded sources, and the
+  GPT is instructed to say so and point at the app. Staleness that announces
+  itself was the whole complaint.
+- **Sanitisation and bounds are real, not aspirational** — the phrase
+  [13](ai/13—birch-ai-integration-architecture.md) used for what Option D would
+  buy. They run server-side before the response is built.
+- **Nothing in the supervision model moved.** One shared parent account, the
+  tablet in the living room, no child with an account, memory off. The Action
+  changes what the assistant *knows*, not who is in the room.
+
+**What is genuinely worse than Option A**, stated plainly: there is now a URL on
+the public internet that returns five children's chores and a week of the family
+calendar to whoever holds a 43-character string. Option A had nothing to steal.
+That trade is the decision, and if it starts to feel like the wrong one, the
+reversal is one environment variable —
+[`operations-runbook.md`](family-api/operations-runbook.md#emergency-shut-it-off-now).

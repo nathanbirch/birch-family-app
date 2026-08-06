@@ -110,6 +110,27 @@ async function main() {
     await starWeeks.createIndex({ weekStart: 1 }, { name: "by_week" });
     console.log(`  ✓ ${COLLECTIONS.starWeeks}.by_week`);
 
+    /*
+     * The ChatGPT API's daily counters.
+     *
+     * Documents are addressed by `_id` — `credential:v-current:2026-08-05` —
+     * so the primary key is the only index the reads and writes need. What
+     * this adds is the TTL, which is what stops a limiter's bookkeeping from
+     * becoming a collection that grows forever: every counter deletes itself
+     * two days after the day it counted.
+     *
+     * `expireAfterSeconds: 0` means "expire at the instant in `expiresAt`",
+     * which is set by `src/lib/family-api/usage.ts` when the document is created.
+     */
+    const familyApiUsage = db.collection(COLLECTIONS.familyApiUsage);
+    await familyApiUsage.createIndex(
+      { expiresAt: 1 },
+      { expireAfterSeconds: 0, name: "usage_ttl" },
+    );
+    console.log(
+      `  ✓ ${COLLECTIONS.familyApiUsage}.usage_ttl     (TTL, auto-deletes counters)`,
+    );
+
     /* --- Seed user ----------------------------------------------------- */
 
     const email = SEED_USER.email.trim().toLowerCase();

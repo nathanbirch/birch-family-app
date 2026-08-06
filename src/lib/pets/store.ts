@@ -12,6 +12,7 @@ import {
   type PetId,
   type PetRotationConfig,
 } from "@/config/pets";
+import { reportDegraded } from "@/lib/data-health";
 import { getCollection } from "@/lib/db";
 
 import { findSharedNightProblem } from "./rotation";
@@ -107,6 +108,10 @@ function fallback(
   reason: string,
   error?: unknown,
 ): readonly PetRotationConfig[] {
+  // Also recorded, so an API can say the rotation is a compiled fallback
+  // rather than presenting it as tonight's stored answer. See
+  // `lib/data-health.ts`.
+  reportDegraded("rotations");
   console.warn(
     `[pets] Falling back to the rotation compiled into config/pets.ts: ` +
       `${reason}.${error ? ` (${describe(error)})` : ""}`,
