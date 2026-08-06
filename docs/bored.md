@@ -28,6 +28,13 @@ Three things enforce it rather than leaving it to good intentions:
 - Every label is **four words or fewer**, and `tests/bored.test.tsx` fails if
   one grows. "Do a load of laundry" was cut to "Do a load" by that test, not by
   a reviewer.
+
+  There is exactly one exception, named in the test so it cannot quietly become
+  two: "Take out a trash can" is five, and the fifth word is `a`. This list
+  says "per one of these" with a singular label and nothing else, so shortening
+  it to "the trash" would turn three cans into one job. A second five-word
+  label means the rule has failed, and the answer then is a shorter job rather
+  than a six-word ceiling.
 - Every category title is **one word**.
 - Every idea has a drawing, checked by the same suite.
 
@@ -83,26 +90,33 @@ page needs no headings and no filter.
 
 | | | | |
 |---|---|---|---|
-| Take out the bins | Đ1 | Clean a room | Đ5 |
-| Pick 10 weeds | Đ2 | Put away a basket | Đ5 |
-| Match the socks | Đ2 | Clean out the car | Đ5 |
-| Sweep the kitchen | Đ2 | Rake the leaves | Đ6 |
-| Wash a window | Đ2 | Wash the car | Đ8 |
-| Do a load | Đ3 | Shovel the snow | Đ8 |
+| Take out a trash can | Đ1 | Put away a basket | Đ5 |
+| Pick 10 weeds | Đ2 | Rake the leaves | Đ6 |
+| Sweep the kitchen | Đ2 | Wash the car | Đ8 |
+| Wash a window | Đ2 | Shovel the snow | Đ8 |
+| Do a load | Đ3 | Clean out the car | Đ9 |
 | Empty the dishwasher | Đ3 | Vacuum downstairs | Đ10 |
 | Wipe a bathroom | Đ4 | Mow the lawn | Đ10 |
+| Clean a room | Đ5 | | |
+
+Cleaning the car out is dearer than washing the outside of it, which is the
+right way round: seven people live in that car.
 
 ### Rates, without a word for "each"
 
 **"Wash a window" pays Đ2 *per window*.** The singular label is what says so,
 and it needs no extra field and no "each" on the pill — because a singular
 label already means a unit rate everywhere else on this list. "Clean a room",
-"Do a load", "Wipe a bathroom" and "Put away a basket" are every one of them
-one-of-those-for-that-price.
+"Do a load", "Wipe a bathroom", "Put away a basket" and "Take out a trash can"
+are every one of them one-of-those-for-that-price.
+
+That last one used to read "Take out the bins" and was changed on purpose:
+wheeling all three cans out is three jobs, not one, and the label is now what
+says so.
 
 A job that pays a flat rate for an unbounded amount of work says so the other
-way, with a plural or a number: "Take out the bins", "Pick 10 weeds", "Rake the
-leaves", "Vacuum downstairs".
+way, with a plural or a number: "Pick 10 weeds", "Rake the leaves", "Vacuum
+downstairs", "Shovel the snow".
 
 That distinction is now load-bearing, so keep to it when adding a job. If a
 future one genuinely cannot be expressed that way, *that* is the point to add a

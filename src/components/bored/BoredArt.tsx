@@ -70,7 +70,7 @@ function Sparkle({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
   );
 }
 
-/** A wheel, used by the bike, the scooter, the mower and the bins. */
+/** A wheel, used by the bike, the scooter, the cars and the mower. */
 function Wheel({ x, y, r, tyre = C.dark }: { x: number; y: number; r: number; tyre?: string }) {
   return (
     <g>
@@ -695,7 +695,7 @@ const OUTSIDE_ART: Record<string, () => JSX.Element> = {
 /* ------------------------------------------------------------------ */
 
 const MONEY_ART: Record<string, () => JSX.Element> = {
-  bins: () => (
+  trash: () => (
     <>
       <path d="M20 30h56l-5 46a6 6 0 0 1-6 5H31a6 6 0 0 1-6-5Z" fill={C.green} />
       <rect x={14} y={20} width={68} height={11} rx={5} fill={C.forest} />
@@ -723,21 +723,6 @@ const MONEY_ART: Record<string, () => JSX.Element> = {
       <path d="M46 68V40" stroke={C.forest} strokeWidth={5} strokeLinecap="round" />
       <circle cx={46} cy={30} r={11} fill={C.yellow} />
       <circle cx={46} cy={30} r={5} fill={C.gold} />
-    </>
-  ),
-
-  socks: () => (
-    <>
-      <path
-        d="M22 12h20v34c0 10 16 12 16 24s-10 16-18 16-16-6-16-16Z"
-        fill={C.pink}
-      />
-      <path d="M22 12h20v12H22Z" fill="#ffa8c9" />
-      <path
-        d="M56 20h18v30c0 9 14 11 14 22s-9 14-16 14-14-5-14-14Z"
-        fill={C.sky}
-        transform="rotate(10 70 50)"
-      />
     </>
   ),
 

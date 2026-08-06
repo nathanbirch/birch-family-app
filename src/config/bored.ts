@@ -144,9 +144,10 @@ const OUTSIDE: readonly BoredIdea[] = [
  * needed for five months of the year.
  */
 const MONEY: readonly BoredIdea[] = [
-  { id: "bins", label: "Take out the bins", price: 1 },
+  // Đ1 *per can*, by the singular-label rule below: wheeling all three out is
+  // three jobs, not one, which is how the family actually counts it.
+  { id: "trash", label: "Take out a trash can", price: 1 },
   { id: "weeds", label: "Pick 10 weeds", price: 2 },
-  { id: "socks", label: "Match the socks", price: 2 },
   { id: "sweep", label: "Sweep the kitchen", price: 2 },
   /*
    * Đ2 *per window*, which the singular label carries on its own.
@@ -166,10 +167,12 @@ const MONEY: readonly BoredIdea[] = [
   { id: "bathroom", label: "Wipe a bathroom", price: 4 },
   { id: "room", label: "Clean a room", price: 5 },
   { id: "laundry-away", label: "Put away a basket", price: 5 },
-  { id: "car-inside", label: "Clean out the car", price: 5 },
   { id: "leaves", label: "Rake the leaves", price: 6 },
   { id: "car-wash", label: "Wash the car", price: 8 },
   { id: "snow", label: "Shovel the snow", price: 8 },
+  // Dearer than washing the outside of it, which is the right way round:
+  // seven people live in that car.
+  { id: "car-inside", label: "Clean out the car", price: 9 },
   { id: "vacuum", label: "Vacuum downstairs", price: 10 },
   { id: "lawn", label: "Mow the lawn", price: 10 },
 ] as const;
