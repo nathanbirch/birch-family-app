@@ -133,6 +133,32 @@ The `starWeeks` unique index on `(childId, weekStart)` is not just the query's
 index: it is what stops two simultaneous taps from creating two documents for
 the same child and week.
 
+### Only today's column
+
+A star records a day, so the only column that can be coloured in is the one
+that is actually happening. Friday cannot be filled in on Monday because the
+row looks better full, and Monday cannot be filled in on Thursday from memory.
+The other four columns are still *drawn* — the week is the picture — but they
+are `disabled`, and a locked empty star is faded much further than a locked
+earned one, so the eye lands on the column that is open.
+
+At the weekend there is no open column at all: the chart runs Monday to Friday.
+That is the one case the page says out loud, because otherwise every star is
+faded and nothing explains why.
+
+[`openDayIndex()`](../src/lib/stars/week.ts) is the only definition of the
+rule. The chart disables the buttons with it and `setStar` re-checks the *same
+function* on the server before it writes — against
+[the family's clock](../src/lib/family-api/time.ts) rather than the device's,
+because this runs on Vercel where "today" is already tomorrow from teatime
+onwards, and because a phone with its date wound back is otherwise a way to buy
+an extra column.
+
+The cost is real and was accepted: a star genuinely earned on Tuesday and
+forgotten cannot be added on Wednesday, and a mistake cannot be rubbed out the
+next morning. Chasing that would mean a parent-only override, which is a
+feature and not a checkbox.
+
 ## On the page
 
 One child at a time. The paper chart shows five columns because it is A3 and
@@ -231,14 +257,24 @@ looked at it and wanted more. `PIECES` in `Confetti.tsx` is the dial.
 
 ### The sound
 
-A 1.6-second clip of children clapping and shouting "yay", played through the
-Web Audio API — full volume for the whole day, 60% for a single chart, so the
-two celebrations do not sound alike.
+A 1.6-second clip of a room breaking into applause with a chime over it, played
+through the Web Audio API — full volume for the whole day, 60% for a single
+chart, so the two celebrations do not sound alike.
 
 It is **synthesised, not recorded**:
-[`scripts/generate-cheer.mjs`](../scripts/generate-cheer.mjs) builds it from
-132 clap transients and six formant-synthesised child voices, then a few delay
-taps for the room. `npm run sound:generate` regenerates it. Three reasons it is
+[`scripts/generate-cheer.mjs`](../scripts/generate-cheer.mjs) builds it from a
+bed of filtered noise, 52 clap transients and a four-note rising chime, then a
+few delay taps for the room.
+
+The first version of this was harsh, and the header of that script explains
+each cause in detail — but the short version is worth having here, because
+every one of them is a mistake that is easy to make again: 132 claps in 1.3
+seconds is dense enough that the transients fuse into hiss; claps that begin at
+full amplitude on their first sample are clicks rather than hands; `tanh` drive
+of 1.9 bought its extra loudness by flattening every peak into distortion; and
+six formant-synthesised "yay"s sat right in the band the ear is most sensitive
+to, sounding like a kazoo. The rebuilt version is 1 dB *louder* overall
+(-14.1 LUFS against -14.7) with 9.5 dB less energy above 5kHz. `npm run sound:generate` regenerates it. Three reasons it is
 made rather than downloaded: no stock licence covers "a family app", it comes
 out at 20KB so it can be precached and work offline, and everything in the
 script is seeded so re-running produces a byte-identical file and therefore the
@@ -306,6 +342,18 @@ change the file so the two never disagree. `tests/stars-config.test.ts` pins
 the per-child row counts and a sample of the exact wording, which is what
 catches a well-meaning tidy-up in review.
 
+Two rows have since moved, and both moved on the fridge first:
+
+- **The laundry row** is worded ahead of the laminate on purpose: "Put away
+  laundry, or do a load of laundry", because the star is earned by either half
+  of the job and the printed wording only describes the end of it. Write it on
+  in pen and the two agree again.
+- **Cello practice is gone.** It was Hannah's, and it is scored out in red on
+  the chart, so it is deleted from `STAR_TASKS` rather than hidden. The id
+  `cello` is retired for good and must never be reused: stars already filed
+  against it stay in the database and are dropped on the way out by
+  `normaliseMarks()`. If the cello comes back, it comes back as a new row.
+
 To add a task:
 
 1. Add it to `STAR_TASKS` in `src/config/stars.ts` with a new, permanent id.
@@ -314,9 +362,18 @@ To add a task:
    `choreRotations` document.
 3. Update the counts in `tests/stars-config.test.ts`.
 
+To back-fill a week off a photograph, there is
+[`scripts/seed-star-history.ts`](../scripts/seed-star-history.ts)
+(`npm run db:seed-history`) — a committed transcription table rather than an
+`updateOne` typed into a shell, so whoever spots a misread star can correct it.
+Read the note at the top of it first: the printed chart has each child's chores
+printed *on* it, so back-filling a week before the rotation's anchor files
+rotating chores against children the rotation says did not have them, and those
+stars are then left uncounted in that week's ceremony.
+
 ## What the week adds up to
 
-Every finished week is read back as an award ceremony at `/report` — a slide
+Every finished week is read back as an award ceremony at `/ceremonies` — a slide
 per child, their charts one at a time, their total, and a nickel a star. It
 stores nothing of its own: it is these same `starWeeks` documents counted
 through [`counting.ts`](../src/lib/stars/counting.ts), so a star corrected on

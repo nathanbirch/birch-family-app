@@ -91,10 +91,18 @@ type Slide =
 export function AwardCeremony({
   report,
   dateLabel,
+  title,
 }: {
   report: WeekReport;
   /** e.g. "Aug 3 – Aug 7", already formatted by the page. */
   dateLabel: string;
+  /**
+   * What the title card is called, when it is not the weekly awards — a
+   * ceremony spanning several weeks was given a name by whoever put it
+   * together, and that name is the point of it. Left out for a weekly report,
+   * which is always "The Birch Family Star Awards".
+   */
+  title?: string;
 }) {
   const slides = useMemo<Slide[]>(
     () => [
@@ -370,6 +378,7 @@ export function AwardCeremony({
                 {slide.kind === "title" ? (
                   <TitleSlide
                     dateLabel={dateLabel}
+                    title={title}
                     childCount={report.children.length}
                     started={started}
                     onStart={start}
@@ -377,6 +386,7 @@ export function AwardCeremony({
                 ) : slide.kind === "child" ? (
                   <ChildSlide
                     report={report.children[slide.childIndex]}
+                    weekCount={report.weekCount}
                     runKey={isCurrent ? run : null}
                   />
                 ) : (
@@ -401,15 +411,15 @@ export function AwardCeremony({
         carries, said once, rather than a description of the animation.
       */}
       <p role="status" aria-live="polite" className="sr-only">
-        {describe(report, slides[index])}
+        {describe(report, slides[index], title)}
       </p>
     </section>
   );
 }
 
-function describe(report: WeekReport, slide: Slide): string {
+function describe(report: WeekReport, slide: Slide, title?: string): string {
   if (slide.kind === "title") {
-    return "The Birch Family Star Awards. Press start to begin.";
+    return `${title ?? "The Birch Family Star Awards"}. Press start to begin.`;
   }
   if (slide.kind === "finale") {
     return `All together: ${report.earned} stars, ${formatMoney(report.cents)}.`;

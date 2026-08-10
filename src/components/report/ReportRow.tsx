@@ -25,7 +25,7 @@ export function ReportRow({
 }) {
   return (
     <Link
-      href={`/report/${report.weekStart}`}
+      href={`/ceremonies/${report.slug}`}
       className="app-card themed-transition flex items-center gap-3 p-4 transition-transform active:scale-[0.98]"
     >
       <span

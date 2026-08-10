@@ -70,8 +70,14 @@
  * is the right trade: the cheer is precached because silence would be the only
  * part of the celebration that needed a signal; the report simply does not
  * open offline before it has ever been opened online.
+ *
+ * v10: the reports became Ceremonies and moved to `/ceremonies`, and the cheer
+ * was rebuilt (a new content hash, so the old file is precached under a name
+ * nothing asks for any more). Both are the v5-v7 case again — a phone holding
+ * the old shell would keep a dead `/report` link on its dashboard and go on
+ * playing a sound the app no longer references.
  */
-const CACHE_VERSION = "v9";
+const CACHE_VERSION = "v10";
 const CACHE_NAME = `birch-family-app-${CACHE_VERSION}`;
 const APP_SHELL = "/";
 
@@ -89,7 +95,7 @@ const PRECACHE = [
    * child notices missing: confetti falls whatever the connection is doing, so
    * silence would be the only part of the party that needed a signal.
    */
-  "/sounds/cheer-00801d9753.mp3",
+  "/sounds/cheer-0d41fbb569.mp3",
 ];
 
 self.addEventListener("install", (event) => {

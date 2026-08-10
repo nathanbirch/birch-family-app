@@ -20,12 +20,15 @@ import { StarGlyph } from "./StarGlyph";
  */
 export function TitleSlide({
   dateLabel,
+  title,
   childCount,
   onStart,
   started,
 }: {
   /** e.g. "Aug 3 – Aug 7". */
   dateLabel: string;
+  /** The ceremony's own name, when it has one. See `AwardCeremony`. */
+  title?: string;
   childCount: number;
   onStart: () => void;
   /** Once it has begun, the button stops asking and becomes a signpost. */
@@ -61,9 +64,13 @@ export function TitleSlide({
           {dateLabel}
         </p>
         <h2 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
-          The Birch Family
-          <br />
-          Star Awards
+          {title ?? (
+            <>
+              The Birch Family
+              <br />
+              Star Awards
+            </>
+          )}
         </h2>
       </div>
 

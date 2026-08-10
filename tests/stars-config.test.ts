@@ -64,7 +64,9 @@ describe("what each child's chart says", () => {
    * to say who it belongs to, or drops a child off a shared row, this fails.
    */
   const EXPECTED: Record<ChildId, { chores: number; learning: number; hygiene: number }> = {
-    hannah: { chores: 4, learning: 5, hygiene: 4 },
+    // The cello row is scored out in red pen on the fridge, so Hannah has the
+    // same four learning rows as everybody else again.
+    hannah: { chores: 4, learning: 4, hygiene: 4 },
     emily: { chores: 4, learning: 4, hygiene: 4 },
     clara: { chores: 4, learning: 4, hygiene: 4 },
     william: { chores: 4, learning: 4, hygiene: 4 },
@@ -82,13 +84,17 @@ describe("what each child's chart says", () => {
     }
   });
 
-  it("gives Hannah the cello and nobody else", () => {
+  it("gives nobody the cello, and keeps its id retired", () => {
+    // It was Hannah's, and it is crossed out on the chart. The id must not
+    // come back on some other row: every star ever filed against `cello` is
+    // still in the database under that name.
     for (const childId of CHILD_IDS) {
       const has = getTasksForChild(CHORE_POOLS, AUGUST, childId).some(
         (task) => task.id === "cello",
       );
-      expect(has).toBe(childId === "hannah");
+      expect(has).toBe(false);
     }
+    expect(STAR_TASKS.some((task) => task.id === "cello")).toBe(false);
   });
 
   it("gives every child the same four hygiene rows", () => {
@@ -104,7 +110,10 @@ describe("what each child's chart says", () => {
   it("keeps the printed wording", () => {
     const labels = STAR_TASKS.map((task) => task.label);
     expect(labels).toContain("Unload & load dishwasher");
-    expect(labels).toContain("Take laundry upstairs & put away");
+    // The one row worded ahead of the laminate rather than off it: the star is
+    // earned by either half of the job. See the note in `config/stars.ts`.
+    expect(labels).toContain("Put away laundry, or do a load of laundry");
+    expect(labels).not.toContain("Take laundry upstairs & put away");
     expect(labels).toContain("IXL Math & fluency practice");
     expect(labels).toContain("1 Reading.com lesson");
     expect(labels).toContain("Brush & floss before bed");

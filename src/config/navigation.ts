@@ -105,7 +105,7 @@ export type NavIconName =
  * ---------------------------------------------------------------------------
  * THE FOURTH ONE HAS NOW ARRIVED TOO, AND STILL NO SHEET
  * ---------------------------------------------------------------------------
- * Weekly Report is the fourth dashboard-only page. It has the profile the
+ * Ceremonies is the fourth dashboard-only page. It has the profile the
  * paragraph above describes for a sheet — but it also has a shape none of the
  * others do: it is looked at *once a week*, on a Monday, and never twice. A
  * tab (or a slot in a sheet) is for somewhere you go repeatedly; a card on the
@@ -182,9 +182,9 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: "bored",
   },
   {
-    href: "/report",
-    label: "Report",
-    title: "Weekly Report",
+    href: "/ceremonies",
+    label: "Ceremony",
+    title: "Ceremonies",
     description: "Last week's award ceremony: every star, and what it was worth.",
     slot: null,
     icon: "report",

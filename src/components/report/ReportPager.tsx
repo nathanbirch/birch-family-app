@@ -41,7 +41,7 @@ export function ReportPager({
 
 /** Page one is the bare path — a `?page=1` in the address bar is noise. */
 function hrefFor(page: number): string {
-  return page <= 1 ? "/report" : `/report?page=${page}`;
+  return page <= 1 ? "/ceremonies" : `/ceremonies?page=${page}`;
 }
 
 function Step({

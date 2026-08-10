@@ -56,6 +56,10 @@ export function StarRow({
             key={day}
             filled={row[day] === true}
             isToday={day === todayIndex}
+            // Every column but today's, and all five at the weekend — the
+            // chart is a record of days, not a grid to fill in. See
+            // `openDayIndex()` in `lib/stars/week.ts`.
+            locked={day !== todayIndex}
             label={`${task.label} on ${STAR_DAY_NAMES[day]}`}
             onToggle={(value) => onToggle(day, value)}
           />

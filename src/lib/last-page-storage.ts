@@ -39,6 +39,8 @@ const RENAMED_PAGES: Record<string, string> = {
   // lookup, not a chain, so a device that missed the middle name is fine.
   "/seating": "/turns",
   "/rotations": "/turns",
+  // The weekly report, renamed to what the family already called it.
+  "/report": "/ceremonies",
 };
 
 /** The saved page, or `null` if nothing valid is stored. */

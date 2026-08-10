@@ -25,8 +25,8 @@ src/app/
     ├── bored/page.tsx      /bored     inside, outside, or earn some money
     ├── bored/[category]/   /bored/…   one category's ideas, as a grid
     │   └── page.tsx
-    ├── report/page.tsx     /report    the weekly reports, newest first
-    ├── report/[week]/      /report/…  one week's award ceremony
+    ├── ceremonies/page.tsx  /ceremonies    every award ceremony, newest first
+    ├── ceremonies/[week]/   /ceremonies/…  one week's award ceremony
     │   └── page.tsx
     ├── calendar/page.tsx   /calendar  the family Google Calendar
     └── account/page.tsx    /account   theme, sign out, app info

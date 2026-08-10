@@ -9,6 +9,7 @@
  * for one child and rejected for them a tap later.
  */
 
+import { STAR_DAY_COUNT } from "@/config/stars";
 import {
   differenceInCalendarDays,
   parseLocalDate,
@@ -30,6 +31,42 @@ export function parseWeekStart(value: string): Date | null {
   const date = parseLocalDate(value);
   if (!date) return null;
   return toIsoDate(startOfWeekMonday(date)) === toIsoDate(date) ? date : null;
+}
+
+/**
+ * Which column of a week may be coloured in right now: 0-4, or -1 for none.
+ *
+ * ---------------------------------------------------------------------------
+ * ONLY TODAY, AND ONLY TODAY
+ * ---------------------------------------------------------------------------
+ * A star is a record of a day, and a chart you can fill in whenever you like
+ * is not a record of anything. Two things were happening on the paper chart
+ * and both of them are now impossible here:
+ *
+ *   **Ahead.** Friday's column coloured in on Monday, because the row looks
+ *   better full. Nothing has been done to earn it and nobody can tell later
+ *   that it was not.
+ *   **Behind.** Sunday-night catching up, four days of teeth reconstructed
+ *   from memory. Kinder than the first, and just as untrue.
+ *
+ * So the only editable column is the one that is actually happening. The other
+ * four are still *drawn* — the week is the picture, and a child looking at
+ * Wednesday should see what Monday and Tuesday came to — they simply cannot be
+ * tapped.
+ *
+ * The weekend returns -1 rather than Friday: the chart runs Monday to Friday,
+ * so on Saturday there is no day to record and the week is closed. The same
+ * answer covers every week that is not the current one.
+ *
+ * This is the *only* definition of that rule. The chart disables the buttons
+ * with it and the Server Action re-checks the same function on the server —
+ * where the clock is the family's, not the device's, so a phone left on
+ * yesterday's date cannot buy an extra column.
+ */
+export function openDayIndex(weekStart: Date, now: Date): number {
+  const monday = startOfWeekMonday(weekStart);
+  const offset = differenceInCalendarDays(monday, now);
+  return offset >= 0 && offset < STAR_DAY_COUNT ? offset : -1;
 }
 
 /**

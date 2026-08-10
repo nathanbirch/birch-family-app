@@ -29,7 +29,15 @@ const refresh = vi.hoisted(() => vi.fn());
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
 
 const WEEK_START = "2026-08-03";
-const TUESDAY = "2026-08-04";
+/**
+ * The board is rendered *on* the Monday of the week it shows.
+ *
+ * Only the day that is actually happening can be coloured in — see
+ * `openDayIndex()` — so a test that taps a star has to be standing on that
+ * day. `useCurrentDate` reaches for the real `Date` a tick after mount, which
+ * is why the clock below is faked rather than only passed in as a prop.
+ */
+const MONDAY = "2026-08-03";
 
 function blankWeek(): WeekMarks {
   return Object.fromEntries(CHILD_IDS.map((id) => [id, {}])) as WeekMarks;
@@ -38,7 +46,7 @@ function blankWeek(): WeekMarks {
 function renderBoard(marks: WeekMarks = blankWeek()) {
   return render(
     <StarsBoard
-      initialDateIso={TUESDAY}
+      initialDateIso={MONDAY}
       weekStart={WEEK_START}
       pools={CHORE_POOLS}
       marks={marks}
@@ -47,11 +55,17 @@ function renderBoard(marks: WeekMarks = blankWeek()) {
 }
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(2026, 7, 3, 12, 0, 0, 0));
   setStar.mockReset();
   playCheer.mockReset();
   primeCheer.mockReset();
   refresh.mockReset();
   setStar.mockResolvedValue({ ok: true });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 /* ------------------------------------------------------------------ */
@@ -66,8 +80,12 @@ describe("accessibility", () => {
       const name = star.getAttribute("aria-label") ?? "";
       // The sound toggle is a switch too, and is named differently.
       if (name.startsWith("Turn the cheering")) continue;
+      // A locked star says why, after its day — the day is still the end of
+      // the part that names it.
       expect(name).toMatch(
-        new RegExp(`^.+ on (${STAR_DAY_NAMES.join("|")})$`),
+        new RegExp(
+          `^.+ on (${STAR_DAY_NAMES.join("|")})( — only today can be coloured in)?$`,
+        ),
       );
     }
   });
@@ -184,8 +202,20 @@ describe("accessibility", () => {
     ]) {
       expect(control.tagName).toBe("BUTTON");
       expect(control.getAttribute("type")).toBe("button");
-      expect(control.hasAttribute("disabled")).toBe(false);
       expect(control.getAttribute("tabindex")).not.toBe("-1");
+    }
+
+    /*
+     * The one deliberate exception: the four columns that are not today are
+     * `disabled`, which takes them out of the tab order on purpose. A closed
+     * day should not be somewhere the keyboard stops — and today's column,
+     * which is the only one anybody can act on, must still be reachable.
+     */
+    for (const star of screen.getAllByRole("switch", { name: / on Monday$/ })) {
+      expect(star.hasAttribute("disabled")).toBe(false);
+    }
+    for (const star of screen.getAllByRole("switch", { name: / on Friday/ })) {
+      expect(star.hasAttribute("disabled")).toBe(true);
     }
   });
 
@@ -252,20 +282,25 @@ describe("kid-proofing", () => {
     }
   });
 
-  it("survives a whole row being filled as fast as a thumb moves", async () => {
-    renderBoard();
+  it("survives the last star of a row being hammered", async () => {
+    /*
+     * A row can no longer be filled in one sitting — four of its five stars
+     * belong to days that have already happened — so the fast thumb this
+     * guards against is the one finishing Monday's star on a row that was
+     * waiting for it.
+     */
+    const marks = blankWeek();
+    marks.hannah = { "tidy-room": [false, true, true, true, true] };
+    renderBoard(marks);
+
+    const star = () =>
+      screen.getAllByRole("switch", { name: /^Tidy room on Monday$/ })[0];
 
     await act(async () => {
-      for (const star of screen.getAllByRole("switch", {
-        name: /^Tidy room on/,
-      })) {
-        star.click();
-      }
+      for (let i = 0; i < 6; i += 1) star().click();
     });
 
-    for (const star of screen.getAllByRole("switch", { name: /^Tidy room on/ })) {
-      expect(star.getAttribute("aria-checked")).toBe("true");
-    }
+    expect(star().getAttribute("aria-checked")).toBe("true");
     expect(screen.getByText(/Whole row/)).toBeTruthy();
   });
 
@@ -364,10 +399,10 @@ describe("kid-proofing", () => {
     renderBoard();
 
     await act(async () => {
-      screen.getAllByRole("switch", { name: /^Tidy room on/ })[0].click();
+      screen.getAllByRole("switch", { name: / on Monday$/ })[0].click();
     });
     await act(async () => {
-      screen.getAllByRole("switch", { name: /^Tidy room on/ })[1].click();
+      screen.getAllByRole("switch", { name: / on Monday$/ })[1].click();
     });
 
     // One message, not two stacked, and the chart is still tappable.
@@ -380,13 +415,13 @@ describe("kid-proofing", () => {
     renderBoard();
 
     await act(async () => {
-      screen.getAllByRole("switch", { name: /^Tidy room on/ })[0].click();
+      screen.getAllByRole("switch", { name: / on Monday$/ })[0].click();
     });
     expect(screen.getByRole("status").textContent).toContain("Nope.");
 
     setStar.mockResolvedValue({ ok: true });
     await act(async () => {
-      screen.getAllByRole("switch", { name: /^Tidy room on/ })[1].click();
+      screen.getAllByRole("switch", { name: / on Monday$/ })[1].click();
     });
     expect(screen.queryByText("Nope.")).toBeNull();
   });

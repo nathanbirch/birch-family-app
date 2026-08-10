@@ -78,7 +78,14 @@ describe("last page storage", () => {
     },
   );
 
-  it.each(["/seating", "/rotations"])(
+  it("follows /report to the ceremonies it was renamed to", () => {
+    // The weekly report kept everything but its name, so a device sitting on
+    // it should reopen on it rather than on Home.
+    window.localStorage.setItem(LAST_PAGE_STORAGE_KEY, "/report");
+    expect(readLastPage()).toBe("/ceremonies");
+  });
+
+  it.each(["/seating", "/rotations", "/report"])(
     "still refuses to store %s",
     (old) => {
       // Migration is a courtesy on the way *out*. Nothing should be writing an

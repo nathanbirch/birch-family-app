@@ -40,6 +40,19 @@ const nextConfig: NextConfig = {
        */
       { source: "/seating", destination: "/turns", permanent: false },
       { source: "/rotations", destination: "/turns", permanent: false },
+
+      /*
+       * The weekly report became Ceremonies, which is what the family calls
+       * the thing it has always been. One week's ceremony keeps its Monday, so
+       * the sub-path is carried across rather than dropping a bookmarked week
+       * on the index.
+       */
+      { source: "/report", destination: "/ceremonies", permanent: false },
+      {
+        source: "/report/:week",
+        destination: "/ceremonies/:week",
+        permanent: false,
+      },
     ];
   },
 

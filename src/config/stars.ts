@@ -178,7 +178,13 @@ export const STAR_TASKS: readonly StarTask[] = [
   {
     id: "laundry-upstairs",
     chart: "chores",
-    label: "Take laundry upstairs & put away",
+    /*
+     * The one row whose wording is *ahead* of the fridge rather than copied
+     * off it. The printed chart says "Take laundry upstairs & put away", which
+     * only describes the end of the job; the star is now earned by either half
+     * of it. Write it onto the laminate in pen and the two agree again.
+     */
+    label: "Put away laundry, or do a load of laundry",
     assign: { kind: "everyone" },
   },
 
@@ -257,12 +263,17 @@ export const STAR_TASKS: readonly StarTask[] = [
     label: "Piano practice",
     assign: { kind: "fixed", children: ["william", "clara", "emily", "hannah"] },
   },
-  {
-    id: "cello",
-    chart: "learning",
-    label: "Cello practice",
-    assign: { kind: "fixed", children: ["hannah"] },
-  },
+  /*
+   * Cello practice used to sit here, as Hannah's alone. It is gone because it
+   * is gone off the fridge: the row is scored out in red pen on the chart, and
+   * this file follows the chart.
+   *
+   * Deleted rather than kept and hidden, and the id `cello` is now retired for
+   * good — never reuse it for something else. Any star already filed against
+   * it stays in the database and is simply dropped on the way out by
+   * `normaliseMarks()`, which is the same forgiveness that lets a row be added
+   * without a migration. If the cello comes back, it comes back as a new row.
+   */
 
   /* --- Hygiene ------------------------------------------------------ */
 

@@ -8,7 +8,7 @@
  * than break; the action's job is to refuse anything it was not asked for,
  * whether or not the request came from the page.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const collection = vi.hoisted(() => ({ find: vi.fn() }));
 const getCollection = vi.hoisted(() => vi.fn(async () => collection));
@@ -52,10 +52,25 @@ function stored(overrides: Record<string, unknown> = {}) {
 
 let warn: ReturnType<typeof vi.spyOn>;
 
+/*
+ * Wednesday 5 August 2026, at noon in Rexburg (18:00 UTC).
+ *
+ * The action only writes to the column that is happening *today*, on the
+ * family's clock rather than the server's — so these tests have to stand on a
+ * particular day, and it is the Wednesday that `valid` below ticks.
+ */
+const NOON_IN_REXBURG = new Date("2026-08-05T18:00:00Z");
+
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(NOON_IN_REXBURG);
   vi.clearAllMocks();
   findReturns([]);
   warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("reading the pools", () => {
@@ -192,6 +207,55 @@ describe("the setStar action", () => {
     const result = await setStar({ ...valid, weekStart: "2026-08-04" });
     expect(result).toEqual({ ok: false, message: expect.stringMatching(/week/i) });
     expect(setStarMark).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["tomorrow", 3],
+    ["Friday", 4],
+    ["yesterday", 1],
+    ["Monday", 0],
+  ])("refuses %s, whichever side of today it falls", async (_label, dayIndex) => {
+    /*
+     * The chart renders the other four columns as untappable, but this is a
+     * POST endpoint and that is only a rendering decision. Ahead is a star
+     * nobody has earned yet; behind is Sunday-night catching up. Both are the
+     * same refusal.
+     */
+    const result = await setStar({ ...valid, dayIndex });
+    expect(result.ok).toBe(false);
+    expect(setStarMark).not.toHaveBeenCalled();
+  });
+
+  it("refuses every column at the weekend", async () => {
+    // Saturday, in Rexburg. The chart runs Monday to Friday, so there is no
+    // day to record and the whole week is closed.
+    vi.setSystemTime(new Date("2026-08-08T18:00:00Z"));
+
+    for (const dayIndex of [0, 1, 2, 3, 4]) {
+      const result = await setStar({ ...valid, dayIndex });
+      expect(result.ok).toBe(false);
+    }
+    expect(setStarMark).not.toHaveBeenCalled();
+  });
+
+  it("refuses a week that has already finished", async () => {
+    // Last week's Monday, ticked this week: the column is real, the week is
+    // over, and the star is a reconstruction.
+    const result = await setStar({ ...valid, weekStart: "2026-07-27" });
+    expect(result.ok).toBe(false);
+    expect(setStarMark).not.toHaveBeenCalled();
+  });
+
+  it("goes by Rexburg's clock, not the server's", async () => {
+    /*
+     * 01:00 UTC on Thursday is still 19:00 on Wednesday in Rexburg. A server
+     * that used its own clock would spend every evening refusing the column
+     * the children are looking at and opening tomorrow's instead.
+     */
+    vi.setSystemTime(new Date("2026-08-06T01:00:00Z"));
+
+    expect((await setStar({ ...valid, dayIndex: 2 })).ok).toBe(true);
+    expect((await setStar({ ...valid, dayIndex: 3 })).ok).toBe(false);
   });
 
   it("refuses a task that is not on that child's chart", async () => {

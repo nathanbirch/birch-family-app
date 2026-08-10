@@ -6,12 +6,13 @@ import { z } from "zod";
 import { CHILD_IDS, type ChildId } from "@/config/family";
 import { STAR_DAY_COUNT } from "@/config/stars";
 import { requireUser } from "@/lib/auth/dal";
+import { familyNow } from "@/lib/family-api/time";
 
 import type { StarActionResult } from "./action-result";
 import { setStarMark } from "./marks";
 import { getChorePools } from "./rotation-store";
 import { isTaskForChild } from "./tasks";
-import { parseWeekStart, referenceDateFor } from "./week";
+import { openDayIndex, parseWeekStart, referenceDateFor } from "./week";
 
 /**
  * Ticking a star.
@@ -61,6 +62,31 @@ export async function setStar(input: {
   const monday = parseWeekStart(weekStart);
   if (!monday) {
     return { ok: false, message: "That week could not be saved." };
+  }
+
+  /*
+   * Only today's column, and only in the week that is actually running.
+   *
+   * The chart already renders the other four columns as untappable, but that
+   * is a rendering decision and this is a POST endpoint — see the note at the
+   * top. `familyNow()` rather than `new Date()` because the check has to be
+   * made on Rexburg's calendar: this runs on Vercel, where from teatime
+   * onwards "today" is already tomorrow, and a UTC clock would spend every
+   * evening refusing the column the children were looking at and opening the
+   * one they were not.
+   *
+   * See `openDayIndex()` for why a star is a record of a day rather than a box
+   * to fill in whenever the row looks untidy.
+   */
+  const openIndex = openDayIndex(monday, familyNow().civilNoon);
+  if (dayIndex !== openIndex) {
+    return {
+      ok: false,
+      message:
+        openIndex === -1
+          ? "Stars can only be coloured in Monday to Friday."
+          : "Only today's star can be coloured in.",
+    };
   }
 
   /*

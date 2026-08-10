@@ -2,7 +2,11 @@
 
 import { getPerson } from "@/config/family";
 import { formatMoney } from "@/config/rewards";
-import { STAR_RATE_LABEL, type WeekReport } from "@/lib/stars/report";
+import {
+  STAR_RATE_LABEL,
+  totalCaption,
+  type WeekReport,
+} from "@/lib/stars/report";
 
 import { Avatar } from "../Avatar";
 import { Confetti } from "../stars/Confetti";
@@ -111,7 +115,7 @@ export function FinaleSlide({
             </span>
           </span>
           <span className="mt-1 text-sm font-bold uppercase tracking-[0.2em] opacity-85">
-            stars this week
+            {totalCaption(report.weekCount)}
           </span>
         </div>
 

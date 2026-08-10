@@ -14,7 +14,6 @@ import { useRouter } from "next/navigation";
 import type { ChorePool } from "@/config/chore-rotation";
 import { CHILD_IDS, getPerson, type ChildId } from "@/config/family";
 import {
-  STAR_DAY_COUNT,
   STAR_DAY_NAMES,
   getChart,
   getStarTask,
@@ -23,7 +22,6 @@ import {
 import { useCurrentDate } from "@/hooks/useCurrentDate";
 import {
   addDays,
-  differenceInCalendarDays,
   formatDateRange,
   parseLocalDate,
   startOfWeekMonday,
@@ -46,7 +44,7 @@ import {
 } from "@/lib/stars/counting";
 import { getChoreCountdownLabel } from "@/lib/stars/rotation";
 import { getChartSectionsForChild, getTasksForChild } from "@/lib/stars/tasks";
-import { getWeekStartIso, referenceDateFor } from "@/lib/stars/week";
+import { getWeekStartIso, openDayIndex, referenceDateFor } from "@/lib/stars/week";
 
 import { Avatar } from "../Avatar";
 
@@ -154,11 +152,15 @@ export function StarsBoard({
     if (getWeekStartIso(date) !== weekStart) router.refresh();
   }, [date, weekStart, router]);
 
-  /** Which column is today, or -1 at the weekend and in any other week. */
-  const todayIndex = useMemo(() => {
-    const offset = differenceInCalendarDays(monday, date);
-    return offset >= 0 && offset < STAR_DAY_COUNT ? offset : -1;
-  }, [monday, date]);
+  /**
+   * Which column is today, or -1 at the weekend and in any other week.
+   *
+   * This is also the only column that can be *changed* — every other star is
+   * drawn but locked. The server re-derives the same answer from the same
+   * function against the family's clock before it writes anything; see
+   * `openDayIndex()`.
+   */
+  const todayIndex = useMemo(() => openDayIndex(monday, date), [monday, date]);
 
   // Chores change hands on the 1st, so a week that straddles a month shows
   // whoever has the chore *now*. See `lib/stars/week.ts`.
@@ -396,6 +398,22 @@ export function StarsBoard({
           ? ` · ${weekTotal.completeRows} whole ${weekTotal.completeRows === 1 ? "row" : "rows"}`
           : ""}
       </p>
+
+      {/*
+        Only said out loud at the weekend. On a weekday the open column is
+        washed in the accent colour and the other four are faded, which a child
+        reads without being told — but on Saturday *every* star is faded and
+        nothing explains why, so that is the one case that needs a sentence.
+      */}
+      {todayIndex === -1 ? (
+        <p
+          className="text-center text-xs font-semibold"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          The chart is closed for the weekend — stars are coloured in on the day
+          they are earned.
+        </p>
+      ) : null}
 
       {error ? (
         <p

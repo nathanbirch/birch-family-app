@@ -8,6 +8,7 @@
     "start": "node scripts/start-server.mjs",
     "db:check": "node --env-file=.env scripts/check-database.mjs",
     "db:seed": "tsx --env-file=.env scripts/seed-database.ts",
+    "db:seed-history": "tsx --env-file=.env scripts/seed-star-history.ts",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

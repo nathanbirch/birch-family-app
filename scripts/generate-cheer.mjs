@@ -1,5 +1,5 @@
 /**
- * Makes the celebration sound: a room of children clapping and shouting "yay".
+ * Makes the celebration sound: a room breaking into applause, and a chime.
  *
  *   npm run sound:generate
  *
@@ -28,24 +28,48 @@
  * will be better than anything in here.
  *
  * ---------------------------------------------------------------------------
- * HOW THE SOUND IS BUILT
+ * WHAT WAS WRONG WITH THE FIRST ONE
  * ---------------------------------------------------------------------------
- * Two layers, because a cheer is two unrelated things happening at once:
+ * The version this replaces was harsh, and it is worth writing down why,
+ * because every cause was a decision that looked sensible on paper:
  *
- *   **Applause** — ninety-odd claps, each a few milliseconds of noise through
- *   a bandpass and a steep decay. Real applause is dense at the start and
- *   thins out, so the clap times are drawn from a falling density rather than
- *   spread evenly, and each clap gets its own filter centre so no two are the
- *   same hand.
+ * 1. **132 claps in 1.3 seconds.** That is a clap every ten milliseconds. Past
+ *    about forty per second the ear stops hearing hands and starts hearing
+ *    *noise* — the individual transients fuse into a hiss.
+ * 2. **Instant attacks.** Each clap began at full amplitude on its first
+ *    sample. A real clap has a millisecond or two of rise; a step function
+ *    does not, and a step function is a click.
+ * 3. **`tanh(x * 1.9)`.** Applause is almost entirely transient, so a mix
+ *    normalised on peak comes out quiet, and the drive was there to lift the
+ *    average. It did — by squashing the peaks into distortion. The extra
+ *    loudness was the sound of clipping.
+ * 4. **Six synthesised "yay"s.** A sawtooth through three biquads is an
+ *    intelligible vowel and it is not a child. It read as a kazoo, and it sat
+ *    right in the 2-3kHz band the ear is most sensitive to.
  *
- *   **Voices** — six children shouting "yay", built by formant synthesis: a
- *   buzzy glottal pulse train through three resonators whose centres move the
- *   way a mouth does through /j/-/eɪ/. Children's voices sit high, so the
- *   fundamentals are 300-460Hz, and each voice gets its own pitch contour,
- *   vibrato and onset so it reads as several children rather than a chord.
+ * ---------------------------------------------------------------------------
+ * HOW THE SOUND IS BUILT NOW
+ * ---------------------------------------------------------------------------
+ * Three layers, quiet to loud:
  *
- * Then a handful of delay taps for the room, a soft clip to keep the peaks
- * civil, and fades so nothing starts or stops with a click.
+ *   **A bed** — filtered noise, swelling and falling. It is barely audible on
+ *   its own, and it is what stops the claps sounding like they were recorded
+ *   in an anechoic chamber.
+ *
+ *   **Applause** — around fifty pairs of hands rather than a hundred and
+ *   thirty, each with a real (if very short) attack, a body resonance low
+ *   enough to have some weight to it, and a decay measured in tens of
+ *   milliseconds rather than units. Times are drawn from a falling density, so
+ *   the room starts together and thins out.
+ *
+ *   **A chime** — three notes of a major triad, rising, made of a few sine
+ *   partials each. This is what replaced the voices. It is unmistakably
+ *   "something good just happened", it costs about fifteen lines, and unlike a
+ *   synthesised shout it cannot sound like a bad imitation of a child, because
+ *   it is not imitating one.
+ *
+ * Then delay taps for the room, a gentle lowpass to take the glare off the top
+ * end, a *mild* soft clip, and fades so nothing starts or stops with a click.
  */
 
 import { createHash } from "node:crypto";
@@ -143,119 +167,135 @@ function bandpass(samples, centreHz, q) {
   return samples;
 }
 
-/** One pair of hands. A few milliseconds of noise, shaped and coloured. */
-function clap(startSeconds, gain) {
-  // 18ms of noise is plenty: past that a clap starts to sound like a hiss.
-  const length = Math.round(SAMPLE_RATE * between(0.012, 0.02));
-  const piece = new Float32Array(length);
+/**
+ * A one-pole lowpass, applied in place.
+ *
+ * The final mix goes through this and so does every clap. Six lines, same
+ * reasoning as `bandpass` — no dependency should stand between somebody and
+ * regenerating this file.
+ */
+function lowpass(samples, cutoffHz) {
+  const rc = 1 / (2 * Math.PI * cutoffHz);
+  const alpha = 1 / SAMPLE_RATE / (rc + 1 / SAMPLE_RATE);
+  let previous = 0;
+  for (let i = 0; i < samples.length; i += 1) {
+    previous += alpha * (samples[i] - previous);
+    samples[i] = previous;
+  }
+  return samples;
+}
 
-  // Decay constant, in samples. Short and steep — this is a transient.
-  const tau = SAMPLE_RATE * between(0.002, 0.006);
+/**
+ * One pair of hands.
+ *
+ * Three details separate this from the version that sounded like static, and
+ * all three are about the *envelope* rather than the spectrum:
+ *
+ *  - **A real attack.** 1.5-3ms of rise. Inaudible as a ramp, and the
+ *    difference between a clap and a click.
+ *  - **A decay in tens of milliseconds**, not units, so the hands have some
+ *    ring rather than being a single spike.
+ *  - **Two bands, not one.** A bandpass around 1-2kHz for the slap, plus a
+ *    lower, quieter body around 400-700Hz. Cupped hands have a resonant cavity
+ *    in them; a clap with no low end at all is a snare rim.
+ */
+function clap(startSeconds, gain) {
+  const length = Math.round(SAMPLE_RATE * between(0.05, 0.09));
+  const noise = new Float32Array(length);
+  for (let i = 0; i < length; i += 1) noise[i] = random() * 2 - 1;
+
+  const slap = bandpass(
+    Float32Array.from(noise),
+    between(900, 2100),
+    between(0.8, 1.4),
+  );
+  const body = bandpass(
+    Float32Array.from(noise),
+    between(380, 700),
+    between(1.2, 2.2),
+  );
+
+  const attack = Math.max(1, Math.round(SAMPLE_RATE * between(0.0015, 0.003)));
+  const tau = SAMPLE_RATE * between(0.012, 0.028);
+
+  const piece = new Float32Array(length);
   for (let i = 0; i < length; i += 1) {
-    piece[i] = (random() * 2 - 1) * Math.exp(-i / tau);
+    const rise = i < attack ? i / attack : 1;
+    piece[i] = (slap[i] + body[i] * 0.5) * rise * Math.exp(-i / tau);
   }
 
-  // Every pair of hands has its own resonance; 900Hz-3.2kHz is where a clap
-  // lives, and spreading the centres is what stops ninety claps sounding like
-  // one clap played ninety times.
-  bandpass(piece, between(1100, 4200), between(0.7, 1.6));
+  // The top end of a clap is where the harshness lives, and a phone speaker
+  // exaggerates it. Rolling it off here rather than only on the mix means the
+  // room's delay taps are not re-adding it a moment later.
+  lowpass(piece, 7000);
 
   return { piece, offset: Math.round(startSeconds * SAMPLE_RATE), gain };
 }
 
 /**
- * One child shouting "yay".
+ * One note of the chime, as a struck bell rather than a beep.
  *
- * The vowel is the interesting part. /eɪ/ moves the first formant down and the
- * second up as the mouth closes towards the /ɪ/, which is what makes it a
- * diphthong rather than a held "eh" — so F1 and F2 are interpolated across the
- * shout rather than fixed.
+ * A bare sine is a test tone. What makes this a *note* is three things it has
+ * on top of one: a couple of quiet inharmonic partials, a short burst of
+ * brightness at the start that dies away faster than the fundamental does
+ * (which is what "struck" sounds like), and a decay long enough to still be
+ * ringing under the next note.
  */
-function voice(startSeconds, f0, lengthSeconds, gain) {
+function bell(startSeconds, frequency, lengthSeconds, gain) {
   const length = Math.round(SAMPLE_RATE * lengthSeconds);
-  const excitation = new Float32Array(length);
+  const piece = new Float32Array(length);
 
-  const vibratoHz = between(4.5, 6.5);
-  const vibratoDepth = between(0.01, 0.028);
+  // Ratios rather than integers: a real bell's partials are not harmonics, and
+  // the slight detuning is most of what stops this sounding like an organ.
+  const PARTIALS = [
+    { ratio: 1, gain: 1, decay: 0.42 },
+    { ratio: 2.01, gain: 0.36, decay: 0.24 },
+    { ratio: 3.02, gain: 0.14, decay: 0.13 },
+    { ratio: 5.4, gain: 0.05, decay: 0.07 },
+  ];
 
-  let phase = 0;
-  for (let i = 0; i < length; i += 1) {
-    const t = i / SAMPLE_RATE;
-    const progress = i / length;
-
-    /*
-     * The pitch of a shout: up quickly, hold, then fall away at the end. A
-     * flat pitch is the single thing that makes synthesised voices sound
-     * synthesised, so this and the vibrato matter more than they look.
-     */
-    const contour =
-      1 + 0.16 * Math.sin(Math.PI * Math.min(1, progress * 1.4)) - 0.1 * progress ** 2;
-    const vibrato = 1 + vibratoDepth * Math.sin(2 * Math.PI * vibratoHz * t);
-    const frequency = f0 * contour * vibrato;
-
-    phase += frequency / SAMPLE_RATE;
-    if (phase >= 1) phase -= 1;
-
-    /*
-     * Glottal excitation. A sawtooth is the standard cheap stand-in: it has
-     * every harmonic, which is what the formant filters need something to bite
-     * on. Adding a touch of breath noise stops it sounding like an organ.
-     */
-    excitation[i] = (2 * phase - 1) * 0.8 + (random() * 2 - 1) * 0.12;
-  }
-
-  /*
-   * Three formants, each filtered from the same excitation and summed. F1 and
-   * F2 sweep; F3 is fixed and quiet and mostly just adds presence.
-   *
-   * The sweep is done in four short segments rather than per-sample, because a
-   * biquad whose coefficients change every sample is not a stable filter — it
-   * chirps. Four is enough to hear the vowel move.
-   */
-  const SEGMENTS = 4;
-  const out = new Float32Array(length);
-  const segmentLength = Math.ceil(length / SEGMENTS);
-
-  // /j/ -> /e/ -> /ɪ/: F1 falls, F2 climbs. Children's formants sit higher
-  // than an adult's, which is already accounted for in these numbers.
-  const F1 = [520, 760, 620, 470];
-  const F2 = [2350, 2050, 2250, 2600];
-  const F3 = 3200;
-
-  for (let s = 0; s < SEGMENTS; s += 1) {
-    const from = s * segmentLength;
-    const to = Math.min(length, from + segmentLength);
-    if (to <= from) break;
-
-    const slice = excitation.slice(from, to);
-
-    const first = bandpass(Float32Array.from(slice), F1[s], 9);
-    const second = bandpass(Float32Array.from(slice), F2[s], 11);
-    const third = bandpass(Float32Array.from(slice), F3, 13);
-
-    for (let i = from; i < to; i += 1) {
-      const j = i - from;
-      out[i] = first[j] * 1 + second[j] * 0.55 + third[j] * 0.22;
+  for (const { ratio, gain: level, decay } of PARTIALS) {
+    const omega = (2 * Math.PI * frequency * ratio) / SAMPLE_RATE;
+    const tau = SAMPLE_RATE * decay;
+    for (let i = 0; i < length; i += 1) {
+      piece[i] += Math.sin(omega * i) * level * Math.exp(-i / tau);
     }
   }
 
-  /*
-   * The shout's envelope. A fast attack because it is a shout and not a note,
-   * a plateau, and a long release so it sounds like a room rather than a
-   * button being pressed.
-   */
-  const attack = Math.round(SAMPLE_RATE * 0.035);
-  const release = Math.round(SAMPLE_RATE * 0.28);
-  for (let i = 0; i < length; i += 1) {
-    let envelope = 1;
-    if (i < attack) envelope = i / attack;
-    else if (i > length - release) envelope = (length - i) / release;
-    out[i] *= envelope * envelope * gain;
-  }
+  // 3ms of rise. Shorter and the note starts with a click of its own; longer
+  // and it fades in rather than being struck.
+  const attack = Math.round(SAMPLE_RATE * 0.003);
+  for (let i = 0; i < attack; i += 1) piece[i] *= i / attack;
+  for (let i = 0; i < length; i += 1) piece[i] *= gain;
 
-  return { piece: out, offset: Math.round(startSeconds * SAMPLE_RATE), gain: 1 };
+  return { piece, offset: Math.round(startSeconds * SAMPLE_RATE), gain: 1 };
 }
 
+/**
+ * The room behind the hands: filtered noise that swells and falls away.
+ *
+ * Almost inaudible by itself, and the whole mix sounds thin without it. Fifty
+ * claps in a silent field is a sound effect; fifty claps over a bed is a room
+ * with people in it.
+ */
+function crowdBed(lengthSeconds, gain) {
+  const length = Math.round(SAMPLE_RATE * lengthSeconds);
+  const piece = new Float32Array(length);
+  for (let i = 0; i < length; i += 1) piece[i] = random() * 2 - 1;
+
+  bandpass(piece, 900, 0.5);
+  lowpass(piece, 3500);
+
+  // Up fast, down slowly — the same shape as the applause it sits under.
+  for (let i = 0; i < length; i += 1) {
+    const progress = i / length;
+    const envelope =
+      Math.min(1, progress * 12) * Math.exp(-Math.max(0, progress - 0.1) * 3.2);
+    piece[i] *= envelope * gain;
+  }
+
+  return { piece, offset: 0, gain: 1 };
+}
 /* -------------------------------------------------------------------------- */
 /* The mix                                                                     */
 /* -------------------------------------------------------------------------- */
@@ -269,41 +309,51 @@ function build() {
     }
   };
 
+  /* --- The bed --------------------------------------------------------- */
+
+  // Under everything, and quiet enough that you would only notice it if it
+  // were missing.
+  add(crowdBed(1.45, 0.1));
+
   /* --- Applause -------------------------------------------------------- */
 
   /*
    * Clap times are drawn from a falling density: a burst as everyone starts
    * together, then thinning out. Evenly spaced claps sound like a machine, and
    * clustered ones sound like a room.
+   *
+   * Fifty-two rather than the old hundred and thirty-two. That is roughly a
+   * clap every twenty-five milliseconds at the peak, which is about as dense
+   * as applause can be before the transients fuse and the whole thing turns
+   * into hiss — the single biggest cause of the harshness this replaced.
    */
-  const CLAPS = 132;
+  const CLAPS = 52;
   for (let i = 0; i < CLAPS; i += 1) {
     const progress = i / CLAPS;
-    // Squaring pushes the times towards the start without ever exceeding 1.3s.
-    const at = Math.min(1.3, progress ** 0.62 * 1.3 + between(-0.03, 0.03));
+    // Squaring pushes the times towards the start without ever exceeding 1.2s.
+    const at = Math.min(1.2, progress ** 0.6 * 1.2 + between(-0.035, 0.035));
     // Later claps are quieter, as if the room is settling.
-    const gain = between(0.35, 1) * (1 - 0.45 * progress);
-    add(clap(Math.max(0, at), gain * 0.95));
+    const gain = between(0.4, 1) * (1 - 0.5 * progress);
+    add(clap(Math.max(0, at), gain * 0.55));
   }
 
-  /* --- Voices ---------------------------------------------------------- */
+  /* --- The chime ------------------------------------------------------- */
 
   /*
-   * Six children. Fundamentals spread across a fifth or so, because six voices
-   * on the same note is a chord, and a chord is a choir rather than a cheer.
-   * The two lowest start a little late — the youngest always joins in after
-   * everyone else.
+   * A major triad, rising: C6, E6, G6, with the octave on top to finish. High
+   * enough to sit above the applause rather than fight it, spaced so each note
+   * is still ringing when the next arrives, and quiet — this is the thing that
+   * makes the noise read as a celebration, not the thing you are meant to
+   * listen to.
    */
-  const VOICES = [
-    { start: 0.02, f0: 396, length: 0.86, gain: 0.34 },
-    { start: 0.05, f0: 342, length: 0.8, gain: 0.3 },
-    { start: 0.09, f0: 448, length: 0.72, gain: 0.26 },
-    { start: 0.13, f0: 308, length: 0.9, gain: 0.28 },
-    { start: 0.18, f0: 366, length: 0.68, gain: 0.24 },
-    { start: 0.26, f0: 424, length: 0.62, gain: 0.22 },
+  const CHIME = [
+    { start: 0.0, hz: 1046.5, length: 0.7, gain: 0.2 },
+    { start: 0.1, hz: 1318.5, length: 0.7, gain: 0.19 },
+    { start: 0.2, hz: 1568.0, length: 0.8, gain: 0.18 },
+    { start: 0.34, hz: 2093.0, length: 1.0, gain: 0.15 },
   ];
-  for (const { start, f0, length, gain } of VOICES) {
-    add(voice(start, f0, length, gain));
+  for (const { start, hz, length, gain } of CHIME) {
+    add(bell(start, hz, length, gain));
   }
 
   /* --- The room -------------------------------------------------------- */
@@ -330,30 +380,41 @@ function build() {
 
   /* --- Levels ---------------------------------------------------------- */
 
+  /*
+   * One gentle lowpass across the whole mix. The delay taps above re-add the
+   * top end that each clap had already had rolled off, and 8kHz is where a
+   * phone speaker stops reproducing anything useful and starts just sounding
+   * thin and glassy.
+   */
+  lowpass(mix, 8000);
+
   // Normalise first, so the soft clip below is doing the same job every run
   // regardless of how the seeded crowd happened to land.
   let peak = 0;
   for (const sample of mix) peak = Math.max(peak, Math.abs(sample));
   if (peak > 0) {
-    const scale = 0.9 / peak;
+    const scale = 0.92 / peak;
     for (let i = 0; i < LENGTH; i += 1) mix[i] *= scale;
   }
 
-  // `tanh` rather than a hard limit: it rounds the transients off instead of
-  // squaring them, which is the difference between "loud" and "distorted".
   /*
-   * Drive of 1.9 is doing double duty: it saturates the clap transients, which
-   * is what a room full of hands actually sounds like, and it lifts the
-   * *average* level. Applause is nearly all transient, so a mix normalised on
-   * peak alone comes out quiet — this is the difference between a celebration
-   * and a polite noise from a phone speaker across a kitchen.
+   * `tanh` rather than a hard limit: it rounds the transients off instead of
+   * squaring them, which is the difference between "loud" and "distorted".
+   *
+   * Drive of 1.3 rather than the 1.9 this used to use. The old figure was
+   * chosen to lift the average level of a mix that is nearly all transient,
+   * and it did — by flattening every clap into the same square-ish shape. What
+   * fixed the loudness properly was giving the claps a longer decay and adding
+   * a bed underneath them, both of which raise the average *without* touching
+   * the peaks. This is now only catching the handful of moments where several
+   * hands happen to land on the same sample.
    */
-  for (let i = 0; i < LENGTH; i += 1) mix[i] = Math.tanh(mix[i] * 1.9) * 0.92;
+  for (let i = 0; i < LENGTH; i += 1) mix[i] = Math.tanh(mix[i] * 1.3) * 0.95;
 
-  // Fades. 4ms in is inaudible but removes the click; 140ms out lets the last
-  // claps land rather than being guillotined.
+  // Fades. 4ms in is inaudible but removes the click; 200ms out lets the last
+  // claps land and the chime ring away rather than being guillotined.
   const fadeIn = Math.round(SAMPLE_RATE * 0.004);
-  const fadeOut = Math.round(SAMPLE_RATE * 0.14);
+  const fadeOut = Math.round(SAMPLE_RATE * 0.2);
   for (let i = 0; i < fadeIn; i += 1) mix[i] *= i / fadeIn;
   for (let i = 0; i < fadeOut; i += 1) {
     mix[LENGTH - 1 - i] *= i / fadeOut;

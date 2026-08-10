@@ -9,7 +9,7 @@
  * with a recording of the real children.
  */
 
-export const CHEER_SOUND = "/sounds/cheer-00801d9753.mp3" as const;
+export const CHEER_SOUND = "/sounds/cheer-0d41fbb569.mp3" as const;
 
 /** Seconds. Used to size the celebration, not to schedule anything. */
 export const CHEER_DURATION_SECONDS = 1.6;

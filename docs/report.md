@@ -1,12 +1,14 @@
-# The weekly report
+# Ceremonies
 
 Every Monday there is a new one: last week's stars, read out as an award
 ceremony. A title card, a slide for each of the five children — their charts
 arriving one at a time, then the total, then what it is worth — and the
 family's total to finish, under confetti and a brass fanfare.
 
-Live at [`/report`](../src/app/(app)/report/page.tsx), with one ceremony per
-week at [`/report/[week]`](../src/app/(app)/report/[week]/page.tsx). The
+Live at [`/ceremonies`](../src/app/(app)/ceremonies/page.tsx) — labelled
+**Ceremony** on the dashboard card and titled **Ceremonies** on the page — with
+one ceremony per week at
+[`/ceremonies/[week]`](../src/app/(app)/ceremonies/[week]/page.tsx). The
 counting is [`lib/stars/report.ts`](../src/lib/stars/report.ts); the stars come
 from `starWeeks`, the same documents the [star charts](stars.md) write.
 
@@ -36,11 +38,62 @@ is what makes the big card at the top of the page a card that sits there for a
 week rather than something anybody has to publish.
 
 `latestCompletedWeekStart()` steps once, at midnight on Monday, and then holds.
-The current week and every week after it are refused outright: `/report/…` for
+The current week and every week after it are refused outright: `/ceremonies/…` for
 this week 404s rather than showing a ceremony for a Wednesday half of which has
 not happened, and a hand-typed URL for October cannot conjure a page of zeroes
 presented as a result. A Monday is the only shape of URL accepted at all —
-`parseWeekStart` rejects anything else, exactly as the star-charts action does.
+`parseWeekStart` rejects anything else, exactly as the star-charts action does
+— with one exception, which is the next section.
+
+## A ceremony that spans several weeks
+
+Sometimes three weeks belong together and are worth watching in one sitting.
+Those are listed by hand in
+[`config/ceremonies.ts`](../src/config/ceremonies.ts) — an id, a name, the
+Mondays it covers, and the window it may be watched in — and they are the only
+part of this feature that is configured rather than derived, because "these
+three weeks are an event" is not something a calendar knows.
+
+Nothing extra is stored. `buildSpanReport()` builds **each week exactly as it
+would be built on its own** and sums the totals, rather than merging the marks
+and counting once. That is not a detail:
+
+- A row is five days long. Merged marks would have to decide what a fifteen-day
+  `tidy-room` row means, and every answer is a lie — including the one where it
+  is a "whole row" once instead of three times.
+- The rotation moves. Which chores were Clara's is a property of the week, so
+  July's stars have to be counted against July's chart.
+
+The consequence is the property that matters: a span can never disagree with
+the weekly ceremonies listed underneath it. Add up the three and you get the
+fourth.
+
+A span is addressed by its id (`/ceremonies/summer-so-far`), which is why
+reports carry a `slug` — `weekStart` stopped being a unique identity the moment
+two reports could begin on the same Monday. The `[week]` page tries the span
+lookup first, because the id would otherwise be rejected as "not a Monday".
+`tests/ceremonies.test.ts` fails if an id is ever shaped like a date.
+
+### The window
+
+`hiddenFrom` is a **date**, and it means midnight at the start of that date on
+the family's clock: `"2026-08-11"` is exactly "gone at 12:00 AM Mountain Time on
+the 11th", so the ceremony is up all through the evening of the 10th. A date
+rather than a timestamp because the boundary anybody asks for is midnight, and
+because it makes the check a string comparison against `familyNow().date` —
+which is the whole point, since a server-clock comparison would take it off the
+page at six in the evening.
+
+When the window closes the ceremony is **gone**, not greyed out: the card
+disappears from `/ceremonies` and the page 404s. `getVisibleSpanCeremony()`
+checks the window itself rather than leaving it to the caller, so there is no
+version of the lookup that returns a ceremony nobody is allowed to watch.
+
+The card sits above the weekly one and only on page one, in the theme's colour
+rather than the star's gold — two near-identical gold cards stacked would have
+to be read to be told apart — and it says "tonight only" on the last evening,
+because a card that quietly vanishes overnight is worse than one that warned
+you.
 
 A week nobody ticked a star in is **not** refused. It is a real report of a
 real week and the slides say so.
@@ -258,7 +311,7 @@ seven exists nobody will be aiming at page seven; they will be aiming at a
 |---|---|
 | What a star is worth | `CENTS_PER_STAR` in `src/config/rewards.ts` |
 | How long a slide holds | `HOLD_MS` in `src/components/report/timing.ts` |
-| How many weeks per page | `PER_PAGE` in `src/app/(app)/report/page.tsx` |
+| How many weeks per page | `PER_PAGE` in `src/app/(app)/ceremonies/page.tsx` |
 | The praise on a thin week | `praiseFor()` in `src/lib/stars/report.ts` |
 | The music | The score in `scripts/generate-fanfare.mjs`, then `npm run music:generate` |
 | How loud the music is | `MUSIC_VOLUME` in `AwardCeremony.tsx` |

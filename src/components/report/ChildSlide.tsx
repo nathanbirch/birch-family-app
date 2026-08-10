@@ -71,9 +71,15 @@ const CHART_WORD: Record<ChartId, string> = {
 
 export function ChildSlide({
   report,
+  weekCount,
   runKey,
 }: {
   report: ChildReport;
+  /**
+   * How many weeks the ceremony covers, for the praise underneath the total —
+   * "a perfect week" and "a perfect 3 weeks" are not the same compliment.
+   */
+  weekCount: number;
   /** Changes every time this slide arrives on stage; `null` while it is off. */
   runKey: number | null;
 }) {
@@ -208,7 +214,7 @@ export function ChildSlide({
             { "--reveal-delay": `${totalDelay + 620}ms` } as React.CSSProperties
           }
         >
-          {praiseFor(report)}
+          {praiseFor(report, weekCount)}
           {report.completeRows > 0 ? (
             <span className="mt-1 block text-sm font-semibold opacity-80">
               {wholeRowsLabel(report.completeRows)} filled all the way across

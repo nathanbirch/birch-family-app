@@ -40,7 +40,7 @@ export function ReportHeroCard({
 
   return (
     <Link
-      href={`/report/${report.weekStart}`}
+      href={`/ceremonies/${report.slug}`}
       className="app-card animate-soft-rise block overflow-hidden p-0 transition-transform active:scale-[0.99]"
     >
       {/*

@@ -1,5 +1,5 @@
 import { render, screen, within, act } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { StarsBoard } from "@/components/stars/StarsBoard";
 import { CHORE_POOLS } from "@/config/chore-rotation";
@@ -28,12 +28,20 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
 }));
 
-/** Monday of the week the charts were photographed, and the Tuesday after it. */
+/**
+ * Monday of the week the charts were photographed, and the Wednesday in it.
+ *
+ * The day matters now: only today's column can be coloured in, so the board is
+ * rendered *on* the Wednesday these tests tick. A test that clicks any other
+ * column is asserting that it cannot be clicked.
+ */
 const WEEK_START = "2026-08-03";
-const TUESDAY = "2026-08-04";
+const TODAY = "2026-08-05";
+/** Wednesday's index in the Monday-to-Friday row. */
+const WEDNESDAY = 2;
 
-/** The same Tuesday as a Date, for asking the rotation what Hannah has. */
-const AUGUST = new Date(2026, 7, 4, 12, 0, 0, 0);
+/** The same week as a Date, for asking the rotation what Hannah has. */
+const AUGUST = new Date(2026, 7, 5, 12, 0, 0, 0);
 
 function blankWeek(): WeekMarks {
   return Object.fromEntries(CHILD_IDS.map((id) => [id, {}])) as WeekMarks;
@@ -42,7 +50,7 @@ function blankWeek(): WeekMarks {
 function renderBoard(marks: WeekMarks = blankWeek()) {
   return render(
     <StarsBoard
-      initialDateIso={TUESDAY}
+      initialDateIso={TODAY}
       weekStart={WEEK_START}
       pools={CHORE_POOLS}
       marks={marks}
@@ -66,12 +74,23 @@ function escapeRegExp(value: string): string {
 }
 
 beforeEach(() => {
+  /*
+   * Only today's column can be coloured in, and `useCurrentDate` reaches for
+   * the real `Date` a tick after mount — so the clock has to be faked as well
+   * as passed in, or every tap below would land on a locked star.
+   */
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(2026, 7, 5, 12, 0, 0, 0));
   setStar.mockReset();
   playCheer.mockReset();
   primeCheer.mockReset();
   // A promise that never settles: the optimistic state is what a child sees
   // while the write is in flight, and that is what most of these assert.
   setStar.mockReturnValue(new Promise(() => {}));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("the chart on screen", () => {
@@ -91,10 +110,10 @@ describe("the chart on screen", () => {
   it("gives every task five stars, one per weekday", () => {
     renderBoard();
 
-    const cello = starsFor("Cello practice");
-    expect(cello).toHaveLength(5);
-    expect(cello[2].getAttribute("aria-label")).toBe(
-      "Cello practice on Wednesday",
+    const reading = starsFor("40 min reading");
+    expect(reading).toHaveLength(5);
+    expect(reading[2].getAttribute("aria-label")).toBe(
+      "40 min reading on Wednesday",
     );
   });
 
@@ -116,7 +135,7 @@ describe("the chart on screen", () => {
     });
 
     expect(starsFor("Write alphabet")).toHaveLength(5);
-    expect(screen.queryByRole("switch", { name: /Cello practice on/ })).toBeNull();
+    expect(screen.queryByRole("switch", { name: /40 min reading on/ })).toBeNull();
     // James feeds Bella in August; the wooden floor is William's.
     expect(starsFor("Feed Bella")).toHaveLength(5);
     expect(
@@ -229,13 +248,13 @@ describe("colouring in a star", () => {
 
   it("celebrates a whole row", async () => {
     const marks = blankWeek();
-    marks.hannah = { "tidy-room": [true, true, true, true, false] };
+    marks.hannah = { "tidy-room": [true, true, false, true, true] };
     renderBoard(marks);
 
     expect(screen.queryByText(/Whole row/)).toBeNull();
 
     await act(async () => {
-      starsFor("Tidy room")[4].click();
+      starsFor("Tidy room")[WEDNESDAY].click();
     });
 
     expect(screen.getByText(/Whole row/)).toBeTruthy();
@@ -263,7 +282,7 @@ describe("colouring in a star", () => {
     renderBoard();
 
     await act(async () => {
-      starsFor("Piano practice")[0].click();
+      starsFor("Piano practice")[WEDNESDAY].click();
     });
 
     const status = await screen.findByRole("status");
@@ -277,8 +296,6 @@ describe("celebrating a finished column", () => {
    * column is everything owed for one day. The two sizes are two different
    * achievements, so these tests are mostly about not confusing them.
    */
-  const WEDNESDAY = 2;
-
   function confetti(): string[] {
     return Array.from(document.querySelectorAll("[data-confetti]")).map(
       (node) => node.getAttribute("data-confetti") ?? "",
@@ -405,7 +422,6 @@ describe("celebrating a finished column", () => {
 });
 
 describe("the cheering", () => {
-  const WEDNESDAY = 2;
 
   /** Everything Hannah owes on Wednesday, bar the very last star. */
   function wholeDayButOne(): StarMarks {
@@ -467,7 +483,7 @@ describe("the cheering", () => {
     renderBoard();
 
     await act(async () => {
-      starsFor("Piano practice")[0].click();
+      starsFor("Piano practice")[WEDNESDAY].click();
     });
 
     expect(primeCheer).toHaveBeenCalled();

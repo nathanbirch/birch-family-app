@@ -1,17 +1,23 @@
 import type { Metadata } from "next";
 
 import { ReportHeroCard } from "@/components/report/ReportHeroCard";
+import { SpanCeremonyCard } from "@/components/report/SpanCeremonyCard";
 import { ReportPager } from "@/components/report/ReportPager";
 import { ReportRow } from "@/components/report/ReportRow";
+import { visibleSpanCeremonies } from "@/config/ceremonies";
 import { requireUser } from "@/lib/auth/dal";
-import { addDays, formatDateRange, parseLocalDate } from "@/lib/dates";
+import { addDays, formatDateRange, parseLocalDate, toIsoDate } from "@/lib/dates";
 import { familyNow } from "@/lib/family-api/time";
 import { getMarksForWeeks, listStarWeekStarts } from "@/lib/stars/marks";
-import { buildWeekReport, reportableWeeks } from "@/lib/stars/report";
+import {
+  buildSpanReport,
+  buildWeekReport,
+  reportableWeeks,
+} from "@/lib/stars/report";
 import { getChorePools } from "@/lib/stars/rotation-store";
 
 export const metadata: Metadata = {
-  title: "Weekly Report",
+  title: "Ceremonies",
 };
 
 /** How many older weeks are listed on one page. */
@@ -51,7 +57,17 @@ export default async function ReportPage({
 }) {
   await requireUser();
 
-  const now = familyNow().civilNoon;
+  const family = familyNow();
+  const now = family.civilNoon;
+  /*
+   * The ceremonies that span several weeks, and whether tonight is one of the
+   * nights they can be watched. `family.date` is Rexburg's calendar day rather
+   * than the server's, which is the whole point: a window that closes at
+   * midnight has to close at midnight *there*, not at six in the evening
+   * because Vercel is already on tomorrow. See `config/ceremonies.ts`.
+   */
+  const spans = visibleSpanCeremonies(family.date);
+
   const stored = await listStarWeekStarts();
   const weeks = reportableWeeks(stored, now);
 
@@ -60,9 +76,19 @@ export default async function ReportPage({
   const page = clampPage((await searchParams).page, pageCount);
   const listed = older.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
+  /*
+   * One read for everything on the page, spans included. A span's weeks are
+   * usually already in the list underneath it, and asking for a week twice
+   * costs nothing here — `getMarksForWeeks` de-duplicates through the `$in`
+   * and keys the answer by week.
+   */
   const [pools, marks] = await Promise.all([
     getChorePools(),
-    getMarksForWeeks([featuredWeek, ...listed]),
+    getMarksForWeeks([
+      featuredWeek,
+      ...listed,
+      ...spans.flatMap((span) => span.weekStarts),
+    ]),
   ]);
 
   const featured = buildWeekReport(
@@ -74,16 +100,55 @@ export default async function ReportPage({
     marks[featuredWeek],
   );
 
+  const spanCards = spans.map((span) => ({
+    span,
+    report: buildSpanReport(
+      pools,
+      span.id,
+      span.weekStarts.map((week) => ({
+        monday: parseLocalDate(week) ?? now,
+        marks: marks[week],
+      })),
+    ),
+    // The window closes at midnight, so "the last night" is simply the day
+    // before it — which is what lets the card say "tonight only" honestly
+    // rather than saying it for a fortnight.
+    lastNight:
+      span.hiddenFrom === toIsoDate(addDays(now, 1)),
+  }));
+
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-4 pt-6 sm:px-6 sm:pt-10">
       <header className="animate-soft-fade mb-5">
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-          Weekly Report
+          Ceremonies
         </h1>
         <p className="mt-1 text-sm" style={{ color: "var(--color-text-muted)" }}>
           Every star of the week, and what it was worth.
         </p>
       </header>
+
+      {/*
+        Above the weekly card, and only on the first page. A span ceremony is
+        an event with a night attached to it: it has to be the first thing on
+        the page while it is up, and it must not follow somebody into the
+        archive on page three.
+      */}
+      {page === 1
+        ? spanCards.map(({ span, report, lastNight }) => (
+            <SpanCeremonyCard
+              key={span.id}
+              report={report}
+              title={span.title}
+              blurb={span.blurb}
+              dateLabel={formatDateRange(
+                parseLocalDate(report.weekStart) ?? now,
+                parseLocalDate(report.weekEnd) ?? now,
+              )}
+              lastNight={lastNight}
+            />
+          ))
+        : null}
 
       {page === 1 ? (
         <ReportHeroCard report={featured} dateLabel={labelFor(featured.weekStart)} />

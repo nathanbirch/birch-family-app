@@ -9,7 +9,7 @@ import { CHILD_IDS, type ChildId } from "@/config/family";
 import { STAR_DAY_COUNT } from "@/config/stars";
 import { parseLocalDate } from "@/lib/dates";
 import type { WeekMarks } from "@/lib/stars/counting";
-import { buildWeekReport } from "@/lib/stars/report";
+import { buildSpanReport, buildWeekReport } from "@/lib/stars/report";
 import { getChartTasksForChild } from "@/lib/stars/tasks";
 
 /**
@@ -310,5 +310,76 @@ describe("what a screen reader is told", () => {
     // read out in a row is not a ceremony.
     const hidden = stage().querySelectorAll('[aria-hidden="true"][inert]');
     expect(hidden.length).toBe(report().children.length + 1);
+  });
+});
+
+describe("a ceremony that spans several weeks", () => {
+  /** The same three weeks the "Summer So Far" ceremony covers. */
+  const WEEKS = ["2026-07-20", "2026-07-27", "2026-08-03"];
+
+  function spanReport() {
+    return buildSpanReport(
+      CHORE_POOLS,
+      "summer-so-far",
+      WEEKS.map((week) => {
+        const monday = parseLocalDate(week)!;
+        const marks = Object.fromEntries(
+          CHILD_IDS.map((id) => [id, {}]),
+        ) as WeekMarks;
+        for (const task of getChartTasksForChild(
+          CHORE_POOLS,
+          monday,
+          "hannah",
+          "hygiene",
+        )) {
+          marks.hannah[task.id] = Array.from(
+            { length: STAR_DAY_COUNT },
+            () => true,
+          );
+        }
+        return { monday, marks };
+      }),
+    );
+  }
+
+  function renderSpan() {
+    return render(
+      <AwardCeremony
+        report={spanReport()}
+        dateLabel="Jul 20 – Aug 7"
+        title="Summer So Far"
+      />,
+    );
+  }
+
+  it("takes its own name on the title card", () => {
+    // A ceremony somebody put together for one evening is not "The Birch
+    // Family Star Awards" — the name is the reason it exists.
+    renderSpan();
+    expect(screen.getByText("Summer So Far")).toBeTruthy();
+    expect(screen.queryByText(/Star Awards/)).toBeNull();
+    expect(screen.getByRole("status").textContent).toContain("Summer So Far");
+  });
+
+  it("says how long it covers rather than calling it a week", () => {
+    const built = spanReport();
+    renderSpan();
+
+    // Straight to the finale: the caption under the family's total is the one
+    // line in the ceremony that names the period out loud.
+    fireEvent.click(screen.getByRole("button", { name: /the family total/i }));
+    expect(screen.getByText("stars in 3 weeks")).toBeTruthy();
+    expect(screen.queryByText("stars this week")).toBeNull();
+    expect(built.weekCount).toBe(3);
+  });
+
+  it("still gives every child exactly one slide", () => {
+    renderSpan();
+    // Title, five children, finale — the shape of the ceremony does not change
+    // because the period did.
+    expect(slideNumber()).toBe(1);
+    expect(stage().getAttribute("aria-label")).toBe(
+      `Slide 1 of ${spanReport().children.length + 2}`,
+    );
   });
 });

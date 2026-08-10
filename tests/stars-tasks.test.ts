@@ -111,10 +111,14 @@ describe("one child's tasks", () => {
 
   it("knows what is on a child's chart and what is not", () => {
     // Hannah's in August, off the photograph.
-    expect(isTaskForChild(CHORE_POOLS, AUGUST, "hannah", "cello")).toBe(true);
+    expect(isTaskForChild(CHORE_POOLS, AUGUST, "hannah", "reading-40")).toBe(
+      true,
+    );
     expect(isTaskForChild(CHORE_POOLS, AUGUST, "hannah", "kitchen-island")).toBe(
       true,
     );
+    // Retired off the chart in red pen, so it is on nobody's.
+    expect(isTaskForChild(CHORE_POOLS, AUGUST, "hannah", "cello")).toBe(false);
     // Emily's chore that month, not Hannah's.
     expect(isTaskForChild(CHORE_POOLS, AUGUST, "hannah", "dishwasher")).toBe(
       false,
