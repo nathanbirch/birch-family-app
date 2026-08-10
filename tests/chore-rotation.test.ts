@@ -115,15 +115,35 @@ describe("rotating on the first of the month", () => {
     }
   });
 
-  it("runs backwards, so last spring is answerable", () => {
-    // Three months before the anchor is a whole number of cycles for the big
-    // three, so May 2026 looks exactly like August 2026.
-    expect(getChoreOwner(CHORE_POOLS, localDate("2026-05-12"), "dishwasher")).toBe(
-      "emily",
-    );
-    // One month before, it is the child *ahead* of Emily in the pool.
-    expect(getChoreOwner(CHORE_POOLS, localDate("2026-07-12"), "dishwasher")).toBe(
-      "clara",
+  it("does not run backwards past the anchor", () => {
+    /*
+     * It used to, and the fridge disproved it: the chart is laminated with
+     * each child's chores printed on it, so Clara's column said "pick up the
+     * living room floor" in July exactly as it does in August. Extrapolating
+     * backwards was not recovering history — it was inventing one, and it cost
+     * fourteen real stars when two July weeks were back-filled off
+     * photographs of that chart.
+     *
+     * Before the anchor, every month is the anchor's month.
+     */
+    for (const day of ["2026-07-12", "2026-05-12", "2019-01-01"]) {
+      expect(getChoreOwner(CHORE_POOLS, localDate(day), "dishwasher")).toBe(
+        "emily",
+      );
+      expect(
+        getChoreOwner(CHORE_POOLS, localDate(day), "pick-up-living-room"),
+      ).toBe("clara");
+      expect(getChoreOwner(CHORE_POOLS, localDate(day), "feed-bella")).toBe(
+        "james",
+      );
+    }
+  });
+
+  it("still moves on normally after the anchor", () => {
+    // The clamp must not flatten the rotation itself — only the guesswork
+    // before it starts.
+    expect(getChoreOwner(CHORE_POOLS, localDate("2026-09-12"), "dishwasher")).toBe(
+      "hannah",
     );
   });
 
@@ -132,7 +152,9 @@ describe("rotating on the first of the month", () => {
     expect(getChoreMonthOffset(BIGS, localDate("2026-08-31"))).toBe(0);
     expect(getChoreMonthOffset(BIGS, localDate("2026-09-01"))).toBe(1);
     expect(getChoreMonthOffset(BIGS, localDate("2027-08-01"))).toBe(12);
-    expect(getChoreMonthOffset(BIGS, localDate("2026-07-31"))).toBe(-1);
+    // Clamped at the anchor rather than going negative — see above.
+    expect(getChoreMonthOffset(BIGS, localDate("2026-07-31"))).toBe(0);
+    expect(getChoreMonthOffset(BIGS, localDate("2020-01-01"))).toBe(0);
   });
 });
 

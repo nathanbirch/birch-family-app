@@ -32,10 +32,39 @@ export type ChoreAssignment = {
 };
 
 /**
- * How many months `date` sits after the pool's anchor. Negative before it.
+ * How many months `date` sits after the pool's anchor. Never negative.
  *
  * The day of the month is ignored, so this steps by exactly one at midnight on
  * the 1st and never in between — the property the whole rotation rests on.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY IT DOES NOT RUN BACKWARDS
+ * ---------------------------------------------------------------------------
+ * It used to. "Whose was the dishwasher in May?" was the same calculation with
+ * a negative offset, and the ability to answer the whole of history from one
+ * anchor was written down here as a feature.
+ *
+ * It was wrong, and the fridge is what proved it. **The chore chart is
+ * laminated with each child's chores printed on it.** Clara's column says
+ * "Pick up living room floor" and it said so in July, because printed card
+ * does not rotate. So when two July weeks were back-filled off photographs of
+ * that chart, fourteen stars landed on chores the extrapolation insisted had
+ * belonged to somebody else — Hannah's bath trash, Clara's living room, James
+ * feeding Bella — and went uncounted in those weeks' ceremonies. Children who
+ * had done the jobs were not paid for them.
+ *
+ * The anchor is documented as *a month whose answer is known*, and that is the
+ * whole point: before it, nothing is known. Running the deal backwards was not
+ * recovering history, it was inventing a history that happened not to have
+ * occurred. Every month before the anchor therefore uses the anchor's own
+ * deal, which is exactly what the printed chart shows and the only answer
+ * there is evidence for.
+ *
+ * This costs nothing real. Nothing in the app rotated before August 2026,
+ * because the app did not exist; and if the chores are ever genuinely
+ * re-dealt, the fix is to re-anchor — which is a one-field edit in the
+ * `choreRotations` document — or to add the per-month override
+ * `config/chore-rotation.ts` describes. Neither is served by guessing.
  */
 export function getChoreMonthOffset(pool: ChorePool, date: Date): number {
   const anchor = parseLocalMonth(pool.anchorMonth);
@@ -45,7 +74,7 @@ export function getChoreMonthOffset(pool: ChorePool, date: Date): number {
         `which is not a valid YYYY-MM month.`,
     );
   }
-  return differenceInCalendarMonths(anchor, date);
+  return Math.max(0, differenceInCalendarMonths(anchor, date));
 }
 
 /** Every rotating chore in one pool, and who has it in `date`'s month. */

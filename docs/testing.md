@@ -113,8 +113,9 @@ not a crash but a **rule being quietly violated**.
 - The same answer on the 1st, the 15th and the 31st, and a **different** one on
   the 1st of the next month: it turns over at midnight on the 1st and at no
   other moment
-- One place down the pool each month, and it runs **backwards**, so "whose was
-  the dishwasher in May?" is answerable
+- One place down the pool each month, and it **does not run backwards**: every
+  month before the anchor is the anchor's month, because the printed chart did
+  not rotate before then and guessing cost fourteen real stars
 - **Every child holds every chore in their pool over one cycle**, and never the
   same chore two months running, checked across 24 months
 - The chores are shared out as evenly as the counts allow

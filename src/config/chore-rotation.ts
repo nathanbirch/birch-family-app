@@ -37,9 +37,12 @@
  *    `j ≡ c - offset (mod n)`, so after `n` months every child has held every
  *    chore in their pool, and the cycle repeats. For the big three that is a
  *    complete turn of all six chores every three months.
- *  - **It runs backwards.** "Whose was the dishwasher in May?" is the same
- *    calculation with a negative offset, which is what makes the whole history
- *    answerable without storing a row per month.
+ *  - **It only runs forwards.** It used to run backwards too — "whose was the
+ *    dishwasher in May" was the same sum with a negative offset — and that was
+ *    removed once the fridge disproved it: the chart is laminated with each
+ *    child's chores *printed* on it, so it did not rotate before the anchor
+ *    and the extrapolation was inventing a history. Months before the anchor
+ *    now use the anchor's deal. See `getChoreMonthOffset()`.
  *
  * ---------------------------------------------------------------------------
  * `chores` IS A DEALING ORDER, NOT A READING ORDER

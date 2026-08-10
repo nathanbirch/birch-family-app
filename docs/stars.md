@@ -50,12 +50,35 @@ chore j goes to  children[(j + months since the anchor) mod children.length]
   `j ≡ c − offset (mod n)`, so after `n` months every child has held every
   chore in their pool. For the big three that is all six chores every three
   months, and nobody ever gets the same chore two months running.
-- **It runs backwards.** "Whose was the dishwasher in May?" is the same
-  calculation with a negative offset — no row per month is stored anywhere.
+- **It only runs forwards.** Months before the anchor use the anchor's own
+  deal. This is the one rule that has been *reversed* since it was written, and
+  the fridge is what reversed it — see below.
 
 It turns over at **midnight on the 1st**. `differenceInCalendarMonths` ignores
 the day entirely, so the answer steps by exactly one on the 1st and never in
 between.
+
+### Why it stopped running backwards
+
+It used to answer "whose was the dishwasher in May?" with a negative offset,
+and the ability to derive the whole of history from one anchor was written down
+here as a feature.
+
+Then two July weeks were back-filled off photographs of the chart, and
+**fourteen stars vanished**. The chart is laminated with each child's chores
+*printed* on it: Clara's column said "Pick up living room floor" in July
+because printed card does not rotate. The extrapolation insisted those weeks
+had a different deal, so Hannah's bath trash, Clara's living room and James
+feeding Bella were all filed against children the rotation said did not have
+them, and `buildWeekReport` — correctly, on its own terms — refused to count
+them. Children who had done the jobs went unpaid for them.
+
+The anchor is *a month whose answer is known*. Before it, nothing is known, and
+running the deal backwards was not recovering a history but inventing one. So
+`getChoreMonthOffset()` clamps at zero, every pre-anchor month uses the
+anchor's deal, and all fourteen stars count against the chore that was actually
+done. If the chores are ever genuinely re-dealt, re-anchor the pool (a
+one-field edit in `choreRotations`) rather than letting the sum guess.
 
 ### `chores` is a dealing order, not a reading order
 
