@@ -83,6 +83,26 @@ export function startOfWeekMonday(date: Date): Date {
   return addDays(noon, -offset);
 }
 
+/**
+ * Whole weeks from `from` to `to`, counted between the Mondays their weeks
+ * begin on. Negative when `to` is in an earlier week.
+ *
+ * The day of the week is therefore ignored entirely, exactly as
+ * `differenceInCalendarMonths` ignores the day of the month: Sunday to the
+ * next Monday is one week, and Monday to the following Sunday is nought. That
+ * is what "the chores change hands on Monday morning" needs it to mean.
+ */
+export function differenceInCalendarWeeks(from: Date, to: Date): number {
+  const start = startOfWeekMonday(from);
+  const end = startOfWeekMonday(to);
+  return Math.round(differenceInCalendarDays(start, end) / 7);
+}
+
+/** The Monday that starts the *next* week after `date`, at local noon. */
+export function startOfNextWeekMonday(date: Date): Date {
+  return addDays(startOfWeekMonday(date), 7);
+}
+
 /* ------------------------------------------------------------------ */
 /* Months                                                              */
 /* ------------------------------------------------------------------ */

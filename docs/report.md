@@ -162,9 +162,38 @@ the CSS delays, the count-up and the auto-advance timer all read. The bar under
 the rail arriving at the end and the slide turning over are therefore the same
 moment rather than two that happen to be close.
 
-The order matters more than the timings do: three small moments of "how did I
-do on that one" before the number that answers the week. Handing over the total
+The order matters more than the timings do: four small moments of "how did I do
+on that one" before the number that answers the week. Handing over the total
 first would make the rest a footnote.
+
+### The fourth line: Star Deals
+
+A slide has four result lines, not three. The three printed charts come first,
+in `CHARTS` order, and then the [Star Deals](stars.md#star-deals) — the day's
+special, worth three ordinary stars each, five on offer in a week and fifteen
+stars if a child took all of them.
+
+Deals go **last** on purpose: it is the line with the biggest number behind the
+smallest count, so the slide reads "Chores 18, Learning 20, Hygiene 20, Star
+Deals 9" and the last one is the surprise rather than the preamble.
+
+Three details in [`report.ts`](../src/lib/stars/report.ts) worth having:
+
+- **It is not in `CHARTS`.** That list is the three sheets on the fridge and
+  their titles are transcriptions of what is printed across the top of them.
+  `DEALS_CHART` lives in `config/deals.ts`, which is the app's own writing, and
+  `CEREMONY_CHARTS` is where the four are put together. Sharing the `Chart`
+  *type* is what lets the slide render four lines without a second shape.
+- **`completeRows` is always zero for deals.** A deal is one day wide, so there
+  is nothing to fill "all the way across", and counting five taken deals as five
+  whole rows would put a number in the ceremony's whole-rows line that does not
+  mean what the rest of that line means.
+- **Which deals a week held is recomputed, not stored** — same principle as the
+  chore rotation, so a ceremony for a week in March shows March's deals. See
+  `lib/stars/deals.ts`.
+
+They are in the child's total and therefore in the money: three stars is
+fifteen cents, and a perfect week of deals is seventy-five.
 
 ### Dragging
 

@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { CHORE_POOLS } from "@/config/chore-rotation";
+import { DEAL_STAR_VALUE } from "@/config/deals";
 import { CHILD_IDS, type ChildId } from "@/config/family";
 import { CENTS_PER_STAR, centsForStars, formatMoney } from "@/config/rewards";
 import { STAR_DAY_COUNT } from "@/config/stars";
 import { parseLocalDate } from "@/lib/dates";
 import type { WeekMarks } from "@/lib/stars/counting";
+import { getWeekDealsForChild } from "@/lib/stars/deals";
 import {
   buildWeekReport,
   ceremonyOrder,
@@ -118,7 +120,13 @@ describe("counting a week", () => {
     const report = buildWeekReport(CHORE_POOLS, MONDAY, blankWeek());
     for (const child of report.children) {
       const tasks = getTasksForChild(CHORE_POOLS, MONDAY, child.childId);
-      expect(child.possible).toBe(tasks.length * STAR_DAY_COUNT);
+      const deals = getWeekDealsForChild(MONDAY, child.childId);
+      expect(child.possible).toBe(
+        tasks.length * STAR_DAY_COUNT + deals.length * DEAL_STAR_VALUE,
+      );
+      // Five deals, one a day, and every one of them countable — nobody may
+      // be quietly short of a day's opportunity because of their age.
+      expect(deals).toHaveLength(STAR_DAY_COUNT);
     }
   });
 

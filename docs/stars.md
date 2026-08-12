@@ -19,44 +19,55 @@ and that is the whole data model:
 |---|---|---|
 | `everyone` | The same row on every child's column, forever. | Tidy room · laundry upstairs · all four hygiene rows |
 | `fixed` | Belongs to named children because of their age or what they are learning. | Cello (Hannah) · Write alphabet (James) · Pick up toys (the two youngest) |
-| `rotating` | A real chore, which moves to another child on the first of each month. | Dishwasher · kitchen island · bath trash · vacuuming |
+| `rotating` | A real chore, which swaps to the other child of a pair every Monday morning. | Dishwasher · kitchen island · bath trash · vacuuming |
 
 A `fixed` row changes when a child grows, which is a deploy. A `rotating` row
 changes by itself.
 
 ## How the rotation works
 
-Chores rotate inside **pools** — a set of children old enough for a set of
-chores. A single rotation across all five would eventually hand the dishwasher
-to the four-year-old.
+Chores rotate inside **pools** — a pair of children close enough in age to do
+each other's jobs. A single rotation across all five would eventually hand the
+dishwasher to the four-year-old.
 
 | Pool | Children | Chores |
 |---|---|---|
-| `bigs` | Clara, Emily, Hannah | Living-room floor, dishwasher, kitchen island, vacuum living room, yard pick-up, bath trash |
-| `littles` | James, William | Feed Bella, vacuum the wooden floor |
+| `elder-pair` | Hannah, Emily | Kitchen island, dishwasher, bath trash, yard pick-up |
+| `younger-pair` | Clara, William | Living-room floor, vacuum the wooden floor, vacuum living room |
 
-Pools are disjoint: a child is in exactly one. The rule is one line —
+**James is in no pool.** His chores stay his indefinitely, so feeding Bella is
+a `fixed` row in `config/stars.ts` rather than a rotating one — he used to
+trade it with William month by month, and William now trades with Clara
+instead. Changing that is a deploy, which is exactly the difference between
+`fixed` and `rotating`.
+
+Pools are disjoint: a child is in at most one. The rule is one line —
 
 ```
-chore j goes to  children[(j + months since the anchor) mod children.length]
+chore j goes to  children[(j + weeks since the anchor) mod children.length]
 ```
 
-— and it buys three things worth stating plainly:
+With two children that is just "swap on Monday", but keeping the round-robin
+rather than a boolean buys:
 
-- **Uneven counts need no special case.** Six chores across three children is
-  two each. Five would be two-two-one, with the short straw moving on next
-  month.
+- **Uneven counts need no special case.** The younger pair share three chores,
+  so one of them does two this week and the other two next week. The odd chore
+  changes hands along with the rest.
 - **Everybody does everything.** Child `c` holds chore `j` exactly when
-  `j ≡ c − offset (mod n)`, so after `n` months every child has held every
-  chore in their pool. For the big three that is all six chores every three
-  months, and nobody ever gets the same chore two months running.
-- **It only runs forwards.** Months before the anchor use the anchor's own
+  `j ≡ c − offset (mod n)`, so after `n` weeks — two, here — each child has
+  held every chore in their pair, and nobody has the same chore two weeks
+  running.
+- **A third child can join a pair** by being added to `children`; the swap
+  becomes a three-way rotation and nothing else changes.
+- **It only runs forwards.** Weeks before the anchor use the anchor's own
   deal. This is the one rule that has been *reversed* since it was written, and
   the fridge is what reversed it — see below.
 
-It turns over at **midnight on the 1st**. `differenceInCalendarMonths` ignores
-the day entirely, so the answer steps by exactly one on the 1st and never in
-between.
+It turns over at **midnight going into Monday**. `differenceInCalendarWeeks`
+ignores the day of the week entirely, so the answer steps by exactly one on
+Monday and never in between — which is also why a Monday-to-Friday chart never
+straddles two deals, and why the live chart, the Server Action and the weekly
+report can all ask about the same date: the week's own Monday.
 
 ### Why it stopped running backwards
 
@@ -73,12 +84,15 @@ feeding Bella were all filed against children the rotation said did not have
 them, and `buildWeekReport` — correctly, on its own terms — refused to count
 them. Children who had done the jobs went unpaid for them.
 
-The anchor is *a month whose answer is known*. Before it, nothing is known, and
+The anchor is *a week whose answer is known*. Before it, nothing is known, and
 running the deal backwards was not recovering a history but inventing one. So
-`getChoreMonthOffset()` clamps at zero, every pre-anchor month uses the
-anchor's deal, and all fourteen stars count against the chore that was actually
-done. If the chores are ever genuinely re-dealt, re-anchor the pool (a
-one-field edit in `choreRotations`) rather than letting the sum guess.
+`getChoreWeekOffset()` clamps at zero and every pre-anchor week uses the
+anchor's deal. That clamp is doing more work since the swap went weekly: the
+chores rotated *monthly* right up to the anchor week, so every week the
+database already holds stars for was dealt exactly as the anchor deals it, and
+all of that history still reports the chart the children worked from. If the
+chores are ever genuinely re-dealt, re-anchor the pool (a one-field edit in
+`choreRotations`) rather than letting the sum guess.
 
 ### `chores` is a dealing order, not a reading order
 
@@ -88,29 +102,32 @@ they look shuffled next to the printed chart. It is dealing cards, not reading
 a column.
 
 **Reordering that list reassigns chores.** Adding one to the end is safe;
-inserting one in the middle shifts everything after it onto a different child.
+inserting one in the middle shifts everything after it onto the other child.
 
 ### The anchor
 
-`anchorMonth` is *a month whose answer is known to be right* — `2026-08`, read
-off the photographs taken on 4 August 2026 — not a "start date". Every other
-month, before and after, derives from it. Fixing a mistake therefore means
-**re-anchoring**: put in this month's truth and every month after it lands
+`anchorWeek` is *a week whose answer is known to be right* — `2026-08-10`, the
+Monday the weekly swap began, dealt as the photographs taken on 4 August 2026
+show — not a "start date". Every other week, before and after, derives from it,
+and the first swap was therefore Monday 17 August 2026. Fixing a mistake means
+**re-anchoring**: put in this week's truth and every week after it lands
 correctly. Same idea as the pets' `anchorDate`; see [Pets](pets.md).
 
-`tests/chore-rotation.test.ts` pins August chore by chore, so a future edit
-cannot quietly move it.
+It must be a **Monday**. An anchor set to a Wednesday would quietly move the
+changeover to Wednesdays, so `findChorePoolProblem()` rejects one.
+
+`tests/chore-rotation.test.ts` pins the anchor week chore by chore, so a future
+edit cannot quietly move it.
 
 ### Changing it without a deploy
 
 The pools live in the `choreRotations` collection, one document per pool:
 
 ```js
-{ poolId: "bigs", name: "The big three",
-  children: ["clara", "emily", "hannah"],
-  chores: ["pick-up-living-room", "dishwasher", "kitchen-island",
-           "vacuum-living-room", "yard-pickup", "bath-trash"],
-  anchorMonth: "2026-08" }
+{ poolId: "elder-pair", name: "Hannah & Emily",
+  children: ["hannah", "emily"],
+  chores: ["kitchen-island", "dishwasher", "bath-trash", "yard-pickup"],
+  anchorWeek: "2026-08-10" }
 ```
 
 Edit that document and the rotation changes on the next page load. What is in
@@ -121,8 +138,11 @@ malformed — the chart still renders, and the log says why.
 `npm run db:seed` writes a pool only if it is missing, so re-seeding never
 drags a re-anchored pool back to the compiled default. It refuses to write
 anything `findChorePoolProblem()` rejects — a child in two pools, a chore in
-none, a chore that is not a task — and that is the same function the app uses,
-so "a usable rotation" has one definition rather than two.
+none, a chore that is not a task, an anchor that is not a Monday — and that is
+the same function the app uses, so "a usable rotation" has one definition
+rather than two. It also **deletes** documents for pools that no longer exist,
+which is what cleared the monthly `bigs` and `littles` rows when the pairs
+took over; an ignored document reads like the live rotation and is not one.
 
 ## Ticking a star
 
@@ -393,6 +413,116 @@ Read the note at the top of it first: the printed chart has each child's chores
 printed *on* it, so back-filling a week before the rotation's anchor files
 rotating chores against children the rotation says did not have them, and those
 stars are then left uncounted in that week's ceremony.
+
+## Star Deals
+
+One extra star a day, different for every child, worth **three** ordinary ones.
+The words are in [`src/config/deals.ts`](../src/config/deals.ts), the maths in
+[`src/lib/stars/deals.ts`](../src/lib/stars/deals.ts), and the card at the top
+of the page is [`DealCard`](../src/components/stars/DealCard.tsx).
+
+The three charts are the same rows every week, on purpose — they are the floor.
+A deal is the opposite: one job nobody was expecting, gone by bedtime. It is the
+only tick in the app where one tap is worth more than one star, and
+`DEAL_STAR_VALUE` is the only place that number is written down.
+
+### The two promises
+
+The family asked for two rules, and both are **structural** rather than checked
+afterwards:
+
+- **No two children get the same deal on the same day.** Each day takes a
+  *window* of five consecutive deals out of `STAR_DEALS` and matches them
+  one-to-one onto the five children. A collision is not something the code
+  avoids; it is something it cannot express.
+- **Nobody gets the same deal two days running.** The window steps forward by
+  exactly five each chart-day, so today's window and tomorrow's are disjoint
+  sets — there is no overlap to repeat out of. It is in fact much stronger than
+  the promise: a child sees twenty-five different deals across a school week,
+  and works through all fifty-three before any comes back.
+
+Neither needs yesterday's answer looked up, which is the point. A rule enforced
+by remembering yesterday needs somewhere to remember it, and then needs an
+answer for the day the memory is missing.
+
+### Nothing is stored
+
+There is no `starDeals` collection and there should not be one. A day's five
+deals are derived from the calendar, exactly as the mantra of the day is: every
+phone lands on the same answer without syncing, the page works offline, and a
+ceremony for a week in March recomputes March's deals rather than trusting a
+record of them. The one thing that *is* stored is whether a child took theirs —
+in the same `starWeeks` document as everything else, under the deal's own id.
+
+Which is why **every deal id starts `deal-`** and no task id may. That prefix is
+what lets one `marks` object hold both, and `isStarMarkId()` in `marks.ts` is the
+single gate in front of it. Deal ids are as permanent as task ids, for the same
+reason: a deal deleted from the config drops the stars filed against it.
+
+### Tiers, not ages
+
+The youngest child in the house is four, and "clean the kids' bathroom" is not a
+thing to hand a four-year-old on a Tuesday. Every deal names the children it
+suits through one of three tiers — `everyone`, `school-age`, `big-kids` — which
+are **lists of children, not computed ages**, exactly like a `fixed` star task. A
+birthday should not silently move a job onto a child mid-week; somebody decides
+William is old enough for the bathrooms now, and that is a deploy. One table,
+`DEAL_TIERS`, at the top of the file.
+
+### `STAR_DEALS` is a dealing order
+
+Same warning as `chores` in `config/chore-rotation.ts`, for the same reason:
+what sits *next to* a deal decides who can be offered it. Because a day's window
+has to be **matched** rather than dealt — the bathrooms belong to the big three —
+a window of five bathrooms would leave James without a deal at all.
+
+So the list is interleaved by tier in a strict repeating pattern:
+
+```
+everyone · school-age · big-kids · everyone · school-age    (× 10)
+everyone · big-kids   · everyone                            (the last 3)
+```
+
+which guarantees every window of five — including the three that wrap round the
+end — contains at least two deals anybody can do, and therefore always admits a
+complete five-way match. `tests/stars-deals.test.ts` checks **all fifty-three
+windows against all five children**, which is the whole space, rather than
+trusting the pattern to survive an edit.
+
+The length matters too: the window steps by five, so the list length must be
+**coprime with five** or the windows would circle the same handful of deals for
+ever. Fifty-three is prime. A fifty-fourth deal is fine; a fifty-fifth is not,
+and the test says so. Add them five at a time, in the pattern.
+
+### On the page, and in the action
+
+The card shows today's deal and the ones already gone, and **nothing ahead**.
+Thursday's deal shown on Monday is no longer a surprise, and — more practically —
+it is an invitation to clean the bathroom on Monday and tick it on Thursday,
+which is what `openDayIndex()` exists to prevent. At the weekend, when there is
+nothing left to spoil, all five are shown.
+
+The Server Action checks a deal against the **day** rather than the week:
+`isDealForChild()` rejects yesterday's deal filed against today, a sibling's
+deal, and the pick of the whole list of fifty-three, all with one comparison.
+
+Two smaller decisions worth knowing:
+
+- **The deal counts towards the whole-day confetti.** "James finished everything
+  for Wednesday" would not be true with a fifteen-cent job untouched at the top
+  of the page. See `isDayComplete()`.
+- **Taking a deal celebrates on its own account.** It has no chart column to
+  complete, and it should not be the only tick on the page that passes in
+  silence.
+
+### The anchor
+
+`DEAL_ANCHOR_WEEK` is genuinely a *start date*, unlike the chore rotation's
+anchor. There is no laminated chart to disagree with — a deal is derived from
+the calendar and nothing else — so running the sum backwards recovers a real
+answer rather than inventing a history, and an old ceremony shows exactly the
+deals that were on offer that week. Moving it reshuffles everything in both
+directions, for ever. There is no reason to.
 
 ## What the week adds up to
 

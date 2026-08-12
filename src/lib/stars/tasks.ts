@@ -27,11 +27,10 @@ export type ChartSection = {
 /**
  * Every star this child can earn in the week containing `date`, in chart order.
  *
- * The rotation is asked for the month containing `date`; because chores change
- * hands on the 1st and the chart's week runs Monday to Friday, a week that
- * straddles a month boundary shows the *current* owner. That is deliberate: a
- * chore handed over on Wednesday shows up on the new child's chart with Monday
- * and Tuesday blank, which is exactly what happened.
+ * The rotation is asked for the week containing `date`, and the chores swap on
+ * Monday morning, so every day of a week gives the same list. Callers pass the
+ * week's own Monday and a past week is therefore as stable as the present
+ * one.
  */
 export function getTasksForChild(
   pools: readonly ChorePool[],

@@ -15,8 +15,8 @@ export const metadata: Metadata = {
  * Every star the family can earn this week, in one place.
  *
  * The three charts off the fridge — chores, learning and hygiene — merged into
- * one page per child. The chores half of it rotates on the first of every
- * month; see docs/stars.md.
+ * one page per child. The chores half of it swaps between two pairs of
+ * children every Monday morning; see docs/stars.md.
  *
  * Two things come out of the database here and nothing else does: the pools
  * (who is in which rotation, and where it is anchored) and this week's ticked

@@ -4,11 +4,11 @@
  *
  * Three rotations now live in this app and they are deliberately the same
  * shape: the seats turn over every Monday, the pets every night, and the
- * chores on the first of every month. All three derive their answer from an
- * anchor plus elapsed time rather than from stored state, which is what makes
- * every past and future month answerable without a row per month.
+ * chores every Monday too. All three derive their answer from an anchor plus
+ * elapsed time rather than from stored state, which is what makes every past
+ * and future week answerable without a row per week.
  *
- *   chore j goes to  children[(j + months since the anchor) mod children.length]
+ *   chore j goes to  children[(j + weeks since the anchor) mod children.length]
  *
  * See `config/chore-rotation.ts` for why the deal is round-robin and why the
  * `chores` list is interleaved.
@@ -18,11 +18,12 @@ import type { ChorePool, ChorePoolId } from "@/config/chore-rotation";
 import type { ChildId } from "@/config/family";
 import { getRotatingTasks, getStarTask } from "@/config/stars";
 import {
-  differenceInCalendarMonths,
-  parseLocalMonth,
-  startOfNextMonth,
+  differenceInCalendarWeeks,
+  startOfNextWeekMonday,
   differenceInCalendarDays,
 } from "@/lib/dates";
+
+import { parseWeekStart } from "./week";
 
 export type ChoreAssignment = {
   /** A task id from `config/stars.ts`. */
@@ -32,10 +33,11 @@ export type ChoreAssignment = {
 };
 
 /**
- * How many months `date` sits after the pool's anchor. Never negative.
+ * How many weeks `date` sits after the pool's anchor week. Never negative.
  *
- * The day of the month is ignored, so this steps by exactly one at midnight on
- * the 1st and never in between — the property the whole rotation rests on.
+ * The day of the week is ignored, so this steps by exactly one at midnight
+ * going into Monday and never in between — the property the whole rotation
+ * rests on.
  *
  * ---------------------------------------------------------------------------
  * WHY IT DOES NOT RUN BACKWARDS
@@ -53,31 +55,34 @@ export type ChoreAssignment = {
  * feeding Bella — and went uncounted in those weeks' ceremonies. Children who
  * had done the jobs were not paid for them.
  *
- * The anchor is documented as *a month whose answer is known*, and that is the
+ * The anchor is documented as *a week whose answer is known*, and that is the
  * whole point: before it, nothing is known. Running the deal backwards was not
  * recovering history, it was inventing a history that happened not to have
- * occurred. Every month before the anchor therefore uses the anchor's own
- * deal, which is exactly what the printed chart shows and the only answer
- * there is evidence for.
+ * occurred. Every week before the anchor therefore uses the anchor's own deal,
+ * which is exactly what the printed chart shows and the only answer there is
+ * evidence for.
  *
- * This costs nothing real. Nothing in the app rotated before August 2026,
- * because the app did not exist; and if the chores are ever genuinely
- * re-dealt, the fix is to re-anchor — which is a one-field edit in the
- * `choreRotations` document — or to add the per-month override
- * `config/chore-rotation.ts` describes. Neither is served by guessing.
+ * That clamp is doing more work now than it was. The chores rotated *monthly*
+ * until the anchor week, so the deal held steady all through the weeks the
+ * database already has stars for; anchoring the weekly swap on the week it
+ * began means every one of those weeks still reports the chart the children
+ * actually worked from. If the chores are ever genuinely re-dealt, the fix is
+ * to re-anchor — a one-field edit in the `choreRotations` document — or to add
+ * the per-week override `config/chore-rotation.ts` describes. Neither is
+ * served by guessing.
  */
-export function getChoreMonthOffset(pool: ChorePool, date: Date): number {
-  const anchor = parseLocalMonth(pool.anchorMonth);
+export function getChoreWeekOffset(pool: ChorePool, date: Date): number {
+  const anchor = parseWeekStart(pool.anchorWeek);
   if (!anchor) {
     throw new Error(
-      `Chore pool "${pool.id}" has an anchorMonth of "${pool.anchorMonth}", ` +
-        `which is not a valid YYYY-MM month.`,
+      `Chore pool "${pool.id}" has an anchorWeek of "${pool.anchorWeek}", ` +
+        `which is not a YYYY-MM-DD date falling on a Monday.`,
     );
   }
-  return Math.max(0, differenceInCalendarMonths(anchor, date));
+  return Math.max(0, differenceInCalendarWeeks(anchor, date));
 }
 
-/** Every rotating chore in one pool, and who has it in `date`'s month. */
+/** Every rotating chore in one pool, and who has it in `date`'s week. */
 export function getPoolAssignments(
   pool: ChorePool,
   date: Date,
@@ -89,7 +94,7 @@ export function getPoolAssignments(
     );
   }
 
-  const offset = getChoreMonthOffset(pool, date);
+  const offset = getChoreWeekOffset(pool, date);
   return pool.chores.map((taskId, index) => ({
     taskId,
     poolId: pool.id,
@@ -97,7 +102,7 @@ export function getPoolAssignments(
   }));
 }
 
-/** Every rotating chore across every pool, for the month containing `date`. */
+/** Every rotating chore across every pool, for the week containing `date`. */
 export function getChoreAssignments(
   pools: readonly ChorePool[],
   date: Date,
@@ -116,7 +121,7 @@ export function getChoresForChild(
     .map((assignment) => assignment.taskId);
 }
 
-/** Which child holds one particular chore this month, or `null` if it is not in any pool. */
+/** Which child holds one particular chore this week, or `null` if it is not in any pool. */
 export function getChoreOwner(
   pools: readonly ChorePool[],
   date: Date,
@@ -132,12 +137,12 @@ export function getChoreOwner(
 /* When the chores change hands                                        */
 /* ------------------------------------------------------------------ */
 
-/** Midnight on the first of next month — when every pool moves on. */
+/** Midnight going into next Monday — when every pool moves on. */
 export function getNextChoreRotation(date: Date): Date {
-  return startOfNextMonth(date);
+  return startOfNextWeekMonday(date);
 }
 
-/** Whole days until the chores change hands. Never 0 — the 1st reports a full month. */
+/** Whole days until the chores change hands. Never 0 — Monday reports a full week. */
 export function getDaysUntilChoreRotation(date: Date): number {
   return differenceInCalendarDays(date, getNextChoreRotation(date));
 }
@@ -176,10 +181,11 @@ export function findChorePoolProblem(
     }
     seenPools.add(pool.id);
 
-    if (!parseLocalMonth(pool.anchorMonth)) {
+    if (!parseWeekStart(pool.anchorWeek)) {
       return (
-        `Chore pool "${pool.id}" is anchored on "${pool.anchorMonth}", ` +
-        `which is not a valid YYYY-MM month.`
+        `Chore pool "${pool.id}" is anchored on "${pool.anchorWeek}", ` +
+        `which is not a YYYY-MM-DD date falling on a Monday. The chores ` +
+        `change hands on Monday morning, so the anchor has to be one.`
       );
     }
 
@@ -196,7 +202,7 @@ export function findChorePoolProblem(
         return (
           `"${childId}" is in both the "${clash}" and "${pool.id}" pools. ` +
           `A child belongs to exactly one pool, otherwise how many chores ` +
-          `they have this month has no single answer.`
+          `they have this week has no single answer.`
         );
       }
       seenChildren.set(childId, pool.id);

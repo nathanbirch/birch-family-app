@@ -67,6 +67,9 @@ const CHART_WORD: Record<ChartId, string> = {
   chores: "Chores",
   learning: "Learning",
   hygiene: "Hygiene",
+  // Two words, and the only line on the slide whose stars are not one apiece:
+  // five deals on offer is fifteen stars. See `config/deals.ts`.
+  deals: "Star Deals",
 };
 
 export function ChildSlide({

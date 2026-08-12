@@ -4,6 +4,7 @@ import { cache } from "react";
 import type { Collection, ObjectId } from "mongodb";
 
 import { COLLECTIONS } from "@/config/db";
+import { isStarDealId } from "@/config/deals";
 import { CHILD_IDS, type ChildId } from "@/config/family";
 import { STAR_DAY_COUNT, isStarTaskId } from "@/config/stars";
 import { reportDegraded } from "@/lib/data-health";
@@ -190,7 +191,11 @@ export async function setStarMark(
   // Both of these are load-bearing, not belt-and-braces: `taskId` becomes a
   // *field name* below, so an unchecked one could write anywhere in the
   // document, and an out-of-range day would silently lengthen the row.
-  if (!isStarTaskId(taskId)) {
+  //
+  // A Star Deal is filed in the same `marks` object as a chart row, under its
+  // own id — which is why every deal id starts `deal-` and no task id may. See
+  // `config/deals.ts`.
+  if (!isStarMarkId(taskId)) {
     throw new Error(`Unknown star task: "${taskId}".`);
   }
   if (!Number.isInteger(dayIndex) || dayIndex < 0 || dayIndex >= STAR_DAY_COUNT) {
@@ -279,18 +284,29 @@ function isDuplicateKey(error: unknown): boolean {
 /* ------------------------------------------------------------------ */
 
 /**
+ * Anything that may be a key in a `marks` object: a chart row, or a Star Deal.
+ *
+ * One function rather than two checks in three places, because this is the
+ * thing standing between a request and a MongoDB field name.
+ */
+function isStarMarkId(id: string): boolean {
+  return isStarTaskId(id) || isStarDealId(id);
+}
+
+/**
  * Coerce whatever is in the document into rows of exactly five booleans.
  *
  * Unknown task ids are dropped rather than kept: a chore that has been retired
  * from `config/stars.ts` should not come back onto a chart because somebody
- * ticked it in March.
+ * ticked it in March. A deal deleted from `config/deals.ts` goes the same way,
+ * which is why deal ids are as permanent as task ids.
  */
 function normaliseMarks(raw: Record<string, unknown>): StarMarks {
   const marks: StarMarks = {};
   if (!raw || typeof raw !== "object") return marks;
 
   for (const [taskId, row] of Object.entries(raw)) {
-    if (!isStarTaskId(taskId)) continue;
+    if (!isStarMarkId(taskId)) continue;
     const source = Array.isArray(row) ? row : [];
     marks[taskId] = Array.from(
       { length: STAR_DAY_COUNT },

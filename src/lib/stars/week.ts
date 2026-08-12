@@ -1,12 +1,10 @@
 /**
- * Which week a star belongs to, and which day the rotation should be asked
- * about.
+ * Which week a star belongs to, and which day of it may be coloured in.
  *
  * Small enough to inline in three places and important enough not to: the page
- * renders a chart from one of these answers and the Server Action re-derives
- * the same answer to check what it is being asked to tick. If those two ever
- * disagreed, a chore handed over at the start of the month could be rendered
- * for one child and rejected for them a tap later.
+ * renders a chart from these answers and the Server Action re-derives the same
+ * answers to check what it is being asked to tick. If those two ever
+ * disagreed, a star could be drawn as tappable and then refused a tap later.
  */
 
 import { STAR_DAY_COUNT } from "@/config/stars";
@@ -69,25 +67,18 @@ export function openDayIndex(weekStart: Date, now: Date): number {
   return offset >= 0 && offset < STAR_DAY_COUNT ? offset : -1;
 }
 
-/**
- * The date to ask the chore rotation about, for a given week.
+/*
+ * There used to be a `referenceDateFor(weekStart, now)` here, which answered
+ * "what date should the chore rotation be asked about for this week?" — today
+ * for the current week, the week's own Monday for any other. It existed
+ * because chores changed hands on the 1st, so a Monday-to-Friday week could
+ * straddle two deals and the live chart had to show whoever held the chore
+ * *now*.
  *
- * Chores change hands on the 1st and the chart's week runs Monday to Friday,
- * so a week can straddle two rotations. The rule is: if the week is the
- * current one, use today — the chart shows who has the chore *now*. For any
- * other week, use its Monday, so looking back at a past week is stable and
- * does not shift as the months go by.
- *
- * Whole *calendar days* decide that, not instants. Comparing the two dates
- * directly looked equivalent and was not: every date this app builds is
- * anchored at local noon, so a Sunday evening is later than "Sunday" and fell
- * outside its own week. It only ever mattered on the handful of Sundays that
- * end a month, and it would have shown the previous month's owner for an
- * evening — which is exactly the class of bug that never reproduces when you
- * go looking for it.
+ * The chores swap on Monday morning now, which means a week is a whole number
+ * of rotations and every day in it has the same answer. The function had
+ * become a way of asking the same question twice, so callers pass the week's
+ * Monday and there is one date a week is ever asked about. Anything that wants
+ * *now* — the countdown to the next swap, say — should use now directly rather
+ * than a reference date, because those are different questions.
  */
-export function referenceDateFor(weekStart: Date, now: Date): Date {
-  const monday = startOfWeekMonday(weekStart);
-  const offset = differenceInCalendarDays(monday, now);
-  return offset >= 0 && offset <= 6 ? now : monday;
-}

@@ -84,8 +84,9 @@ npm start          # serve the production build locally
   the paper and stay that way. See [Healthy Birches](docs/health.md).
 - **Star charts** (`/stars`) — the three charts off the fridge — chores,
   summer learning and hygiene — merged into one page per child, with the stars
-  tappable. The chores rotate between the children on the first of every month,
-  inside age-appropriate pools, from an anchor stored in the database. See
+  tappable. The chores swap every Monday morning between two pairs of children
+  — Hannah and Emily, Clara and William — from an anchor stored in the
+  database. James's chores stay his. See
   [Star charts](docs/stars.md).
 - **Bored?** (`/bored`) — what to do when there is nothing to do. Three
   pictures — Inside, Outside, Money — then a grid of pictures behind each.
@@ -124,7 +125,7 @@ Everything lives in **[`docs/`](docs/README.md)**:
 | [Getting started](docs/getting-started.md) | Install, run, test, build. Every npm script. |
 | [Deployment](docs/deployment.md) | Vercel setup, env vars, domains, the GitHub Pages history. |
 | [Mantras](docs/mantras.md) | The family mantras, the quoting rule, and the mantra of the day. |
-| [Star charts](docs/stars.md) | The three charts, the monthly chore rotation, and how a star is stored. |
+| [Star charts](docs/stars.md) | The three charts, the weekly chore swap, and how a star is stored. |
 | [Healthy Birches](docs/health.md) | The five lists off the wall, the transcription rule, and the drawings. |
 | [Database](docs/database.md) | MongoDB, collections, seeding, the Atlas allowlist trap. |
 | [Authentication](docs/authentication.md) | How login works, changing the password, adding people. |

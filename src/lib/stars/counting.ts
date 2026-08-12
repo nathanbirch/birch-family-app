@@ -6,8 +6,10 @@
  * knows about MongoDB — see `marks.ts` for the storage.
  */
 
+import { DEAL_STAR_VALUE } from "@/config/deals";
 import { STAR_DAY_COUNT, type ChartId, type StarTask } from "@/config/stars";
 import type { ChildId } from "@/config/family";
+import type { DealSlot } from "./deals";
 
 /** Task id -> one boolean per weekday, Monday first. Always `STAR_DAY_COUNT` long. */
 export type StarMarks = Record<string, boolean[]>;
@@ -121,6 +123,87 @@ export function isPerfect(marks: StarMarks, tasks: readonly StarTask[]): boolean
   if (tasks.length === 0) return false;
   const { earned, possible } = tally(marks, tasks);
   return earned === possible;
+}
+
+/* ------------------------------------------------------------------ */
+/* Star Deals                                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * How a week's deals went for one child.
+ *
+ * A deal is stored in exactly the same `marks` object as everything else — one
+ * row of five booleans, filed under the deal's id — so nothing above had to
+ * learn a new shape. What is different is the arithmetic, and it is different
+ * in two ways that both live here and nowhere else:
+ *
+ *   **A deal is worth three stars, not one.** `DEAL_STAR_VALUE`. This is the
+ *   only place in the app where one tick is worth more than one star.
+ *   **A deal is one day wide, not five.** It is offered on the day it is
+ *   offered and never again, so a deal's row has exactly one meaningful column
+ *   — `slot.dayIndex` — and the other four are read as nothing. A child who
+ *   somehow had a `true` in Friday's column of Monday's deal has not earned a
+ *   star for it.
+ *
+ * `slots` is one child's week, from `getWeekDealsForChild()`.
+ */
+export type DealTally = {
+  /** Deals taken, counted in ordinary stars — so `taken * DEAL_STAR_VALUE`. */
+  earned: number;
+  /** Every deal on offer, in stars. */
+  possible: number;
+  /** How many deals were actually done. */
+  taken: number;
+  /** How many were on offer. Five in a full week. */
+  offered: number;
+};
+
+export function tallyDeals(
+  marks: StarMarks,
+  slots: readonly DealSlot[],
+): DealTally {
+  let taken = 0;
+  for (const slot of slots) {
+    if (rowFor(marks, slot.deal.id)[slot.dayIndex] === true) taken += 1;
+  }
+
+  return {
+    earned: taken * DEAL_STAR_VALUE,
+    possible: slots.length * DEAL_STAR_VALUE,
+    taken,
+    offered: slots.length,
+  };
+}
+
+/** Whether one particular day's deal was taken. */
+export function isDealTaken(
+  marks: StarMarks,
+  slot: DealSlot | null | undefined,
+): boolean {
+  if (!slot) return false;
+  return rowFor(marks, slot.deal.id)[slot.dayIndex] === true;
+}
+
+/**
+ * Everything owed for one day, deal included — what the whole-screen confetti
+ * is thrown at.
+ *
+ * The deal is part of the day rather than a bonus on top of it, so "James
+ * finished everything for Wednesday" means the chores, the learning, the
+ * hygiene *and* the deal. It is the biggest single star of the day and leaving
+ * it out would make the sentence untrue.
+ *
+ * A day with no deal — one the matching could not fill — falls back to the
+ * charts alone rather than becoming impossible to finish.
+ */
+export function isDayComplete(
+  marks: StarMarks,
+  tasks: readonly StarTask[],
+  slot: DealSlot | null | undefined,
+  dayIndex: number,
+): boolean {
+  if (!isColumnComplete(marks, tasks, dayIndex)) return false;
+  return slot ? isDealTaken(marks, slot) : true;
 }
 
 /** The charts this child was perfect on, in the order the charts are listed. */

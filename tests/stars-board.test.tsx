@@ -6,6 +6,7 @@ import { CHORE_POOLS } from "@/config/chore-rotation";
 import { SOUND_STORAGE_KEY } from "@/config/app";
 import { CHILD_IDS } from "@/config/family";
 import type { StarMarks, WeekMarks } from "@/lib/stars/counting";
+import { getDealForChild } from "@/lib/stars/deals";
 import { getTasksForChild } from "@/lib/stars/tasks";
 
 /*
@@ -314,13 +315,22 @@ describe("celebrating a finished column", () => {
     return marks;
   }
 
-  /** Everything Hannah owes on Wednesday, bar the very last star. */
+  /**
+   * Everything Hannah owes on Wednesday, bar the very last star.
+   *
+   * Including the Star Deal, which is part of the day rather than a bonus on
+   * top of it — see `isDayComplete()`. Leave it out and "finished everything
+   * for Wednesday" would be a sentence the app says while a fifteen-cent job
+   * sits untouched at the top of the page.
+   */
   function wholeDayButOne(): StarMarks {
     const tasks = getTasksForChild(CHORE_POOLS, AUGUST, "hannah");
     const marks: StarMarks = {};
     for (const task of tasks.slice(0, -1)) {
       marks[task.id] = [false, false, true, false, false];
     }
+    const deal = getDealForChild(AUGUST, WEDNESDAY, "hannah");
+    if (deal) marks[deal.id] = [false, false, true, false, false];
     return marks;
   }
 
@@ -423,13 +433,22 @@ describe("celebrating a finished column", () => {
 
 describe("the cheering", () => {
 
-  /** Everything Hannah owes on Wednesday, bar the very last star. */
+  /**
+   * Everything Hannah owes on Wednesday, bar the very last star.
+   *
+   * Including the Star Deal, which is part of the day rather than a bonus on
+   * top of it — see `isDayComplete()`. Leave it out and "finished everything
+   * for Wednesday" would be a sentence the app says while a fifteen-cent job
+   * sits untouched at the top of the page.
+   */
   function wholeDayButOne(): StarMarks {
     const tasks = getTasksForChild(CHORE_POOLS, AUGUST, "hannah");
     const marks: StarMarks = {};
     for (const task of tasks.slice(0, -1)) {
       marks[task.id] = [false, false, true, false, false];
     }
+    const deal = getDealForChild(AUGUST, WEDNESDAY, "hannah");
+    if (deal) marks[deal.id] = [false, false, true, false, false];
     return marks;
   }
 
@@ -554,5 +573,100 @@ describe("every child", () => {
 
     const tab = screen.getByRole("tab", { name: /Clara/ });
     expect(within(tab).getByText(/3 ⭐/)).toBeTruthy();
+  });
+
+  it("counts a Star Deal as three stars on the tab", () => {
+    const marks = blankWeek();
+    const deal = getDealForChild(AUGUST, 0, "clara")!;
+    marks.clara = { [deal.id]: [true, false, false, false, false] };
+    renderBoard(marks);
+
+    const tab = screen.getByRole("tab", { name: /Clara/ });
+    expect(within(tab).getByText(/3 ⭐/)).toBeTruthy();
+  });
+});
+
+describe("the Star Deal", () => {
+  /** Today's deal for whoever's page is open — Hannah, on the Wednesday. */
+  function todaysDeal() {
+    return getDealForChild(AUGUST, WEDNESDAY, "hannah")!;
+  }
+
+  function dealStar(): HTMLElement {
+    return screen.getByRole("switch", { name: /today’s Star Deal/ });
+  }
+
+  it("shows one deal, for today, worth three stars", () => {
+    renderBoard();
+
+    const card = screen.getByText("Star Deals").closest("section")!;
+    expect(within(card).getByText(todaysDeal().label)).toBeTruthy();
+    expect(within(card).getByText(/Today’s deal · Wednesday/)).toBeTruthy();
+    expect(within(card).getByText("Worth 3 stars")).toBeTruthy();
+  });
+
+  it("does not show the deals still to come", () => {
+    // Thursday's deal shown on Wednesday is no longer a surprise — and it is
+    // an invitation to do the job a day early and tick it late.
+    renderBoard();
+
+    const card = screen.getByText("Star Deals").closest("section")!;
+    const thursday = getDealForChild(AUGUST, 3, "hannah")!;
+    expect(within(card).queryByText(thursday.label)).toBeNull();
+    // Monday's and Tuesday's are behind us, so they are on the card.
+    const monday = getDealForChild(AUGUST, 0, "hannah")!;
+    expect(within(card).getByText(monday.label)).toBeTruthy();
+  });
+
+  it("files the deal against its own id, on today's column", async () => {
+    renderBoard();
+
+    await act(async () => {
+      dealStar().click();
+    });
+
+    expect(setStar).toHaveBeenCalledWith({
+      childId: "hannah",
+      weekStart: WEEK_START,
+      taskId: todaysDeal().id,
+      dayIndex: WEDNESDAY,
+      value: true,
+    });
+  });
+
+  it("fills the moment it is tapped, before the write comes back", async () => {
+    renderBoard();
+    expect(dealStar().getAttribute("aria-checked")).toBe("false");
+
+    await act(async () => {
+      dealStar().click();
+    });
+
+    expect(dealStar().getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("celebrates on its own account, because it finishes no column", async () => {
+    renderBoard();
+
+    await act(async () => {
+      dealStar().click();
+    });
+
+    expect(screen.getByRole("status").textContent).toContain(
+      "Star Deal taken — 3 stars",
+    );
+  });
+
+  it("gives every child a different deal on the same day", async () => {
+    renderBoard();
+
+    const labels = new Set<string>();
+    for (const name of ["Hannah", "Emily", "Clara", "William", "James"]) {
+      await act(async () => {
+        screen.getByRole("tab", { name: new RegExp(name) }).click();
+      });
+      labels.add(dealStar().getAttribute("aria-label")!);
+    }
+    expect(labels.size).toBe(5);
   });
 });

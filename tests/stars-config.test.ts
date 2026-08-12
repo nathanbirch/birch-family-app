@@ -120,12 +120,21 @@ describe("what each child's chart says", () => {
   });
 
   it("never gives a child a chore from the other pool", () => {
-    const littles = new Set(
-      CHORE_POOLS.find((pool) => pool.id === "littles")!.chores,
+    const youngers = new Set(
+      CHORE_POOLS.find((pool) => pool.id === "younger-pair")!.chores,
     );
-    for (const childId of ["hannah", "emily", "clara"] as const) {
+    for (const childId of ["hannah", "emily"] as const) {
       for (const task of getTasksForChild(CHORE_POOLS, AUGUST, childId)) {
-        expect(littles.has(task.id)).toBe(false);
+        expect(youngers.has(task.id)).toBe(false);
+      }
+    }
+
+    const elders = new Set(
+      CHORE_POOLS.find((pool) => pool.id === "elder-pair")!.chores,
+    );
+    for (const childId of ["clara", "william", "james"] as const) {
+      for (const task of getTasksForChild(CHORE_POOLS, AUGUST, childId)) {
+        expect(elders.has(task.id)).toBe(false);
       }
     }
   });

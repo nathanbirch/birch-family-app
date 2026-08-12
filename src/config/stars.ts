@@ -26,12 +26,12 @@
  *                 hygiene rows, plus "Tidy room" and the laundry.
  *   `fixed`     — belongs to particular children because of their age or what
  *                 they are learning. Cello is Hannah's; "Write alphabet" is
- *                 James's. These change when a child grows, which is a deploy,
- *                 not a rotation.
- *   `rotating`  — the real chores, which move between children on the first of
- *                 each month. Which child has which is NOT stored here — see
- *                 `config/chore-rotation.ts` for the pools and the anchor, and
- *                 `lib/stars/rotation.ts` for the maths.
+ *                 James's, and so is feeding Bella. These change when a child
+ *                 grows, which is a deploy, not a rotation.
+ *   `rotating`  — the real chores, which swap between the children of a pair
+ *                 every Monday morning. Which child has which is NOT stored
+ *                 here — see `config/chore-rotation.ts` for the pools and the
+ *                 anchor, and `lib/stars/rotation.ts` for the maths.
  *
  * A task with `kind: "rotating"` must appear in exactly one pool. The test
  * suite fails if one is left out, so a new chore cannot silently belong to
@@ -40,7 +40,17 @@
 
 import type { ChildId } from "./family";
 
-export type ChartId = "learning" | "chores" | "hygiene";
+/**
+ * The three printed charts, plus `deals`.
+ *
+ * `deals` is in the union but deliberately *not* in `CHARTS` below, and no
+ * `StarTask` may carry it. It is the daily Star Deal — see `config/deals.ts`,
+ * which owns its wording and exports `DEALS_CHART`. It lives in this union so
+ * that a ceremony slide, a confetti burst and a card heading can all be
+ * addressed by chart id without a second, parallel type for the one section
+ * that did not come off the fridge.
+ */
+export type ChartId = "learning" | "chores" | "hygiene" | "deals";
 
 export type Chart = {
   id: ChartId;
@@ -78,7 +88,7 @@ export const CHARTS: readonly Chart[] = [
  * How a task finds its way onto a child's chart.
  *
  * `rotating` carries no children at all — that is the point. It is a promise
- * that somebody in a pool owns this chore this month, and the pool decides
+ * that somebody in a pool owns this chore this week, and the pool decides
  * who.
  */
 export type StarAssignment =
@@ -131,7 +141,14 @@ export const STAR_TASKS: readonly StarTask[] = [
     id: "feed-bella",
     chart: "chores",
     label: "Feed Bella",
-    assign: { kind: "rotating" },
+    /*
+     * James's, and staying his. He used to swap it with William month by
+     * month; William now swaps with Clara instead, which leaves James with no
+     * one to trade with — and feeding the dog is the job he knows. A `fixed`
+     * row is exactly that promise: it moves when we decide it moves, not when
+     * the calendar does.
+     */
+    assign: { kind: "fixed", children: ["james"] },
   },
   {
     id: "vacuum-wooden-floor",
@@ -348,7 +365,7 @@ export function getChartTasks(chart: ChartId): readonly StarTask[] {
   return STAR_TASKS.filter((task) => task.chart === chart);
 }
 
-/** The chores that move between children each month, in dealing order. */
+/** The chores that move between children each Monday, in dealing order. */
 export function getRotatingTasks(): readonly StarTask[] {
   return STAR_TASKS.filter((task) => task.assign.kind === "rotating");
 }

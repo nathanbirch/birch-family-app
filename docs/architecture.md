@@ -58,9 +58,9 @@ looking at the app on the same day always show the same seats, and the database
 being unreachable does not change a single seat.
 
 **Stored in MongoDB** — accounts, sessions, the nightly pet rotation, the
-monthly chore rotation and the ticked stars. The chores follow the pets'
-pattern exactly: the *maths* is derived from an anchor plus elapsed months, and
-only the anchor is stored, so no row per month exists anywhere. The stars
+weekly chore swap and the ticked stars. The chores follow the pets' pattern
+exactly: the *maths* is derived from an anchor plus elapsed weeks, and only the
+anchor is stored, so no row per week exists anywhere. The stars
 themselves are the app's first genuinely accumulating data — see
 [Star charts](stars.md). The weekly report is then *derived from stored data*:
 it adds no collection of its own and is `starWeeks` read back through the same

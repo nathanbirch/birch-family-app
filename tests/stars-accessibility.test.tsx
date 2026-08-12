@@ -10,6 +10,7 @@ import { CHORE_POOLS } from "@/config/chore-rotation";
 import { CHILD_IDS, FAMILY, getChildren } from "@/config/family";
 import { STAR_DAY_NAMES, STAR_TASKS } from "@/config/stars";
 import type { WeekMarks } from "@/lib/stars/counting";
+import { getDealForChild } from "@/lib/stars/deals";
 
 /**
  * Accessibility, responsiveness and kid-proofing.
@@ -38,6 +39,13 @@ const WEEK_START = "2026-08-03";
  * is why the clock below is faked rather than only passed in as a prop.
  */
 const MONDAY = "2026-08-03";
+
+/** The same Monday as a `Date`, for asking what the day's Star Deals are. */
+const AUGUST_MONDAY = new Date(2026, 7, 3, 12, 0, 0, 0);
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 function blankWeek(): WeekMarks {
   return Object.fromEntries(CHILD_IDS.map((id) => [id, {}])) as WeekMarks;
@@ -80,6 +88,14 @@ describe("accessibility", () => {
       const name = star.getAttribute("aria-label") ?? "";
       // The sound toggle is a switch too, and is named differently.
       if (name.startsWith("Turn the cheering")) continue;
+      /*
+       * So is the Star Deal, and it is named differently on purpose: it is
+       * only ever offered on one day, so "on Monday" would be telling a child
+       * something they cannot act on. It says what it is worth instead, which
+       * is the thing they do not already know. Its own naming is asserted
+       * below.
+       */
+      if (name.includes("today’s Star Deal")) continue;
       // A locked star says why, after its day — the day is still the end of
       // the part that names it.
       expect(name).toMatch(
@@ -88,6 +104,19 @@ describe("accessibility", () => {
         ),
       );
     }
+  });
+
+  it("names the Star Deal by what it is and what it is worth", () => {
+    renderBoard();
+
+    const deal = getDealForChild(AUGUST_MONDAY, 0, "hannah")!;
+    const star = screen.getByRole("switch", {
+      name: new RegExp(`^${escapeRegExp(deal.label)} — today’s Star Deal`),
+    });
+    // Three stars is the whole reason it is worth interrupting a day for, so
+    // a child who cannot see the card must hear it.
+    expect(star.getAttribute("aria-label")).toContain("worth 3 stars");
+    expect(star.getAttribute("aria-checked")).toBe("false");
   });
 
   it("names every star uniquely, so 'that one' is never ambiguous", () => {
@@ -161,7 +190,14 @@ describe("accessibility", () => {
     renderBoard();
     expect(
       screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent),
-    ).toEqual(["Chore Chart", "Summer Learning Chart", "Hygiene Chart"]);
+      // The deal comes first: it is the card that is new today and gone
+      // tonight, and the three charts are the same rows they always are.
+    ).toEqual([
+      "Star Deals",
+      "Chore Chart",
+      "Summer Learning Chart",
+      "Hygiene Chart",
+    ]);
   });
 
   it("labels the child picker as a tab list, with one tab selected", () => {
@@ -333,7 +369,8 @@ describe("kid-proofing", () => {
     // One chart, one heading, one backdrop — nothing accumulates.
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.querySelectorAll("[data-child]")).toHaveLength(1);
-    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(3);
+    // Three charts and the Star Deal.
+    expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(4);
   });
 
   it("clears the confetti when it has finished falling", async () => {
@@ -693,6 +730,9 @@ describe("the chart card", () => {
   it("repeats the day letters on every card, so the columns stay labelled", () => {
     renderBoard();
     for (const heading of screen.getAllByRole("heading", { level: 2 })) {
+      // The Star Deal card has no columns to label: one deal, one day, one
+      // star. See `DealCard`.
+      if (heading.textContent === "Star Deals") continue;
       const card = heading.closest("section")!;
       const letters = [...card.querySelectorAll("[aria-hidden='true'] span")]
         .map((node) => node.textContent)

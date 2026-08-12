@@ -117,11 +117,11 @@ Who has which chore, and when it changes hands. One document per pool.
 | Field | Type | Notes |
 |---|---|---|
 | `_id` | ObjectId | |
-| `poolId` | string | `"bigs"` / `"littles"` — an id from `src/config/chore-rotation.ts`. Unique index. |
+| `poolId` | string | `"elder-pair"` / `"younger-pair"` — an id from `src/config/chore-rotation.ts`. Unique index. A document whose `poolId` is no longer one of those is ignored by the app and deleted by the next seed. |
 | `name` | string | Shown when the page explains a rotation. |
 | `children` | string[] | Child ids, in the order the chores walk through them. **Reordering reassigns chores.** |
 | `chores` | string[] | Task ids from `src/config/stars.ts`, in *dealing* order — consecutive entries go to different children. |
-| `anchorMonth` | string | `YYYY-MM`. The month this deal is known to be right for. |
+| `anchorWeek` | string | `YYYY-MM-DD`, and it must be a **Monday**. The week this deal is known to be right for; the chores swap on Monday morning. |
 | `updatedAt` | Date | |
 
 **Indexes:** `pool_unique` — unique on `poolId`.

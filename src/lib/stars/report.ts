@@ -29,14 +29,29 @@
  * page for a week rather than something that has to be published.
  */
 
+import { DEALS_CHART } from "@/config/deals";
 import { getChildren, getPerson, type ChildId } from "@/config/family";
 import { CENTS_PER_STAR, centsForStars } from "@/config/rewards";
 import { CHARTS, type Chart } from "@/config/stars";
 import type { ChorePool } from "@/config/chore-rotation";
 import { addDays, startOfWeekMonday, toIsoDate } from "@/lib/dates";
 
-import { tally, type StarMarks, type WeekMarks } from "./counting";
+import { tally, tallyDeals, type StarMarks, type WeekMarks } from "./counting";
+import { getWeekDealsForChild } from "./deals";
 import { getTasksForChild } from "./tasks";
+
+/**
+ * The sections of a ceremony slide, in the order they arrive on it.
+ *
+ * The three printed charts, then the Star Deals. Deals go last on purpose: it
+ * is the line with the biggest number behind the smallest count, so a child
+ * watching their slide reads "Chores 18, Learning 20, Hygiene 20, Star Deals
+ * 9" and the last one is the surprise rather than the preamble.
+ *
+ * `CHARTS` itself is left alone — it is the three sheets on the fridge, and
+ * `config/stars.ts` keeps it that way. See `DEALS_CHART`.
+ */
+const CEREMONY_CHARTS: readonly Chart[] = [...CHARTS, DEALS_CHART];
 
 /** How one of the three charts went for one child. */
 export type ChartResult = {
@@ -120,12 +135,12 @@ export function ceremonyOrder(): ChildId[] {
 /**
  * Build a report for the week beginning `monday`.
  *
- * `monday` is also the date the chore rotation is asked about: a finished week
- * is always reported as of its own Monday, so looking back at July in December
- * gives July's answer. (The live chart uses today instead — see
- * `referenceDateFor()` in `week.ts` — because a chore handed over mid-week
- * should show on the new child's chart straight away. A finished week has no
- * such "now".)
+ * `monday` is also the date the chore rotation is asked about: a week is
+ * always reported as of its own Monday, so looking back at July in December
+ * gives July's answer. The live chart asks about the same date, which is the
+ * whole reason the chores swap on Monday morning rather than mid-week — a week
+ * has one deal from end to end, and the report and the chart cannot disagree
+ * about it.
  */
 export function buildWeekReport(
   pools: readonly ChorePool[],
@@ -232,7 +247,7 @@ export function buildSpanReport(
 
 /** One child's weeks, added together. `parts` is never empty. */
 function sumChildReports(parts: readonly ChildReport[]): ChildReport {
-  const charts: ChartResult[] = CHARTS.map((chart) => {
+  const charts: ChartResult[] = CEREMONY_CHARTS.map((chart) => {
     const across = parts.flatMap((part) =>
       part.charts.filter((result) => result.chart.id === chart.id),
     );
@@ -285,6 +300,13 @@ function buildChildReport(
   const tasks = getTasksForChild(pools, monday, childId);
   const person = getPerson(childId);
 
+  /*
+   * The week's deals are recomputed from the calendar rather than read back
+   * from anything — the same principle as the rotation, and the reason a
+   * ceremony for a week in March shows March's deals. See `lib/stars/deals.ts`.
+   */
+  const deals = tallyDeals(marks, getWeekDealsForChild(monday, childId));
+
   const charts: ChartResult[] = CHARTS.map((chart) => {
     const chartTasks = tasks.filter((task) => task.chart === chart.id);
     const counts = tally(marks, chartTasks);
@@ -298,7 +320,21 @@ function buildChildReport(
       // than calls — the tally is already in hand.
       perfect: chartTasks.length > 0 && counts.earned === counts.possible,
     };
-  }).filter((result) => result.possible > 0);
+  });
+
+  charts.push({
+    chart: DEALS_CHART,
+    earned: deals.earned,
+    possible: deals.possible,
+    /*
+     * Zero, always. A deal is not a row: it is one day wide, so there is
+     * nothing to fill "all the way across" and counting five taken deals as
+     * five whole rows would put a number in the ceremony's "whole rows" line
+     * that does not mean what the rest of that line means.
+     */
+    completeRows: 0,
+    perfect: deals.offered > 0 && deals.taken === deals.offered,
+  });
 
   const whole = tally(marks, tasks);
 
@@ -307,11 +343,13 @@ function buildChildReport(
     name: person.name,
     color: person.avatarColor,
     colorDark: person.avatarColorDark,
-    charts,
-    earned: whole.earned,
-    possible: whole.possible,
+    charts: charts.filter((result) => result.possible > 0),
+    // The deals are in the total, at three stars each, which is what makes
+    // them worth the interruption — and what puts them in the money below.
+    earned: whole.earned + deals.earned,
+    possible: whole.possible + deals.possible,
     completeRows: whole.completeRows,
-    cents: centsForStars(whole.earned),
+    cents: centsForStars(whole.earned + deals.earned),
   };
 }
 

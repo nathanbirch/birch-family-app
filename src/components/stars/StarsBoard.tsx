@@ -12,6 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 
 import type { ChorePool } from "@/config/chore-rotation";
+import { DEAL_STAR_VALUE } from "@/config/deals";
 import { CHILD_IDS, getPerson, type ChildId } from "@/config/family";
 import {
   STAR_DAY_NAMES,
@@ -36,21 +37,25 @@ import { setStar } from "@/lib/stars/actions";
 import { playCheer, primeCheer } from "@/lib/stars/cheer";
 import {
   isColumnComplete,
+  isDayComplete,
   rowFor,
   tally,
+  tallyDeals,
   withMark,
   type StarMarks,
   type WeekMarks,
 } from "@/lib/stars/counting";
+import { getWeekDealsForChild } from "@/lib/stars/deals";
 import { getChoreCountdownLabel } from "@/lib/stars/rotation";
 import { getChartSectionsForChild, getTasksForChild } from "@/lib/stars/tasks";
-import { getWeekStartIso, openDayIndex, referenceDateFor } from "@/lib/stars/week";
+import { getWeekStartIso, openDayIndex } from "@/lib/stars/week";
 
 import { Avatar } from "../Avatar";
 
 import { ChildBackdrop } from "./ChildBackdrop";
 import { ChildTabs } from "./ChildTabs";
 import { Confetti, CONFETTI_DURATION_MS } from "./Confetti";
+import { DealCard } from "./DealCard";
 import { SoundToggle } from "./SoundToggle";
 import { StarChartCard } from "./StarChartCard";
 
@@ -59,8 +64,8 @@ import { StarChartCard } from "./StarChartCard";
  *
  * A client component for the same reason `SeatingBoard` is: which chores a
  * child has depends on the *device's* local date, and it has to be right at
- * midnight on the first of the month without a reload. The pools and the
- * week's marks are handed down by the page — nothing here queries anything.
+ * midnight on Monday morning without a reload. The pools and the week's marks
+ * are handed down by the page — nothing here queries anything.
  *
  * ---------------------------------------------------------------------------
  * WHY ONE CHILD AT A TIME
@@ -162,25 +167,36 @@ export function StarsBoard({
    */
   const todayIndex = useMemo(() => openDayIndex(monday, date), [monday, date]);
 
-  // Chores change hands on the 1st, so a week that straddles a month shows
-  // whoever has the chore *now*. See `lib/stars/week.ts`.
-  const reference = useMemo(() => referenceDateFor(monday, date), [monday, date]);
-
+  /*
+   * The rotation is asked about the week's Monday, never about today. Chores
+   * swap on Monday morning, so a week has one deal from end to end — and the
+   * server re-derives it from the same date when a star is tapped.
+   */
   const sections = useMemo(
-    () => getChartSectionsForChild(pools, reference, selected),
-    [pools, reference, selected],
+    () => getChartSectionsForChild(pools, monday, selected),
+    [pools, monday, selected],
   );
 
+  /*
+   * The week's five Star Deals for this child, derived from the calendar and
+   * nothing else — the same function the Server Action re-checks a tap against
+   * and the same one the ceremony reads the week back through. See
+   * `lib/stars/deals.ts`.
+   */
+  const dealSlots = useMemo(
+    () => getWeekDealsForChild(monday, selected),
+    [monday, selected],
+  );
   const totals = useMemo(() => {
     const counts = {} as Record<ChildId, number>;
     for (const childId of CHILD_IDS) {
-      counts[childId] = tally(
-        optimistic[childId] ?? {},
-        getTasksForChild(pools, reference, childId),
-      ).earned;
+      const childMarks = optimistic[childId] ?? {};
+      counts[childId] =
+        tally(childMarks, getTasksForChild(pools, monday, childId)).earned +
+        tallyDeals(childMarks, getWeekDealsForChild(monday, childId)).earned;
     }
     return counts;
-  }, [optimistic, pools, reference]);
+  }, [optimistic, pools, monday]);
 
   // Memoised because `?? {}` would hand a brand-new object to the tally below
   // on every render, defeating its own memo.
@@ -188,10 +204,15 @@ export function StarsBoard({
     () => optimistic[selected] ?? {},
     [optimistic, selected],
   );
-  const weekTotal = useMemo(
-    () => tally(childMarks, getTasksForChild(pools, reference, selected)),
-    [childMarks, pools, reference, selected],
-  );
+  const weekTotal = useMemo(() => {
+    const charts = tally(childMarks, getTasksForChild(pools, monday, selected));
+    const deals = tallyDeals(childMarks, dealSlots);
+    return {
+      ...charts,
+      earned: charts.earned + deals.earned,
+      possible: charts.possible + deals.possible,
+    };
+  }, [childMarks, pools, monday, selected, dealSlots]);
 
   const person = getPerson(selected);
   /*
@@ -234,10 +255,23 @@ export function StarsBoard({
     dayIndex: number,
   ) {
     const day = STAR_DAY_NAMES[dayIndex];
-    const tasks = getTasksForChild(pools, reference, selected);
+    const tasks = getTasksForChild(pools, monday, selected);
+    const deal = dealSlots.find((slot) => slot.dayIndex === dayIndex) ?? null;
 
-    if (isColumnComplete(marks, tasks, dayIndex)) {
+    // The deal counts towards "everything for Wednesday" — it is the biggest
+    // star of the day, and the sentence would not be true without it.
+    if (isDayComplete(marks, tasks, deal, dayIndex)) {
       throwConfetti("page", `${person.name} finished everything for ${day}!`);
+      return;
+    }
+
+    /*
+     * A deal has no chart of its own to finish, so taking one celebrates on its
+     * own account rather than by completing a column. It is worth three stars;
+     * it should not be the only tick on the page that passes in silence.
+     */
+    if (deal?.deal.id === taskId) {
+      throwConfetti("deals", `Star Deal taken — ${DEAL_STAR_VALUE} stars!`);
       return;
     }
 
@@ -347,7 +381,7 @@ export function StarsBoard({
           </h1>
           <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
             {formatDateRange(monday, addDays(monday, 4))} ·{" "}
-            {getChoreCountdownLabel(reference)}
+            {getChoreCountdownLabel(date)}
           </p>
         </div>
 
@@ -444,6 +478,24 @@ export function StarsBoard({
         key={`charts-${selected}`}
         className="animate-soft-rise flex flex-col gap-3"
       >
+        {/*
+          The deal goes above the three charts, and it is the only card whose
+          order is an argument. It is the thing that is new today and the thing
+          that expires tonight; the charts are the same four rows they were
+          yesterday and will be tomorrow, and they are still there after a
+          scroll.
+        */}
+        <DealCard
+          slots={dealSlots}
+          marks={childMarks}
+          todayIndex={todayIndex}
+          accent={person.avatarColor}
+          accentInk={accentInk}
+          celebration={celebration?.scope === "deals" ? celebration.id : null}
+          celebrationColors={celebrationColors}
+          onToggle={toggle}
+        />
+
         {sections.map((section) => (
           <StarChartCard
             key={section.chart.id}

@@ -216,7 +216,7 @@ async function main() {
             name: pool.name,
             children: [...pool.children],
             chores: [...pool.chores],
-            anchorMonth: pool.anchorMonth,
+            anchorWeek: pool.anchorWeek,
             updatedAt: new Date(),
           },
         },
@@ -226,8 +226,28 @@ async function main() {
       console.log(
         outcome.upsertedCount > 0
           ? `  ✓ Chore pool "${pool.id}" seeded ` +
-              `(${pool.chores.length} chores, anchored on ${pool.anchorMonth}).`
+              `(${pool.chores.length} chores, anchored on ${pool.anchorWeek}).`
           : `  • Chore pool "${pool.id}" already exists — left untouched.`,
+      );
+    }
+
+    /*
+     * Pools that no longer exist. The app ignores a document whose `poolId` is
+     * not a pool any more — it simply logs and falls back — but an ignored
+     * document is a trap: it reads like the live rotation and is not one. The
+     * monthly `bigs`/`littles` pair became the weekly `elder-pair` and
+     * `younger-pair` on 10 August 2026, and their old rows are what this
+     * clears. Nothing a child earned lives here; the stars are in `starWeeks`.
+     */
+    const known = CHORE_POOLS.map((pool) => pool.id);
+    const orphans = await choreRotations
+      .find({ poolId: { $nin: known } })
+      .toArray();
+    for (const orphan of orphans) {
+      await choreRotations.deleteOne({ _id: orphan._id });
+      console.log(
+        `  ✓ Removed the retired chore pool "${String(orphan.poolId)}", ` +
+          `which is no longer in src/config/chore-rotation.ts.`,
       );
     }
 

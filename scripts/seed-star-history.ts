@@ -34,29 +34,26 @@
  * needs to change.
  *
  * ---------------------------------------------------------------------------
- * THE CHORE ROTATION DISAGREES WITH THESE PHOTOGRAPHS
+ * THE CHORE ROTATION ONCE DISAGREED WITH THESE PHOTOGRAPHS
  * ---------------------------------------------------------------------------
- * Read this before wondering where some of the stars went.
+ * Read this before wondering why the transcription is stubbornly literal.
  *
  * The printed chart has each child's chores printed *on* it, so the photographs
  * show the same assignment in July that they show in August: the living room is
  * Clara's, the dishwasher is Emily's, the kitchen island is Hannah's. The app
- * rotates the chores on the first of each month from an anchor of August 2026
- * (`config/chore-rotation.ts`), so as far as it is concerned July's deal was
- * one step back — the living room was Hannah's, the dishwasher was Clara's, and
- * so on.
+ * used to extrapolate a *different* July deal backwards from its anchor — the
+ * living room was Hannah's, the dishwasher was Clara's, and so on.
  *
  * The marks below are transcribed **as photographed**, because that is what
- * actually happened. The consequence is that a rotating chore ticked by the
- * child who is printed against it will not appear in that week's ceremony:
- * `buildWeekReport` only counts the tasks the rotation says were that child's,
- * and the stars stay in the database, uncounted, rather than being awarded to
- * somebody who did not do the job.
+ * actually happened, and for a while it cost fourteen stars: `buildWeekReport`
+ * counts only the tasks the rotation says were that child's, so those stars sat
+ * in the database uncounted rather than being awarded to somebody who had not
+ * done the job.
  *
- * That is fourteen stars across the two weeks. The fix is not in this script —
- * it is the per-rotation override that `config/chore-rotation.ts` already
- * describes as forthcoming, or a decision that the rotation should not run
- * backwards past its anchor at all.
+ * The rotation no longer runs backwards past its anchor — every earlier week
+ * uses the anchor's own deal, which is exactly what the laminate shows — so all
+ * fourteen count. Keep the transcription literal: it is the photographs that
+ * are the evidence, and the rotation that has to fit them.
  */
 
 import { MongoClient } from "mongodb";
@@ -278,8 +275,9 @@ async function main() {
     console.log(
       "Done. Both weeks are finished weeks, so each has a ceremony at\n" +
         "  /ceremonies/<week>\n\n" +
-        "Some rotating chores will be missing from those ceremonies — see the\n" +
-        "note at the top of this file about the rotation and the laminate.",
+        "Both fall before the chore rotation's anchor, so they are counted\n" +
+        "against the deal printed on the laminate — see the note at the top of\n" +
+        "this file.",
     );
   } finally {
     await client.close();

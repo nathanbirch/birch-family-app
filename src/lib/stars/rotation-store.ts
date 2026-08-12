@@ -22,7 +22,8 @@ import { findChorePoolProblem } from "./rotation";
  *
  * One document per pool:
  *
- *   { poolId: "bigs", children: [...], chores: [...], anchorMonth: "2026-08" }
+ *   { poolId: "elder-pair", children: [...], chores: [...],
+ *     anchorWeek: "2026-08-10" }
  *
  * Reading is forgiving and writing is strict, exactly as with the pets. This
  * is a page five children open every morning, so a malformed document must not
@@ -47,7 +48,7 @@ const chorePoolSchema = z.object({
   name: z.string().min(1),
   children: z.array(z.enum(CHILD_ENUM)).min(1),
   chores: z.array(z.string().min(1)).min(1),
-  anchorMonth: z.string().regex(/^\d{4}-\d{2}$/),
+  anchorWeek: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
 export type ChorePoolDocument = {
@@ -56,7 +57,7 @@ export type ChorePoolDocument = {
   name: string;
   children: string[];
   chores: string[];
-  anchorMonth: string;
+  anchorWeek: string;
   updatedAt: Date;
 };
 

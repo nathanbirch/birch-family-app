@@ -6,7 +6,7 @@ import { getRotatingTasks } from "@/config/stars";
 import {
   findChorePoolProblem,
   getChoreAssignments,
-  getChoreMonthOffset,
+  getChoreWeekOffset,
   getChoreOwner,
   getChoresForChild,
   getDaysUntilChoreRotation,
@@ -18,14 +18,19 @@ function localDate(iso: string, hour = 12): Date {
   return new Date(year, month - 1, day, hour, 0, 0, 0);
 }
 
-function poolFor(id: "bigs" | "littles"): ChorePool {
+function poolFor(id: "elder-pair" | "younger-pair"): ChorePool {
   const pool = CHORE_POOLS.find((entry) => entry.id === id);
   if (!pool) throw new Error(`No pool called ${id}`);
   return pool;
 }
 
-const BIGS = poolFor("bigs");
-const LITTLES = poolFor("littles");
+const ELDERS = poolFor("elder-pair");
+const YOUNGERS = poolFor("younger-pair");
+
+/** The anchor week: Monday 10 August 2026, and the Wednesday inside it. */
+const ANCHOR_WEEK = localDate("2026-08-12");
+/** The first Monday the pairs swap on. */
+const NEXT_WEEK = localDate("2026-08-17");
 
 describe("configuration sanity", () => {
   it("is a usable set of pools", () => {
@@ -41,38 +46,50 @@ describe("configuration sanity", () => {
   });
 
   it("keeps the pools apart, so a child has one rotation", () => {
-    const bigs = new Set<ChildId>(BIGS.children);
-    for (const child of LITTLES.children) {
-      expect(bigs.has(child)).toBe(false);
+    const elders = new Set<ChildId>(ELDERS.children);
+    for (const child of YOUNGERS.children) {
+      expect(elders.has(child)).toBe(false);
     }
+  });
+
+  it("rotates two pairs and leaves James out of both", () => {
+    expect(CHORE_POOLS.map((pool) => [...pool.children])).toEqual([
+      ["hannah", "emily"],
+      ["clara", "william"],
+    ]);
+
+    const rotated = CHORE_POOLS.flatMap((pool) => pool.children);
+    expect(rotated).not.toContain("james");
+    // His chores are `fixed` in config/stars.ts instead, so nothing here can
+    // hand one of them to somebody else on a Monday morning.
+    expect(getChoresForChild(CHORE_POOLS, ANCHOR_WEEK, "james")).toEqual([]);
+    expect(getChoreOwner(CHORE_POOLS, ANCHOR_WEEK, "feed-bella")).toBeNull();
   });
 });
 
-describe("the August 2026 anchor", () => {
+describe("the anchor week", () => {
   /*
-   * These are read straight off the photograph of the chore chart taken on
-   * 4 August 2026. If a future edit to the pools moves August, this fails —
-   * which is the point. The anchor is the family's own truth, not a default.
+   * The week of Monday 10 August 2026, dealt exactly as the photograph of the
+   * chore chart taken on 4 August 2026 shows it — the chores rotated monthly
+   * until this week, so the anchor and the photograph agree. If a future edit
+   * to the pools moves this week, this fails, which is the point.
    */
-  const AUGUST: [string, ChildId][] = [
+  const ANCHOR: [string, ChildId][] = [
     ["pick-up-living-room", "clara"],
     ["vacuum-living-room", "clara"],
+    ["vacuum-wooden-floor", "william"],
     ["dishwasher", "emily"],
     ["yard-pickup", "emily"],
     ["kitchen-island", "hannah"],
     ["bath-trash", "hannah"],
-    ["feed-bella", "james"],
-    ["vacuum-wooden-floor", "william"],
   ];
 
-  it.each(AUGUST)("gives %s to %s", (taskId, childId) => {
-    expect(getChoreOwner(CHORE_POOLS, localDate("2026-08-04"), taskId)).toBe(
-      childId,
-    );
+  it.each(ANCHOR)("gives %s to %s", (taskId, childId) => {
+    expect(getChoreOwner(CHORE_POOLS, ANCHOR_WEEK, taskId)).toBe(childId);
   });
 
-  it("is the same on the 1st and the 31st of the month", () => {
-    for (const day of ["2026-08-01", "2026-08-15", "2026-08-31"]) {
+  it("is the same on every day of that week", () => {
+    for (const day of ["2026-08-10", "2026-08-14", "2026-08-16"]) {
       expect(getChoreOwner(CHORE_POOLS, localDate(day), "dishwasher")).toBe(
         "emily",
       );
@@ -80,38 +97,52 @@ describe("the August 2026 anchor", () => {
   });
 });
 
-describe("rotating on the first of the month", () => {
-  it("changes overnight between the 31st and the 1st", () => {
-    const july = getChoreOwner(CHORE_POOLS, localDate("2026-08-31"), "dishwasher");
-    const august = getChoreOwner(CHORE_POOLS, localDate("2026-09-01"), "dishwasher");
-    expect(july).not.toBe(august);
+describe("swapping on Monday morning", () => {
+  it("changes overnight between Sunday and Monday", () => {
+    const sunday = getChoreOwner(CHORE_POOLS, localDate("2026-08-16"), "dishwasher");
+    const monday = getChoreOwner(CHORE_POOLS, localDate("2026-08-17"), "dishwasher");
+    expect(sunday).toBe("emily");
+    expect(monday).toBe("hannah");
   });
 
-  it("does not change at any other point in the month", () => {
+  it("does not change at any other point in the week", () => {
     const owners = new Set(
-      Array.from({ length: 30 }, (_, index) =>
-        getChoreOwner(
-          CHORE_POOLS,
-          localDate(`2026-09-${String(index + 1).padStart(2, "0")}`),
-          "kitchen-island",
-        ),
+      ["17", "18", "19", "20", "21", "22", "23"].map((day) =>
+        getChoreOwner(CHORE_POOLS, localDate(`2026-08-${day}`), "kitchen-island"),
       ),
     );
     expect(owners.size).toBe(1);
   });
 
-  it("moves one place down the pool each month", () => {
-    // Clara, Emily, Hannah — the dishwasher walks the pool in that order.
-    const months: [string, ChildId][] = [
-      ["2026-08-10", "emily"],
-      ["2026-09-10", "hannah"],
-      ["2026-10-10", "clara"],
-      ["2026-11-10", "emily"],
-    ];
-    for (const [day, childId] of months) {
-      expect(getChoreOwner(CHORE_POOLS, localDate(day), "dishwasher")).toBe(
-        childId,
-      );
+  it("hands the elder pair's chores across, whole", () => {
+    expect(getChoresForChild(CHORE_POOLS, ANCHOR_WEEK, "hannah").sort()).toEqual(
+      ["bath-trash", "kitchen-island"],
+    );
+    expect(getChoresForChild(CHORE_POOLS, NEXT_WEEK, "hannah").sort()).toEqual(
+      ["dishwasher", "yard-pickup"],
+    );
+    expect(getChoresForChild(CHORE_POOLS, NEXT_WEEK, "emily").sort()).toEqual(
+      ["bath-trash", "kitchen-island"],
+    );
+  });
+
+  it("passes the younger pair's odd chore over too", () => {
+    // Three chores between two children: two one week, one the next.
+    expect(getChoresForChild(CHORE_POOLS, ANCHOR_WEEK, "clara")).toHaveLength(2);
+    expect(getChoresForChild(CHORE_POOLS, ANCHOR_WEEK, "william")).toHaveLength(1);
+    expect(getChoresForChild(CHORE_POOLS, NEXT_WEEK, "clara")).toHaveLength(1);
+    expect(getChoresForChild(CHORE_POOLS, NEXT_WEEK, "william")).toHaveLength(2);
+  });
+
+  it("puts each pair back where it started every second week", () => {
+    const fortnight = localDate("2026-08-24");
+    for (const [taskId, childId] of [
+      ["dishwasher", "emily"],
+      ["kitchen-island", "hannah"],
+      ["pick-up-living-room", "clara"],
+      ["vacuum-wooden-floor", "william"],
+    ] as [string, ChildId][]) {
+      expect(getChoreOwner(CHORE_POOLS, fortnight, taskId)).toBe(childId);
     }
   });
 
@@ -124,37 +155,39 @@ describe("rotating on the first of the month", () => {
      * fourteen real stars when two July weeks were back-filled off
      * photographs of that chart.
      *
-     * Before the anchor, every month is the anchor's month.
+     * Before the anchor, every week is the anchor's week — which is also every
+     * week the chores rotated monthly, and so every week the database already
+     * holds stars for.
      */
-    for (const day of ["2026-07-12", "2026-05-12", "2019-01-01"]) {
+    for (const day of ["2026-08-03", "2026-07-12", "2026-05-12", "2019-01-01"]) {
       expect(getChoreOwner(CHORE_POOLS, localDate(day), "dishwasher")).toBe(
         "emily",
       );
       expect(
         getChoreOwner(CHORE_POOLS, localDate(day), "pick-up-living-room"),
       ).toBe("clara");
-      expect(getChoreOwner(CHORE_POOLS, localDate(day), "feed-bella")).toBe(
-        "james",
-      );
+      expect(
+        getChoreOwner(CHORE_POOLS, localDate(day), "vacuum-wooden-floor"),
+      ).toBe("william");
     }
   });
 
   it("still moves on normally after the anchor", () => {
     // The clamp must not flatten the rotation itself — only the guesswork
     // before it starts.
-    expect(getChoreOwner(CHORE_POOLS, localDate("2026-09-12"), "dishwasher")).toBe(
+    expect(getChoreOwner(CHORE_POOLS, localDate("2026-09-16"), "dishwasher")).toBe(
       "hannah",
     );
   });
 
-  it("counts months, not days", () => {
-    expect(getChoreMonthOffset(BIGS, localDate("2026-08-01"))).toBe(0);
-    expect(getChoreMonthOffset(BIGS, localDate("2026-08-31"))).toBe(0);
-    expect(getChoreMonthOffset(BIGS, localDate("2026-09-01"))).toBe(1);
-    expect(getChoreMonthOffset(BIGS, localDate("2027-08-01"))).toBe(12);
+  it("counts weeks, not days", () => {
+    expect(getChoreWeekOffset(ELDERS, localDate("2026-08-10"))).toBe(0);
+    expect(getChoreWeekOffset(ELDERS, localDate("2026-08-16", 23))).toBe(0);
+    expect(getChoreWeekOffset(ELDERS, localDate("2026-08-17", 0))).toBe(1);
+    expect(getChoreWeekOffset(ELDERS, localDate("2026-10-05"))).toBe(8);
     // Clamped at the anchor rather than going negative — see above.
-    expect(getChoreMonthOffset(BIGS, localDate("2026-07-31"))).toBe(0);
-    expect(getChoreMonthOffset(BIGS, localDate("2020-01-01"))).toBe(0);
+    expect(getChoreWeekOffset(ELDERS, localDate("2026-08-09"))).toBe(0);
+    expect(getChoreWeekOffset(ELDERS, localDate("2020-01-01"))).toBe(0);
   });
 });
 
@@ -165,9 +198,9 @@ describe("fairness", () => {
         pool.children.map((child) => [child, new Set<string>()]),
       );
 
-      for (let month = 0; month < pool.children.length; month += 1) {
-        const date = localDate("2026-08-04");
-        date.setMonth(date.getMonth() + month);
+      for (let week = 0; week < pool.children.length; week += 1) {
+        const date = localDate("2026-08-12");
+        date.setDate(date.getDate() + week * 7);
         for (const assignment of getChoreAssignments([pool], date)) {
           held.get(assignment.childId)!.add(assignment.taskId);
         }
@@ -179,12 +212,12 @@ describe("fairness", () => {
     }
   });
 
-  it("never gives one child the same chore two months running", () => {
-    for (let month = 0; month < 24; month += 1) {
-      const date = localDate("2026-08-04");
-      date.setMonth(date.getMonth() + month);
+  it("never gives one child the same chore two weeks running", () => {
+    for (let week = 0; week < 26; week += 1) {
+      const date = localDate("2026-08-12");
+      date.setDate(date.getDate() + week * 7);
       const next = new Date(date);
-      next.setMonth(next.getMonth() + 1);
+      next.setDate(next.getDate() + 7);
 
       for (const assignment of getChoreAssignments(CHORE_POOLS, date)) {
         expect(getChoreOwner(CHORE_POOLS, next, assignment.taskId)).not.toBe(
@@ -198,11 +231,7 @@ describe("fairness", () => {
     for (const pool of CHORE_POOLS) {
       const per = pool.chores.length / pool.children.length;
       for (const child of pool.children) {
-        const count = getChoresForChild(
-          [pool],
-          localDate("2026-08-04"),
-          child,
-        ).length;
+        const count = getChoresForChild([pool], ANCHOR_WEEK, child).length;
         expect(count).toBeGreaterThanOrEqual(Math.floor(per));
         expect(count).toBeLessThanOrEqual(Math.ceil(per));
       }
@@ -211,11 +240,10 @@ describe("fairness", () => {
 });
 
 describe("the countdown", () => {
-  it("counts the days to the first of next month", () => {
-    expect(getDaysUntilChoreRotation(localDate("2026-08-31"))).toBe(1);
-    expect(getDaysUntilChoreRotation(localDate("2026-08-01"))).toBe(31);
-    // February in a leap year, which a naive 30-day assumption would get wrong.
-    expect(getDaysUntilChoreRotation(localDate("2028-02-01"))).toBe(29);
+  it("counts the days to next Monday", () => {
+    expect(getDaysUntilChoreRotation(localDate("2026-08-16"))).toBe(1);
+    expect(getDaysUntilChoreRotation(localDate("2026-08-17"))).toBe(7);
+    expect(getDaysUntilChoreRotation(localDate("2026-08-12"))).toBe(5);
   });
 });
 
@@ -231,10 +259,10 @@ describe("refusing a broken rotation", () => {
   it("rejects a child in two pools", () => {
     expect(
       problemWith((pools) => {
-        pools[1] = { ...pools[1], children: [...pools[1].children, "clara"] };
+        pools[1] = { ...pools[1], children: [...pools[1].children, "hannah"] };
         return pools;
       }),
-    ).toMatch(/clara/);
+    ).toMatch(/hannah/);
   });
 
   it("rejects a chore in two pools", () => {
@@ -270,10 +298,10 @@ describe("refusing a broken rotation", () => {
   it("rejects a task that is assigned rather than rotated", () => {
     expect(
       problemWith((pools) => {
-        pools[0] = { ...pools[0], chores: [...pools[0].chores, "tidy-room"] };
+        pools[0] = { ...pools[0], chores: [...pools[0].chores, "feed-bella"] };
         return pools;
       }),
-    ).toMatch(/tidy-room/);
+    ).toMatch(/feed-bella/);
   });
 
   it("rejects an empty pool", () => {
@@ -285,12 +313,22 @@ describe("refusing a broken rotation", () => {
     ).toMatch(/no children/);
   });
 
-  it("rejects a nonsense anchor month", () => {
+  it("rejects a nonsense anchor week", () => {
     expect(
       problemWith((pools) => {
-        pools[0] = { ...pools[0], anchorMonth: "August" };
+        pools[0] = { ...pools[0], anchorWeek: "2026-08" };
         return pools;
       }),
-    ).toMatch(/August/);
+    ).toMatch(/2026-08/);
+  });
+
+  it("rejects an anchor that is not a Monday", () => {
+    // A Wednesday anchor would quietly move the changeover to Wednesdays.
+    expect(
+      problemWith((pools) => {
+        pools[0] = { ...pools[0], anchorWeek: "2026-08-12" };
+        return pools;
+      }),
+    ).toMatch(/Monday/);
   });
 });

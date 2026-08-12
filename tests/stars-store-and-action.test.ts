@@ -34,18 +34,11 @@ function findReturns(documents: unknown[]) {
 /** A valid stored pool, which tests then break in one way each. */
 function stored(overrides: Record<string, unknown> = {}) {
   return {
-    poolId: "bigs",
-    name: "The big three",
-    children: ["clara", "emily", "hannah"],
-    chores: [
-      "pick-up-living-room",
-      "dishwasher",
-      "kitchen-island",
-      "vacuum-living-room",
-      "yard-pickup",
-      "bath-trash",
-    ],
-    anchorMonth: "2026-08",
+    poolId: "elder-pair",
+    name: "Hannah & Emily",
+    children: ["hannah", "emily"],
+    chores: ["kitchen-island", "dishwasher", "bath-trash", "yard-pickup"],
+    anchorWeek: "2026-08-10",
     ...overrides,
   };
 }
@@ -80,28 +73,42 @@ describe("reading the pools", () => {
   });
 
   it("prefers what is stored", async () => {
-    findReturns([stored({ anchorMonth: "2026-09" })]);
+    findReturns([stored({ anchorWeek: "2026-08-17" })]);
 
     const pools = await getChorePools();
-    const bigs = pools.find((pool) => pool.id === "bigs")!;
-    expect(bigs.anchorMonth).toBe("2026-09");
+    const elders = pools.find((pool) => pool.id === "elder-pair")!;
+    expect(elders.anchorWeek).toBe("2026-08-17");
     // The pool with no document keeps its compiled default rather than
     // vanishing and taking its children's chores with it.
-    expect(pools.find((pool) => pool.id === "littles")).toEqual(CHORE_POOLS[1]);
+    expect(pools.find((pool) => pool.id === "younger-pair")).toEqual(
+      CHORE_POOLS[1],
+    );
   });
 
   it("keeps the configured order however the documents come back", async () => {
     findReturns([
-      { ...stored(), poolId: "littles", children: ["james", "william"], chores: ["feed-bella", "vacuum-wooden-floor"] },
+      {
+        ...stored(),
+        poolId: "younger-pair",
+        children: ["clara", "william"],
+        chores: [
+          "pick-up-living-room",
+          "vacuum-wooden-floor",
+          "vacuum-living-room",
+        ],
+      },
       stored(),
     ]);
     const pools = await getChorePools();
-    expect(pools.map((pool) => pool.id)).toEqual(["bigs", "littles"]);
+    expect(pools.map((pool) => pool.id)).toEqual([
+      "elder-pair",
+      "younger-pair",
+    ]);
   });
 
   it("ignores one malformed document and keeps the rest", async () => {
     findReturns([
-      stored({ anchorMonth: "August 2026" }), // fails the YYYY-MM check
+      stored({ anchorWeek: "2026-08" }), // fails the YYYY-MM-DD check
     ]);
 
     const pools = await getChorePools();
@@ -122,11 +129,10 @@ describe("reading the pools", () => {
   });
 
   it("falls back wholesale when the stored set is unusable", async () => {
-    // Valid on its own, but it hands the littles' chores to the big three —
-    // which leaves William and James with nothing and two children told to do
-    // the same job.
+    // Valid on its own, but it hands the younger pair's chore to the elder
+    // one — which leaves two children told to do the same job.
     findReturns([
-      stored({ chores: [...stored().chores, "feed-bella"] }),
+      stored({ chores: [...stored().chores, "vacuum-wooden-floor"] }),
     ]);
 
     const pools = await getChorePools();

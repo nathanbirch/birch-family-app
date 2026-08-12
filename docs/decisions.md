@@ -471,3 +471,38 @@ calendar to whoever holds a 43-character string. Option A had nothing to steal.
 That trade is the decision, and if it starts to feel like the wrong one, the
 reversal is one environment variable —
 [`operations-runbook.md`](family-api/operations-runbook.md#emergency-shut-it-off-now).
+
+---
+
+## The chores swap weekly, and the anchor is the week the swap began
+
+The chores used to rotate on the first of the month, three children in one pool
+and two in another. They now swap every Monday morning between two pairs —
+Hannah and Emily, Clara and William — and James, who is in no pair, keeps his.
+That much is the family's call, not an engineering one. Three things about
+*how* it landed are not obvious from the code:
+
+**The anchor is 10 August 2026, not the week of the photographs.** The anchor
+is defined as a week whose answer is known, and the rotation clamps at it —
+every earlier week uses the anchor's deal. Because the chores rotated monthly
+right up to that Monday, the anchor's deal *is* what every week already in the
+database was worked from, so no star that has been earned changes hands. Had
+the anchor been set back to the photographs in early August, this week would
+have swapped a fortnight of stars onto the wrong children.
+
+**The anchor must be a Monday, and the validator says so.** A Wednesday anchor
+would still "work" — it would just quietly move the changeover to Wednesdays,
+which nobody would notice until a chore vanished mid-week.
+
+**`referenceDateFor()` was deleted rather than kept.** It existed to answer
+"which date should the rotation be asked about for this week?", because a
+Monday-to-Friday week could straddle the first of the month and the live chart
+had to show whoever held the chore *now*. A weekly swap makes a week a whole
+number of rotations, so every day in it gives the same answer, and the chart,
+the Server Action and the ceremony now all ask about the week's own Monday. The
+countdown asks about today instead — that is a different question, and it was
+worth separating the two rather than keeping one date that meant both.
+
+**James's chore became `fixed`, not a pool of one.** A one-child pool would
+have rotated correctly and said nothing true: `fixed` is the app's existing
+word for "this moves when we decide it moves, not when the calendar does."

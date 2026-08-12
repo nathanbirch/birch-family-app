@@ -3,16 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { isStarDealId } from "@/config/deals";
 import { CHILD_IDS, type ChildId } from "@/config/family";
 import { STAR_DAY_COUNT } from "@/config/stars";
 import { requireUser } from "@/lib/auth/dal";
 import { familyNow } from "@/lib/family-api/time";
 
 import type { StarActionResult } from "./action-result";
+import { isDealForChild } from "./deals";
 import { setStarMark } from "./marks";
 import { getChorePools } from "./rotation-store";
 import { isTaskForChild } from "./tasks";
-import { openDayIndex, parseWeekStart, referenceDateFor } from "./week";
+import { openDayIndex, parseWeekStart } from "./week";
 
 /**
  * Ticking a star.
@@ -92,13 +94,28 @@ export async function setStar(input: {
   /*
    * The task must be on *this child's* chart for *that* week. Without this,
    * the endpoint would happily file a cello star against James, or a chore
-   * against the child who had it last month — and the weekly report would then
+   * against the child who had it last week — and the weekly report would then
    * award stars nobody could have earned.
+   *
+   * The rotation is asked about the week's own Monday, which is the same date
+   * the chart was rendered from and the same one the report will use later.
    */
-  const pools = await getChorePools();
-  const reference = referenceDateFor(monday, new Date());
-  if (!isTaskForChild(pools, reference, childId as ChildId, taskId)) {
-    return { ok: false, message: "That is not on this chart." };
+  /*
+   * A Star Deal is checked against the day rather than against the week. It is
+   * one child's, on one day, and derived from the calendar — so this rejects
+   * yesterday's deal filed against today, a sibling's deal, and the pick of
+   * the whole list of fifty-three, all with the same comparison. `dayIndex` is
+   * already known to be today's; see the check above.
+   */
+  if (isStarDealId(taskId)) {
+    if (!isDealForChild(monday, dayIndex, childId as ChildId, taskId)) {
+      return { ok: false, message: "That is not today’s deal." };
+    }
+  } else {
+    const pools = await getChorePools();
+    if (!isTaskForChild(pools, monday, childId as ChildId, taskId)) {
+      return { ok: false, message: "That is not on this chart." };
+    }
   }
 
   try {
