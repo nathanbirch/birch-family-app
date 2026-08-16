@@ -24,6 +24,7 @@
  */
 
 import {
+  NOTE_ASPECT,
   NOTE_PAPER_COLOUR,
   noteInk,
   noteNib,
@@ -39,6 +40,39 @@ export type PadSize = {
   /** CSS pixels down the pad. */
   height: number;
 };
+
+/**
+ * The largest sheet of the right shape that fits in the space available.
+ *
+ * The pad's proportions are fixed (`NOTE_ASPECT`) and its size is not: it
+ * should be as big as whatever is left of the screen once the heading and the
+ * tray have taken theirs. Those two things together are a "contain" fit —
+ * match the width, and if that makes it too tall, match the height instead.
+ *
+ * This is done in JavaScript rather than in CSS, which is worth explaining
+ * because `aspect-ratio` looks like it should cover it. It does not: a box with
+ * `aspect-ratio` and `max-height` has its height clamped and its width left
+ * alone, so a pad in a short window comes out squashed rather than smaller —
+ * and squashed is the one thing handwriting cannot survive. The CSS-only
+ * alternative is `width: min(100%, calc(<available height> * 3 / 2))`, which
+ * needs the available height as a constant, and the available height is not
+ * constant: the tray wraps to four rows on a phone and one on an iPad.
+ *
+ * Rounded down, so the sheet can never be a fraction of a pixel wider than the
+ * box that measured it and start a resize that measures it smaller.
+ */
+export function fitPad(
+  available: { width: number; height: number },
+  aspect: number = NOTE_ASPECT,
+): PadSize {
+  const width = Math.max(0, available.width);
+  const height = Math.max(0, available.height);
+
+  if (width / aspect <= height) {
+    return { width: Math.floor(width), height: Math.floor(width / aspect) };
+  }
+  return { width: Math.floor(height * aspect), height: Math.floor(height) };
+}
 
 /**
  * How far the nib narrows at its lightest, as a share of its full width.

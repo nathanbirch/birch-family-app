@@ -62,17 +62,45 @@ import { BURST_DURATION_MS, EdgeConfetti } from "./EdgeConfetti";
  * finger is then a finger on the screen — starts the next round on the way
  * down. Lifting it goes back to `waiting`. That is one gesture doing the
  * obvious thing in both directions rather than a reset button.
+ *
+ * ---------------------------------------------------------------------------
+ * TOUCH EVENTS, NOT POINTER EVENTS
+ * ---------------------------------------------------------------------------
+ * Every other interactive surface in this app uses pointer events, which are
+ * the modern answer and unify mouse, pen and touch. This one does not, and the
+ * reason is the only thing it does: **hold ten fingers at once**.
+ *
+ * Pointer events describe one pointer per event, so ten fingers means tracking
+ * ten independent streams of down/move/up and trusting that none of them is
+ * dropped. On an iPad they are dropped — the page stopped taking fingers at
+ * five, and `setPointerCapture` on a single element for that many concurrent
+ * pointers is the most likely reason.
+ *
+ * A `TouchEvent` carries `event.touches`: the complete list of everything
+ * currently on the glass, recomputed and handed over on every single event.
+ * There is no stream to lose track of, no capture to hold, and no arithmetic —
+ * the component simply mirrors that list. It is both more reliable and less
+ * code, and it is what a picker like this has always been built on.
+ *
+ * Pointer events are kept for `pointerType === "mouse"` alone, so the page can
+ * still be used and tested with a trackpad. That discriminator matters: an
+ * Apple Pencil raises touch events *as well as* pointer events on iOS, so
+ * routing on "is it touch" would count the same finger twice.
  */
 
 /** A finger that is currently on the glass. */
 type Finger = {
-  pointerId: number;
+  /** `Touch.identifier`, or a `pointerId` on the mouse path. */
+  id: number;
   /** Viewport pixels. */
   x: number;
   y: number;
   /** Index into `PICKER_COLOURS`. */
   colour: number;
 };
+
+/** A finger before it has been given a colour. */
+type RawFinger = { id: number; x: number; y: number };
 
 type Winner = {
   x: number;
@@ -109,10 +137,29 @@ export function FingerPicker() {
   const deadlineRef = useRef(0);
   /** Whether the clock is running, readable in the same tick it is set. */
   const countingRef = useRef(false);
+  /** The phase, for the same reason. See `setPhaseNow`. */
+  const phaseRef = useRef<PickerPhase>("waiting");
+
+  /**
+   * Which colour each finger has, by its id.
+   *
+   * Kept outside the finger list because the list is *rebuilt from scratch* on
+   * every touch event — that is the whole point of using touch events — and a
+   * colour that was recomputed each time would flicker through the palette as
+   * neighbours came and went. The map is the memory the rebuilt list does not
+   * have.
+   */
+  const coloursRef = useRef(new Map<number, number>());
 
   const setFingersNow = useCallback((next: readonly Finger[]) => {
     fingersRef.current = next;
     setFingers(next);
+  }, []);
+
+  /** Set the phase where a handler can read it back in the same tick. */
+  const setPhaseNow = useCallback((next: PickerPhase) => {
+    phaseRef.current = next;
+    setPhase(next);
   }, []);
 
   /* ---------------------------------------------------------------- */
@@ -124,14 +171,14 @@ export function FingerPicker() {
     countingRef.current = true;
     deadlineRef.current = performance.now() + PICKER_SECONDS * 1000;
     setShowing(PICKER_SECONDS);
-    setPhase("counting");
-  }, []);
+    setPhaseNow("counting");
+  }, [setPhaseNow]);
 
   const stopCounting = useCallback(() => {
     countingRef.current = false;
     setShowing(PICKER_SECONDS);
-    setPhase("waiting");
-  }, []);
+    setPhaseNow("waiting");
+  }, [setPhaseNow]);
 
   /**
    * Back to a blank screen.
@@ -177,8 +224,8 @@ export function FingerPicker() {
         PICKER_CIRCLE_PX,
       ),
     });
-    setPhase("winner");
-  }, [stopCounting]);
+    setPhaseNow("winner");
+  }, [setPhaseNow, stopCounting]);
 
   /* The clock. Runs only while somebody is in the round. */
   useEffect(() => {
@@ -237,68 +284,127 @@ export function FingerPicker() {
   /* Hands                                                             */
   /* ---------------------------------------------------------------- */
 
-  const handlePointerDown = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      // One tap on the winning colour clears it. The same finger then joins
-      // the round below, which is what makes tap-and-hold start the next one.
-      if (phase === "winner") reset();
+  /**
+   * Everything on the glass, right now.
+   *
+   * The single way fingers get into this component. It is handed the complete
+   * list every time — never a delta — which is what makes ten fingers no
+   * harder than one: there is no per-finger stream that could go out of step
+   * with the others.
+   *
+   * `arriving` is true only for a touch (or click) *starting*, which is the
+   * one case that may need to clear a winning colour first.
+   */
+  const applyFingers = useCallback(
+    (raw: readonly RawFinger[], arriving: boolean) => {
+      // One tap on the winning colour clears it. The finger that did it then
+      // joins the round below, which is what makes tap-and-hold start the next.
+      if (arriving && phaseRef.current === "winner") reset();
 
-      const current = fingersRef.current;
-      if (current.some((finger) => finger.pointerId === event.pointerId)) return;
+      const colours = coloursRef.current;
 
-      event.currentTarget.setPointerCapture(event.pointerId);
+      // Forget the colours of fingers that have left, so the palette is walked
+      // from the top again rather than running out after ten *cumulative*
+      // fingers across a long session.
+      const present = new Set(raw.map((finger) => finger.id));
+      for (const id of [...colours.keys()]) {
+        if (!present.has(id)) colours.delete(id);
+      }
 
-      const next = [
-        ...current,
-        {
-          pointerId: event.pointerId,
-          x: event.clientX,
-          y: event.clientY,
-          colour: nextColourIndex(current.map((finger) => finger.colour)),
-        },
-      ];
+      const next = raw.map((finger) => {
+        let colour = colours.get(finger.id);
+        if (colour === undefined) {
+          colour = nextColourIndex([...colours.values()]);
+          colours.set(finger.id, colour);
+        }
+        return { id: finger.id, x: finger.x, y: finger.y, colour };
+      });
+
       setFingersNow(next);
-      // `startCounting` ignores a second call while the clock is already
-      // running, so this is safe whether this is the first hand of a fresh
-      // round or the fifth of one already under way.
+
+      // The flood owns the screen; a finger sliding across it must not quietly
+      // start a new round underneath.
+      if (phaseRef.current === "winner") return;
+
+      if (next.length === 0) {
+        // A round nobody is in is not a round: the clock stops and the number
+        // goes back to five rather than running down to a draw with no
+        // entrants.
+        if (countingRef.current) stopCounting();
+        return;
+      }
+
+      // Ignored while the clock is already running, so this is safe whether it
+      // is the first hand of a fresh round or the tenth of one under way.
       startCounting();
     },
-    [phase, reset, setFingersNow, startCounting],
+    [reset, setFingersNow, startCounting, stopCounting],
+  );
+
+  /** `event.touches` — every finger on the screen — as plain data. */
+  const touchList = (event: React.TouchEvent<HTMLDivElement>): RawFinger[] =>
+    Array.from(event.touches, (touch) => ({
+      id: touch.identifier,
+      x: touch.clientX,
+      y: touch.clientY,
+    }));
+
+  const handleTouchStart = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => applyFingers(touchList(event), true),
+    [applyFingers],
+  );
+
+  const handleTouchChange = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => applyFingers(touchList(event), false),
+    [applyFingers],
+  );
+
+  /*
+   * The mouse path, so the page is usable and testable without a touchscreen.
+   *
+   * Restricted to `pointerType === "mouse"` rather than to "not touch": an
+   * Apple Pencil raises touch events *and* pointer events on iOS, so anything
+   * looser would count the same finger twice and give it two circles.
+   */
+  const handlePointerDown = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (event.pointerType !== "mouse") return;
+      applyFingers(
+        [
+          ...fingersRef.current,
+          { id: event.pointerId, x: event.clientX, y: event.clientY },
+        ],
+        true,
+      );
+    },
+    [applyFingers],
   );
 
   const handlePointerMove = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      const current = fingersRef.current;
-      const index = current.findIndex(
-        (finger) => finger.pointerId === event.pointerId,
+      if (event.pointerType !== "mouse") return;
+      if (!fingersRef.current.some((finger) => finger.id === event.pointerId)) return;
+      applyFingers(
+        fingersRef.current.map((finger) =>
+          finger.id === event.pointerId
+            ? { id: finger.id, x: event.clientX, y: event.clientY }
+            : finger,
+        ),
+        false,
       );
-      if (index === -1) return;
-
-      const finger = current[index];
-      if (finger.x === event.clientX && finger.y === event.clientY) return;
-
-      const next = [...current];
-      next[index] = { ...finger, x: event.clientX, y: event.clientY };
-      setFingersNow(next);
     },
-    [setFingersNow],
+    [applyFingers],
   );
 
   const handlePointerUp = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      const current = fingersRef.current;
-      const next = current.filter(
-        (finger) => finger.pointerId !== event.pointerId,
+      if (event.pointerType !== "mouse") return;
+      applyFingers(
+        fingersRef.current.filter((finger) => finger.id !== event.pointerId),
+        false,
       );
-      if (next.length === current.length) return;
-
-      setFingersNow(next);
-
-      // A round nobody is in is not a round: the clock stops and the number
-      // goes back to five rather than running down to a draw with no entrants.
-      if (next.length === 0 && countingRef.current) stopCounting();
     },
-    [setFingersNow, stopCounting],
+    [applyFingers],
   );
 
   /* ---------------------------------------------------------------- */
@@ -324,6 +430,16 @@ export function FingerPicker() {
         paddingTop: "env(safe-area-inset-top)",
         paddingLeft: "env(safe-area-inset-left)",
       }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchChange}
+      onTouchEnd={handleTouchChange}
+      /*
+       * `touchcancel` is not an error case here — it is what iPadOS sends when
+       * it decides a handful of fingers was a system gesture. Treating it the
+       * same as a lift is the only honest response: those fingers really are
+       * gone as far as this page is concerned.
+       */
+      onTouchCancel={handleTouchChange}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -370,7 +486,7 @@ export function FingerPicker() {
             const colour = PICKER_COLOURS[finger.colour];
             return (
               <div
-                key={finger.pointerId}
+                key={finger.id}
                 aria-hidden="true"
                 className="pointer-events-none absolute"
                 style={{
@@ -416,7 +532,25 @@ export function FingerPicker() {
             marginTop: -PICKER_CIRCLE_PX / 2,
             backgroundColor: winningColour.hex,
             transform: `scale(${flooded ? winner.scale : 1})`,
-            transition: `transform ${PICKER_FLOOD_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+            /*
+             * Very nearly linear, and that is the whole point of this line.
+             *
+             * This was `cubic-bezier(0.22, 1, 0.36, 1)` — the springy ease-out
+             * used everywhere else in the app, and completely wrong here.
+             * That curve is 90% finished in the first quarter of its duration,
+             * so lengthening the transition did nothing you could see: the
+             * colour still arrived at the edges of the screen in a couple of
+             * hundred milliseconds and then spent the rest of the second
+             * imperceptibly finishing off.
+             *
+             * An ease-out is right when the *destination* is the point and the
+             * journey is overhead. Here the journey is the point — the circle
+             * leaving the winning finger is how everybody round the table sees
+             * whose it was — so the radius should grow at a steady, watchable
+             * rate and reach the corners as the second runs out. The gentle
+             * ends are just to stop it starting and stopping with a jolt.
+             */
+            transition: `transform ${PICKER_FLOOD_MS}ms cubic-bezier(0.4, 0.06, 0.42, 1)`,
             zIndex: 20,
           }}
         />

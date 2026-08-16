@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import {
   DEFAULT_INK,
   DEFAULT_NIB,
-  NOTE_ASPECT,
   NOTE_PAPER_COLOUR,
   noteTool,
   type NoteNib,
@@ -14,6 +13,7 @@ import {
 } from "@/config/note";
 import {
   clearCanvas,
+  fitPad,
   renderNote,
   renderStroke,
   sizeCanvas,
@@ -129,7 +129,8 @@ export function StickyNote() {
   const [penSeen, setPenSeen] = useState(false);
   const [fingerDrawing, setFingerDrawing] = useState(true);
 
-  const frameRef = useRef<HTMLDivElement | null>(null);
+  /** The space left for the sheet, once the heading and the tray have theirs. */
+  const areaRef = useRef<HTMLDivElement | null>(null);
   const baseRef = useRef<HTMLCanvasElement | null>(null);
   const liveRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -210,25 +211,38 @@ export function StickyNote() {
   /* Painting                                                          */
   /* ---------------------------------------------------------------- */
 
-  /* The pad's size in CSS pixels, watched rather than measured once. */
+  /*
+   * The pad's size, from the space left over for it.
+   *
+   * What is measured is the **area**, not the sheet — the sheet's size is
+   * derived from it by `fitPad`. Measuring the sheet and sizing the sheet from
+   * that measurement is a loop, and a loop that settles differently on each
+   * device; the area's height comes from the page's flex layout and owes
+   * nothing to the pad, so there is nothing to feed back.
+   *
+   * The sheet is absolutely positioned inside the area for the same reason: it
+   * cannot push the box that measures it, however wrong the arithmetic ever
+   * gets.
+   */
   useEffect(() => {
-    const frame = frameRef.current;
-    if (!frame) return;
+    const area = areaRef.current;
+    if (!area) return;
 
     const measure = () => {
-      const rect = frame.getBoundingClientRect();
-      if (rect.width === 0) return;
+      const rect = area.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const next = fitPad(rect);
       setSize((box) =>
-        box && box.width === rect.width && box.height === rect.height
+        box && box.width === next.width && box.height === next.height
           ? box
-          : { width: rect.width, height: rect.height },
+          : next,
       );
     };
 
     measure();
     if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(measure);
-    observer.observe(frame);
+    observer.observe(area);
     return () => observer.disconnect();
   }, []);
 
@@ -500,103 +514,142 @@ export function StickyNote() {
   const empty = note.strokes.length === 0;
 
   return (
-    <div>
-      <div
-        ref={frameRef}
-        className="relative mx-auto w-full overflow-hidden"
-        style={{
-          aspectRatio: NOTE_ASPECT,
-          /*
-           * Width, not height, is what keeps the sheet's proportions: clamping
-           * the height of a box with an `aspect-ratio` squashes it, whereas
-           * capping the width lets the ratio pick the height. The cap keeps
-           * the whole pad and its tray on screen without scrolling on a
-           * landscape iPad, which is the one device this is really for.
-           */
-          maxWidth: `min(100%, calc(58svh * ${NOTE_ASPECT}))`,
-          borderRadius: "var(--radius-card)",
-          backgroundColor: NOTE_PAPER_COLOUR,
-          boxShadow:
-            "0 1px 2px var(--color-shadow), 0 18px 44px -24px var(--color-shadow)",
-          border: "1px solid var(--color-border)",
-        }}
-      >
-        <canvas
-          ref={baseRef}
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full"
-        />
-        <canvas
-          ref={liveRef}
-          role="img"
-          aria-label={
-            empty
-              ? "An empty note. Write on it with a pencil or a finger."
-              : "A handwritten note."
-          }
-          className="absolute inset-0 h-full w-full"
+    /*
+     * A column that fills whatever height the page gives it. The tray and the
+     * line under it take what they need; the sheet gets the rest, which is the
+     * whole point — a note pad should be as big as the screen allows, not as
+     * big as some fraction somebody guessed.
+     *
+     * `flex-1` rather than `h-full`, all the way up to the `<main>` that has a
+     * real height on it. A percentage height resolves against the parent's
+     * *computed* height, and a flex item's computed height is `auto` however
+     * definite its used height turns out to be — so `h-full` here collapsed
+     * the sheet to nothing at all. Flex grow carries down where percentages do
+     * not.
+     *
+     * `min-h-0` on both this and the area below it is the other half. A flex
+     * item's default `min-height: auto` refuses to shrink below its content,
+     * so without it the sheet would push the tray off the bottom of the screen
+     * instead of giving way to it.
+     */
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/*
+        `min-h-[13rem]` is the floor a sheet stops shrinking at. Below about
+        this, handwriting stops being legible and the pad stops being a pad —
+        so on a screen too small to hold both it and the tray, the page grows
+        past the viewport and scrolls rather than squeezing the paper away. See
+        the note on the page's `minHeight`.
+      */}
+      <div ref={areaRef} className="relative min-h-[13rem] flex-1">
+        <div
+          className="absolute overflow-hidden"
           style={{
             /*
-             * The three that make a stylus usable at all. Without
-             * `touch-action` the first stroke scrolls the page instead of
-             * drawing; without the callout and selection suppression, a slow
-             * mark on an iPad raises the copy/paste bubble over the paper.
+             * Centred in the leftover space. The sheet matches whichever of
+             * the two dimensions runs out first, so on any screen that is not
+             * exactly 3:2 there is spare room in the other one — a margin
+             * either side on a wide window, above and below on a tall one.
+             *
+             * Positioned rather than laid out, so it cannot push against the
+             * box whose size decided it. `left`/`top` and an explicit size,
+             * never `inset-0`, which would fight both of them.
              */
-            touchAction: "none",
-            WebkitUserSelect: "none",
-            userSelect: "none",
-            WebkitTouchCallout: "none",
-            cursor: tool === "eraser" ? "cell" : "crosshair",
+            left: size ? `calc(50% - ${size.width / 2}px)` : 0,
+            top: size ? `calc(50% - ${size.height / 2}px)` : 0,
+            width: size ? size.width : "100%",
+            height: size ? size.height : "100%",
+            borderRadius: "var(--radius-card)",
+            backgroundColor: NOTE_PAPER_COLOUR,
+            boxShadow:
+              "0 1px 2px var(--color-shadow), 0 18px 44px -24px var(--color-shadow)",
+            border: "1px solid var(--color-border)",
           }}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          /*
-           * `pointercancel` and nothing else. There is deliberately no
-           * `pointerleave` handler: the pointer is captured, so leaving the
-           * sheet does not lose the stroke, and running the nib off the edge
-           * and back on is handled properly in `consume` — ending the stroke
-           * on leave would break that and turn an overrun into a lost letter.
-           */
-          onPointerCancel={handlePointerUp}
-          onContextMenu={(event) => event.preventDefault()}
-        />
+        >
+          <canvas
+            ref={baseRef}
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full"
+          />
+          <canvas
+            ref={liveRef}
+            role="img"
+            aria-label={
+              empty
+                ? "An empty note. Write on it with a pencil or a finger."
+                : "A handwritten note."
+            }
+            className="absolute inset-0 h-full w-full"
+            style={{
+              /*
+               * The three that make a stylus usable at all. Without
+               * `touch-action` the first stroke scrolls the page instead of
+               * drawing; without the callout and selection suppression, a slow
+               * mark on an iPad raises the copy/paste bubble over the paper.
+               */
+              touchAction: "none",
+              WebkitUserSelect: "none",
+              userSelect: "none",
+              WebkitTouchCallout: "none",
+              cursor: tool === "eraser" ? "cell" : "crosshair",
+            }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            /*
+             * `pointercancel` and nothing else. There is deliberately no
+             * `pointerleave` handler: the pointer is captured, so leaving the
+             * sheet does not lose the stroke, and running the nib off the edge
+             * and back on is handled properly in `consume` — ending the stroke
+             * on leave would break that and turn an overrun into a lost letter.
+             */
+            onPointerCancel={handlePointerUp}
+            onContextMenu={(event) => event.preventDefault()}
+          />
 
-        {empty ? (
-          <p
-            className="pointer-events-none absolute inset-0 flex items-center justify-center text-center text-base font-semibold sm:text-lg"
-            style={{ color: "#b9b3a0" }}
-          >
-            Write the note here
-          </p>
-        ) : null}
+          {empty ? (
+            <p
+              className="pointer-events-none absolute inset-0 flex items-center justify-center text-center text-base font-semibold sm:text-lg"
+              style={{ color: "#b9b3a0" }}
+            >
+              Write the note here
+            </p>
+          ) : null}
+        </div>
       </div>
 
-      <NoteToolbar
-        tool={tool}
-        onToolChange={setTool}
-        ink={ink}
-        onInkChange={setInk}
-        nib={nib}
-        onNibChange={setNib}
-        paper={note.paper}
-        onPaperChange={handlePaperChange}
-        canUndo={note.canUndo}
-        onUndo={undoNote}
-        canRedo={note.canRedo}
-        onRedo={redoNote}
-        clearArmed={clearArmed}
-        onClear={handleClear}
-      />
+      {/*
+        `shrink-0`, so the tray keeps its full height and the sheet above gives
+        way instead. The other way round is the failure worth naming: a tray
+        squeezed to fit would put the ink swatches half off the bottom of an
+        iPad in landscape, which is the exact device this page is for.
+      */}
+      <div className="shrink-0">
+        <NoteToolbar
+          tool={tool}
+          onToolChange={setTool}
+          ink={ink}
+          onInkChange={setInk}
+          nib={nib}
+          onNibChange={setNib}
+          paper={note.paper}
+          onPaperChange={handlePaperChange}
+          canUndo={note.canUndo}
+          onUndo={undoNote}
+          canRedo={note.canRedo}
+          onRedo={redoNote}
+          clearArmed={clearArmed}
+          onClear={handleClear}
+        />
 
-      <NoteFooter
-        savedAt={note.savedAt}
-        storageWorks={note.storageWorks}
-        hasRoom={note.hasRoom}
-        penSeen={penSeen}
-        fingerDrawing={fingerDrawing}
-        onFingerDrawingChange={setFingerDrawing}
-      />
+        <NoteFooter
+          savedAt={note.savedAt}
+          storageWorks={note.storageWorks}
+          hasRoom={note.hasRoom}
+          penSeen={penSeen}
+          fingerDrawing={fingerDrawing}
+          onFingerDrawingChange={setFingerDrawing}
+        />
+      </div>
     </div>
   );
 }

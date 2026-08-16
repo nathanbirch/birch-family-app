@@ -50,6 +50,36 @@ recognise — a truncated write, a format from a future build, an `Infinity`
 where a coordinate should be — means a blank pad rather than a crash. One bad
 stroke drops that stroke, not the note.
 
+### The sheet is as big as the screen allows
+
+The page does not scroll. It is a column with a height — `100svh` less the tab
+bar's space — the heading and the tray take what they need, and the sheet gets
+everything left over. `fitPad` then picks the largest 3:2 rectangle that fits
+in it, which is why there is a margin at the sides on a wide window and above
+and below on a tall one.
+
+Three things about that are worth knowing before changing it:
+
+- **The height is handed down by `flex-1`, never by `h-full`.** A percentage
+  height resolves against the parent's *computed* height, and a flex item's
+  computed height is `auto` however definite its used height is — `h-full`
+  collapsed the sheet to nothing.
+- **The fit is done in JavaScript, not with `aspect-ratio`.** A box with
+  `aspect-ratio` and a `max-height` has its height clamped and its width left
+  alone, so a short window gives a *squashed* pad rather than a smaller one.
+  The CSS-only alternative needs the available height as a constant, and it is
+  not one — the tray wraps to four rows on a phone and one on an iPad.
+- **It is a `min-height`, with a floor under the sheet.** On a 320px phone
+  there is genuinely not room for both; at a fixed height the sheet was
+  squeezed to a 41-pixel stamp. Now it stops at 13rem and the page scrolls the
+  last little bit instead.
+
+`BOTTOM_NAV_SPACE` lives in `config/navigation.ts` rather than beside the bar
+it describes, because `BottomNav.tsx` is a `"use client"` module and every
+export of one reaches a Server Component as a client *reference* rather than
+as its value — a page importing it from there interpolates an object into its
+stylesheet and silently gets no height at all.
+
 ### Ink does not follow the theme
 
 Every other surface in the app takes its colours from the active theme. The

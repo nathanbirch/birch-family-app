@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { getNavBarItems, isActivePath } from "@/config/navigation";
+import {
+  BOTTOM_NAV_SPACE,
+  getNavBarItems,
+  isActivePath,
+} from "@/config/navigation";
 
 import { NavIcon } from "./NavIcon";
 
@@ -111,7 +115,8 @@ export function BottomNavSpacer() {
   return (
     <div
       aria-hidden="true"
-      className="h-[calc(4.5rem+env(safe-area-inset-bottom))] shrink-0"
+      className="shrink-0"
+      style={{ height: BOTTOM_NAV_SPACE }}
     />
   );
 }

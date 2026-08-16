@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **1,275 tests across 60 files.**
+Vitest with jsdom and Testing Library. **1,282 tests across 60 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -674,7 +674,7 @@ word — which is what cut "Do a load of laundry" down to "Do a load". Plus the
 Dad Bucks contract: cheapest first, no gap wider than two, and the five prices
 the family had already set.
 
-### `note-strokes.test.ts` — 35 tests
+### `note-strokes.test.ts` — 42 tests
 The Note's model, which is the half of that page nobody can check by looking at
 it. Three groups matter:
 
@@ -695,6 +695,14 @@ it. Three groups matter:
 Plus the storage format's two promises: inks and nibs stored by *id* so the
 palette can be re-tuned under notes already written (asserted by there being no
 `#` anywhere in the output), and a thousand points fitting in under 40KB.
+
+And `fitPad`, which sizes the sheet to whatever the heading and the tray leave
+behind. Every case checks two things at once — that the sheet is the right
+*shape*, and that it is the biggest one of that shape which fits — because
+"fits" alone is satisfied by a stamp in the middle of an empty screen. It also
+pins the rounding: a sheet a fraction of a pixel wider than the box that
+measured it makes that box report smaller on the next frame, which is a resize
+loop that never settles.
 
 ### `note-store.test.ts` — 21 tests
 The pad's actual promise — that a note written today is there tomorrow:

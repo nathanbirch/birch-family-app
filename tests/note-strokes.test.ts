@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { NOTE_ASPECT } from "@/config/note";
+import { fitPad } from "@/lib/note/render";
 import {
   MAX_POINTS,
   NOTE_FORMAT_VERSION,
@@ -66,6 +67,80 @@ describe("measuring the pad", () => {
   it("treats a stroke that never moved as a dot", () => {
     const dot = distanceToSegment({ x: 0.2, y: 0.5 }, { x: 0.5, y: 0.5 }, { x: 0.5, y: 0.5 });
     expect(dot).toBeCloseTo(0.3);
+  });
+});
+
+describe("fitting the sheet to the space left for it", () => {
+  /*
+   * The pad fills whatever the heading and the tray leave behind, and its
+   * proportions are not negotiable — squashed handwriting is the one failure
+   * this page cannot survive. So every case here checks two things at once:
+   * that the sheet is the right *shape*, and that it is the biggest one of
+   * that shape which fits.
+   */
+
+  function ratio(size: { width: number; height: number }) {
+    return size.width / size.height;
+  }
+
+  it("matches the width when the space is taller than the sheet", () => {
+    const pad = fitPad({ width: 900, height: 900 });
+    expect(pad.width).toBe(900);
+    expect(ratio(pad)).toBeCloseTo(NOTE_ASPECT, 2);
+  });
+
+  it("matches the height when the space is wider than the sheet", () => {
+    const pad = fitPad({ width: 2000, height: 400 });
+    expect(pad.height).toBe(400);
+    expect(ratio(pad)).toBeCloseTo(NOTE_ASPECT, 2);
+  });
+
+  it("never spills out of the space in either direction", () => {
+    const spaces = [
+      { width: 1180, height: 520 },
+      { width: 390, height: 640 },
+      { width: 1024, height: 683 },
+      { width: 300, height: 1200 },
+      { width: 1600, height: 200 },
+    ];
+    for (const space of spaces) {
+      const pad = fitPad(space);
+      expect(pad.width).toBeLessThanOrEqual(space.width);
+      expect(pad.height).toBeLessThanOrEqual(space.height);
+      expect(ratio(pad)).toBeCloseTo(NOTE_ASPECT, 1);
+    }
+  });
+
+  it("fills the dimension that ran out", () => {
+    // "As big as it can be" is the whole requirement: a sheet that fits but
+    // leaves a margin on *both* sides could have been larger.
+    const wide = fitPad({ width: 1600, height: 400 });
+    expect(wide.height).toBe(400);
+    const tall = fitPad({ width: 600, height: 1600 });
+    expect(tall.width).toBe(600);
+  });
+
+  it("is exact on a space that is already the right shape", () => {
+    const pad = fitPad({ width: 900, height: 600 });
+    expect(pad).toEqual({ width: 900, height: 600 });
+  });
+
+  it("rounds down rather than up", () => {
+    /*
+     * A sheet a fraction of a pixel wider than the box that measured it would
+     * make that box report a smaller size on the next frame, which reports a
+     * smaller sheet, and so on — a resize loop that never settles.
+     */
+    const pad = fitPad({ width: 1000.7, height: 999 });
+    expect(pad.width).toBe(1000);
+    expect(Number.isInteger(pad.height)).toBe(true);
+    expect(pad.width).toBeLessThanOrEqual(1000.7);
+  });
+
+  it("survives being measured before there is anything to measure", () => {
+    // The first paint, and a page in a background tab, both report zero.
+    expect(fitPad({ width: 0, height: 0 })).toEqual({ width: 0, height: 0 });
+    expect(fitPad({ width: -50, height: 100 })).toEqual({ width: 0, height: 0 });
   });
 });
 

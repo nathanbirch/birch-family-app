@@ -39,7 +39,7 @@ All of them are in `config/picker.ts`, because they are the design.
 |---|---|---|
 | `PICKER_SECONDS` | 5 | Long enough for a fifth child to get a finger down, short enough that nobody lets go. |
 | `PICKER_HOLD_MS` | 5000 | Solid colour after the flood finishes. Long enough to see who won, short enough that the next round starts before the argument restarts. |
-| `PICKER_FLOOD_MS` | 900 | The colour expanding to fill the screen. |
+| `PICKER_FLOOD_MS` | 1000 | The colour expanding to fill the screen. |
 | `PICKER_CIRCLE_PX` | 132 | About two fingers wide. The circle is a token saying *you are in the draw*, not a cursor — everyone can already see where their own finger is. |
 
 ## The draw
@@ -53,6 +53,50 @@ index that is not on the screen.
 
 `floodScale` measures to the **furthest** corner of the viewport. Measuring to
 the nearest leaves a wedge of background showing for the whole round.
+
+### The flood is timed, and the easing matters more than the duration
+
+A full second, on a curve that is very nearly linear
+(`cubic-bezier(0.4, 0.06, 0.42, 1)`), reaching the corners at about 890ms.
+
+Both halves of that are deliberate, and the second is the one that is easy to
+get wrong. The flood originally used the springy ease-out the rest of the app
+uses, which is 90% finished in the first quarter of its duration — so
+lengthening the transition changed nothing anybody could see. The colour still
+hit the edges in a couple of hundred milliseconds and spent the rest of the
+second imperceptibly finishing off.
+
+An ease-out is right when the destination is the point and the journey is
+overhead. Here the journey *is* the point: the circle leaving the winning
+finger is how everybody round the table sees whose it was.
+
+## Multi-touch
+
+Fingers come from **touch events**, not pointer events, and that is the one
+place this page departs from the rest of the app.
+
+A pointer event describes one pointer, so ten fingers means ten independent
+streams of down/move/up and trusting that none is dropped. On an iPad they were
+— the page stopped accepting fingers at five, with `setPointerCapture` on a
+single element for that many concurrent pointers the most likely reason.
+
+A `TouchEvent` carries `event.touches`: everything on the glass, recomputed and
+handed over on every event. There is no stream to lose, no capture to hold and
+no arithmetic — `applyFingers` simply mirrors the list. Colours are kept in a
+map keyed by `Touch.identifier`, because the list is rebuilt from scratch each
+time and a recomputed colour would flicker as neighbours came and went.
+
+Pointer events are kept for `pointerType === "mouse"` alone, so the page still
+works with a trackpad. That discriminator matters: an Apple Pencil raises touch
+events *as well as* pointer events on iOS, so anything looser would count the
+same finger twice.
+
+`touchcancel` is treated exactly like a lift. It is not an error case — it is
+what iPadOS sends when it claims a handful of fingers as a system gesture, and
+those fingers really are gone as far as this page is concerned. If fingers
+still disappear on a particular iPad, check **Settings → Home Screen &
+Multitasking → Gestures**: a four- or five-finger swipe or pinch is an OS
+gesture that no web page can opt out of.
 
 Colours are handed out by `nextColourIndex` — the lowest one nobody is holding,
 so a finger that lifts frees its colour for the next one down. The palette's

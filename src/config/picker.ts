@@ -14,8 +14,16 @@ export const PICKER_SECONDS = 5;
 /** How long the winning colour holds the screen before the pad resets itself. */
 export const PICKER_HOLD_MS = 5000;
 
-/** How long the winning colour takes to flood the screen. */
-export const PICKER_FLOOD_MS = 900;
+/**
+ * How long the winning colour takes to flood the screen.
+ *
+ * A full second, deliberately slower than it wants to be. The flood is not a
+ * transition between two screens — it is the *announcement*, and it starts at
+ * the winning finger. Watching it leave that spot is how everybody round the
+ * table sees whose colour it was; at 900ms it was over before the five of them
+ * had finished looking down at their own hands.
+ */
+export const PICKER_FLOOD_MS = 1000;
 
 /** One full grow-and-shrink of a waiting circle. */
 export const PICKER_PULSE_MS = 1400;

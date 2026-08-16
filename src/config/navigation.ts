@@ -29,6 +29,24 @@
  */
 export type NavSlot = "far-left" | "left" | "home" | "right" | "far-right";
 
+/**
+ * How much vertical space the fixed bar occupies, as a CSS length.
+ *
+ * Almost every page in the app scrolls, so the bar only ever has to be *left
+ * alone* — that is what `BottomNavSpacer` does, and it is the only consumer
+ * that matters. The Note is the exception: it does not scroll, its pad has to
+ * be the largest sheet that fits in what is left of the screen, and "what is
+ * left" is a subtraction that has to know this number.
+ *
+ * It lives **here** rather than beside the bar it describes, and that is not
+ * filing preference. `BottomNav.tsx` is a `"use client"` module, and every
+ * export of one of those reaches a Server Component as a client *reference*
+ * rather than as its value — so a page that imported the string from there
+ * would interpolate an object into its stylesheet and silently get no height
+ * at all. This file is plain configuration, importable from either side.
+ */
+export const BOTTOM_NAV_SPACE = "calc(4.5rem + env(safe-area-inset-bottom))";
+
 export type NavItem = {
   /** Route path. Must match a real page under `src/app/(app)/`. */
   href: string;
