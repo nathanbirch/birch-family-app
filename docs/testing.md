@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **1,307 tests across 61 files.**
+Vitest with jsdom and Testing Library. **1,328 tests across 62 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -262,9 +262,38 @@ The two reads the report adds to `starWeeks`, with MongoDB mocked.
 - A document for a week nobody asked about is ignored
 - An unreachable database costs the *history*, not the page
 
-### `report-ceremony.test.tsx` — 17 tests
+### `ceremony-music.test.ts` — 18 tests
+The song the ceremony picks, and every way YouTube can fail to turn up.
+
+Most of `lib/stars/playlist.ts` is browser glue — a script tag, an iframe, an
+object YouTube puts on `window` — and glue is verified by opening the page.
+What is pinned here is what can be wrong *without being visible*:
+
+- **The draw reaches every song.** An off-by-one that never played the first or
+  last track would go unnoticed for months; 20,000 picks over a playlist of
+  twelve must touch all twelve
+- **Playlists that can never be embedded are rejected at test time** — a pasted
+  URL, Liked Music, a radio mix — rather than failing on a Sunday afternoon as
+  an unexplained fallback to the fanfare
+- **An unset playlist costs nothing**: no script fetched, no network touched,
+  `false` returned immediately. That is what keeps the app working offline and
+  what made the feature safe to ship before the playlist existed
+- **It always answers.** The ceremony is waiting on that boolean to decide
+  whether to play the fanfare instead, so a promise that never settles is a
+  silent ceremony — the timeout is tested, not assumed
+
+The config is mocked per test, so these assert the *invariant* rather than
+whatever playlist happens to be configured today.
+
+### `report-ceremony.test.tsx` — 23 tests
 The award ceremony driving itself, and being driven.
 
+- **A playlist song plays *instead of* the fanfare, never both.** Two pieces of
+  music at once is not a richer ceremony, it is a mess, and it is exactly what
+  an `await` in the wrong place produces
+- **A song that arrives after the speaker was turned off does not play.**
+  Starting one is asynchronous and the speaker can be tapped inside that
+  moment; React state would still read "on" in the closure that is waiting
 - It waits on the title card and does not turn over until it has been started
 - A child's slide holds for its whole choreography plus five seconds, then
   moves on — and the finale **stops** rather than looping, because a loop would

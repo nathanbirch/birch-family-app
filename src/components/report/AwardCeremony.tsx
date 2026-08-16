@@ -20,6 +20,12 @@ import {
   startFanfare,
   stopFanfare,
 } from "@/lib/stars/fanfare";
+import {
+  primeCeremonyPlaylist,
+  startCeremonyPlaylist,
+  stopCeremonyPlaylist,
+} from "@/lib/stars/playlist";
+import { PLAYLIST_VOLUME } from "@/config/ceremony-music";
 import { formatMoney } from "@/config/rewards";
 import type { WeekReport } from "@/lib/stars/report";
 
@@ -140,6 +146,17 @@ export function AwardCeremony({
     locked: boolean;
   } | null>(null);
 
+  /**
+   * Whether music is still wanted, readable after an await.
+   *
+   * Starting a song is asynchronous — YouTube's script, then the player, then
+   * the playlist — and the speaker can be tapped off while all that is
+   * happening. React state would still hold `true` inside the closure that is
+   * waiting, so the song would arrive on top of the silence somebody just
+   * asked for. This is the only value the music path reads across an await.
+   */
+  const wantsMusic = useRef(false);
+
   const soundOn = useSyncExternalStore(
     subscribeToSoundOn,
     getSoundOnSnapshot,
@@ -161,23 +178,55 @@ export function AwardCeremony({
 
   /* --- The music ------------------------------------------------------- */
 
-  // Leaving the page, by any route, takes the music with it. Without this the
-  // fanfare would keep playing over the star charts.
-  useEffect(() => stopFanfare, []);
+  /*
+   * A song from the family's playlist if there is one, and the fanfare if
+   * there is not.
+   *
+   * The order matters and the fallback is the point. `startCeremonyPlaylist`
+   * answers `false` for every way YouTube can fail to turn up — nothing
+   * configured, no network, a private playlist, an ad-blocker, or simply
+   * taking too long — and each of those ends with the brass the ceremony has
+   * always had rather than with a silent Sunday afternoon.
+   *
+   * It is `async`, which the fanfare is not, so the two are guarded: a child
+   * who taps the speaker off while YouTube is still arriving must not have a
+   * song start on top of the silence they asked for. `wantsMusic` is read
+   * again on the other side of the await for exactly that.
+   */
+  const playMusic = useCallback(async () => {
+    if (await startCeremonyPlaylist(PLAYLIST_VOLUME)) {
+      if (!wantsMusic.current) stopCeremonyPlaylist();
+      return;
+    }
+    if (wantsMusic.current) startFanfare(MUSIC_VOLUME);
+  }, []);
+
+  const silence = useCallback(() => {
+    stopFanfare();
+    stopCeremonyPlaylist();
+  }, []);
+
+  // Leaving the page, by any route, takes the music with it. Without this it
+  // would keep playing over the star charts.
+  useEffect(() => silence, [silence]);
 
   function start() {
     // The button only exists on the title card — every other slide is `inert`
     // — so this always means "on with the first award".
     go(1);
-    if (soundOn) startFanfare(MUSIC_VOLUME);
+    if (soundOn) {
+      wantsMusic.current = true;
+      void playMusic();
+    }
   }
 
   function toggleSound(next: boolean) {
     setSoundOn(next);
+    wantsMusic.current = next;
     // This click is itself the user gesture the autoplay policy wants, so the
     // music can begin right here rather than at the next slide.
-    if (next) startFanfare(MUSIC_VOLUME);
-    else stopFanfare();
+    if (next) void playMusic();
+    else silence();
   }
 
   /* --- The slide that turns by itself ---------------------------------- */
@@ -214,8 +263,17 @@ export function AwardCeremony({
       y: event.clientY,
       locked: false,
     };
-    // Warm the file so that if they press Start next, the brass is ready.
-    if (soundOn) primeFanfare();
+    /*
+     * Warm both, so that pressing Start next is a `play` and not a network
+     * request. The playlist needs it more than the fanfare does: YouTube's
+     * script, the player and the playlist all have to arrive before a song can
+     * begin, and a player built inside the click would still be fetching when
+     * the gesture expired.
+     */
+    if (soundOn) {
+      primeFanfare();
+      primeCeremonyPlaylist();
+    }
   }
 
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {

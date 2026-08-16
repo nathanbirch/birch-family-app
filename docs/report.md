@@ -274,8 +274,51 @@ is simply there.
 
 ## The music
 
+Two sources, and the second is a fallback for the first.
+
+### A song from the family's playlist
+
+The ceremony plays a random track from a YouTube Music playlist —
+`CEREMONY_PLAYLIST_ID` in [`config/ceremony-music.ts`](../src/config/ceremony-music.ts) —
+so no two Sundays sound the same and nobody has to choose a song on the day.
+
+**Nothing is downloaded and no audio is in this repository.** Putting real
+music in `public/` would be distributing somebody's recording, however private
+the app is. Streaming through YouTube's own player is the arrangement that is
+actually licensed: YouTube serves the audio and pays the rights, and the app
+holds an id and nothing else.
+
+There is **no API key and no quota.** Picking a song at random needs to know
+how many songs there are, and the obvious source is the YouTube Data API, which
+needs a key, a project and a quota that runs out. Instead the IFrame player
+loads the playlist itself and `getPlaylist()` hands back the ids — the count
+comes from the thing that was already loading it.
+
+The player is off-screen at a real 200×200, never `display: none`, because a
+player in an undisplayed iframe may never initialise and the failure is silent.
+Hiding it is outside YouTube's Required Minimum Functionality policy, which
+asks for a visible player of at least 200×200; that was a deliberate call for a
+private family app rather than an oversight, and it is written down in the
+config beside the constant. A visible player belongs on the title slide if it
+ever needs revisiting.
+
+Only public or unlisted playlists can be embedded. Liked Music (`LM`), radio
+and mixes (`RD…`) belong to an account rather than a URL and never can;
+`isEmbeddablePlaylistId` rejects those and a pasted URL at test time rather
+than leaving it to fail on a Sunday afternoon.
+
+### The fanfare, which is what happens when YouTube does not turn up
+
+`startCeremonyPlaylist` answers a single boolean, and everything that can go
+wrong answers `false`: nothing configured, no network, a private playlist, an
+ad-blocker, or simply taking longer than `PLAYLIST_TIMEOUT_MS`. Every one of
+those ends in the fanfare rather than in a silent ceremony. It is also what
+plays offline, which the playlist can never do.
+
 A twelve-bar fanfare in D major at 128bpm, looping, played through the shared
-Web Audio context at 42% volume. It is
+Web Audio context at 42% volume — a song from the playlist plays quieter, at
+28%, because the fanfare was written to sit under a voice and a mastered
+recording was not. It is
 [synthesised](../scripts/generate-fanfare.mjs), not downloaded —
 `npm run music:generate`.
 
@@ -361,8 +404,11 @@ seven exists nobody will be aiming at page seven; they will be aiming at a
 | How long a slide holds | `HOLD_MS` in `src/components/report/timing.ts` |
 | How many weeks per page | `PER_PAGE` in `src/app/(app)/ceremonies/page.tsx` |
 | The praise on a thin week | `praiseFor()` in `src/lib/stars/report.ts` |
-| The music | The score in `scripts/generate-fanfare.mjs`, then `npm run music:generate` |
-| How loud the music is | `MUSIC_VOLUME` in `AwardCeremony.tsx` |
+| Which playlist plays | `CEREMONY_PLAYLIST_ID` in `src/config/ceremony-music.ts` |
+| How loud a song is | `PLAYLIST_VOLUME` in `src/config/ceremony-music.ts` |
+| How long YouTube gets | `PLAYLIST_TIMEOUT_MS` in `src/config/ceremony-music.ts` |
+| The fanfare | The score in `scripts/generate-fanfare.mjs`, then `npm run music:generate` |
+| How loud the fanfare is | `MUSIC_VOLUME` in `AwardCeremony.tsx` |
 
 Replacing the fanfare with a **recording** — somebody in the family actually
 playing something — is a one-line change: put the file in `public/sounds/` and

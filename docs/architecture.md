@@ -153,6 +153,7 @@ here, strongly typed, with no logic beyond simple lookups.
 | `navigation.ts` | The pages, the tools, where each sits in the tab bar, the planned-feature cards |
 | `note.ts` | The Note's tools, inks, nibs, papers and the pad's fixed shape |
 | `picker.ts` | Finger Picker's timings and its ten circle colours |
+| `ceremony-music.ts` | The ceremony's playlist id, its volume, and how long YouTube gets |
 | `mantras.ts` | The family mantras, their verbatim quotes and sources |
 | `health.ts` | The five healthy lists, transcribed from the sheets on the wall |
 | `family.ts` | The seven people: names, roles, identifying colours, faces, photos |

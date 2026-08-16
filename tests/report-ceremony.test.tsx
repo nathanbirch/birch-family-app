@@ -32,6 +32,20 @@ const playback = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/stars/fanfare", () => playback);
 
+/*
+ * The playlist, mocked, and answering `false` unless a test says otherwise.
+ *
+ * `false` is "YouTube did not turn up" — no playlist configured, no network, a
+ * private playlist — which is the case the ceremony has to survive, so it is
+ * the default every test runs under.
+ */
+const music = vi.hoisted(() => ({
+  primeCeremonyPlaylist: vi.fn(),
+  startCeremonyPlaylist: vi.fn(),
+  stopCeremonyPlaylist: vi.fn(),
+}));
+vi.mock("@/lib/stars/playlist", () => music);
+
 const MONDAY = parseLocalDate("2026-08-03")!;
 /* A Monday-to-Friday week: it predates `SATURDAY_FROM_WEEK`. */
 const DAYS = starDayCount("2026-08-03");
@@ -96,8 +110,20 @@ function drag(dx: number, dy = 0) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  music.startCeremonyPlaylist.mockResolvedValue(false);
   vi.useFakeTimers({ shouldAdvanceTime: true });
 });
+
+/**
+ * Let the music decision settle.
+ *
+ * Starting a song is asynchronous — YouTube's script, then the player, then
+ * the playlist — so whether the fanfare plays instead is only known a
+ * microtask after the press.
+ */
+async function settleMusic() {
+  await act(async () => {});
+}
 
 afterEach(() => {
   vi.useRealTimers();
@@ -122,13 +148,71 @@ describe("the curtain", () => {
     expect(slideNumber()).toBe(1);
   });
 
-  it("starts the music and the first award on one press", () => {
+  it("starts the music and the first award on one press", async () => {
     renderCeremony();
 
     fireEvent.click(screen.getByRole("button", { name: /start the ceremony/i }));
 
+    // The slide turns immediately; the music is decided a beat later.
     expect(slideNumber()).toBe(2);
+    await settleMusic();
     expect(playback.startFanfare).toHaveBeenCalledTimes(1);
+  });
+
+  it("plays a playlist song *instead of* the fanfare, never both", async () => {
+    /*
+     * The whole point of the fallback being a fallback. Two pieces of music at
+     * once is not a richer ceremony, it is a mess — and it is the failure mode
+     * an `await` in the wrong place produces.
+     */
+    music.startCeremonyPlaylist.mockResolvedValue(true);
+    renderCeremony();
+
+    fireEvent.click(screen.getByRole("button", { name: /start the ceremony/i }));
+    await settleMusic();
+
+    expect(music.startCeremonyPlaylist).toHaveBeenCalledTimes(1);
+    expect(playback.startFanfare).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the fanfare when YouTube does not turn up", async () => {
+    // No playlist configured, no network, an ad-blocker, a private playlist:
+    // all one answer here, and all of them end in brass rather than silence.
+    music.startCeremonyPlaylist.mockResolvedValue(false);
+    renderCeremony();
+
+    fireEvent.click(screen.getByRole("button", { name: /start the ceremony/i }));
+    await settleMusic();
+
+    expect(playback.startFanfare).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not start a song that arrived after the speaker was turned off", async () => {
+    /*
+     * The race a ref exists to close. A song takes a moment to fetch, and a
+     * child can tap the speaker off inside that moment — React state would
+     * still read `true` in the closure that is waiting, and the music would
+     * arrive on top of the silence they just asked for.
+     */
+    let arrive: (started: boolean) => void = () => {};
+    music.startCeremonyPlaylist.mockReturnValue(
+      new Promise<boolean>((resolve) => {
+        arrive = resolve;
+      }),
+    );
+    renderCeremony();
+
+    fireEvent.click(screen.getByRole("button", { name: /start the ceremony/i }));
+    fireEvent.click(
+      screen.getByRole("switch", { name: /turn the ceremony music off/i }),
+    );
+
+    await act(async () => {
+      arrive(true);
+    });
+
+    expect(music.stopCeremonyPlaylist).toHaveBeenCalled();
+    expect(playback.startFanfare).not.toHaveBeenCalled();
   });
 });
 
@@ -271,7 +355,7 @@ describe("the music", () => {
     expect(slideNumber()).toBe(2);
   });
 
-  it("can be switched on and off from the speaker, mid-ceremony", () => {
+  it("can be switched on and off from the speaker, mid-ceremony", async () => {
     renderCeremony();
 
     const speaker = screen.getByRole("switch", {
@@ -284,6 +368,7 @@ describe("the music", () => {
     fireEvent.click(
       screen.getByRole("switch", { name: /turn the ceremony music on/i }),
     );
+    await settleMusic();
     expect(playback.startFanfare).toHaveBeenCalled();
   });
 
