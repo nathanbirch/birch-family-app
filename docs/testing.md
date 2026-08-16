@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **1,297 tests across 60 files.**
+Vitest with jsdom and Testing Library. **1,306 tests across 61 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -721,6 +721,24 @@ The pad's actual promise — that a note written today is there tomorrow:
   beginning; anything new throws the redo stack away
 - **Clear removes the stored copy at once** — not on the debounce — and is
   still one Undo away, which re-saves it
+
+### `picker-board.test.tsx` — 9 tests
+The round, under hands that come and go — the rule the component owns rather
+than `game.ts`:
+
+- **The deadline does not move.** A finger arriving two seconds in does not buy
+  everybody a fresh five, and — the bug this file was written for — neither
+  does the last finger leaving and coming back
+- The number keeps falling while nobody is touching the screen at all, and the
+  instruction line comes back so that reads as an invitation rather than a fault
+- **The draw is made from whoever is down at zero**, not at the start: a child
+  who starts the round and gives up on it is not in it, and one who arrives with
+  a second to spare is
+- A round that ends on an empty screen crowns nobody, returns to waiting, and
+  gives the next finger a full five seconds of its own
+
+Driven with real `touchstart` / `touchend` payloads and fake timers, because
+every one of these is a question about *when* rather than about markup.
 
 ### `finger-picker.test.ts` — 21 tests
 The draw settles arguments between five children, so fairness is checked rather

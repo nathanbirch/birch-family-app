@@ -50,18 +50,30 @@ import { BURST_DURATION_MS, EdgeConfetti } from "./EdgeConfetti";
  * ---------------------------------------------------------------------------
  * THE THREE PHASES
  * ---------------------------------------------------------------------------
- *   `waiting`  — nothing down. The number sits at 5, unlit.
- *   `counting` — at least one finger down, clock running. Lift every finger
- *                and it goes back to `waiting` with the clock reset, because a
- *                round nobody is in is not a round.
+ *   `waiting`  — no round running. The number sits at 5, unlit.
+ *   `counting` — a round is under way and the clock is running.
  *   `winner`   — one has been drawn. Its colour floods out from where that
  *                finger was, paper comes in from all four edges, and after
  *                five seconds of solid colour it resets itself.
  *
- * A tap during `winner` resets it immediately, and — because the tapping
- * finger is then a finger on the screen — starts the next round on the way
- * down. Lifting it goes back to `waiting`. That is one gesture doing the
- * obvious thing in both directions rather than a reset button.
+ * ---------------------------------------------------------------------------
+ * THE DEADLINE DOES NOT MOVE
+ * ---------------------------------------------------------------------------
+ * The first hand down starts a round, and from that instant the five seconds
+ * are fixed. Hands may arrive and leave as much as they like — a child
+ * repositioning a finger, one joining late, one giving up — and the number goes
+ * on counting the five seconds it promised. **Only the last moment counts**:
+ * the draw is made from whoever is on the glass when the clock reaches zero.
+ *
+ * It used to cancel the round the moment the screen emptied, which was the same
+ * bug wearing a different hat. With one finger down, lifting it reset the clock
+ * to five, so putting it back started the whole thing again — "I moved my
+ * finger and it started over".
+ *
+ * A round that runs out with nobody on the screen has no winner and goes quietly
+ * back to waiting. That is the only cost of never cancelling, and it is a
+ * five-second one; in the meantime anybody may still join, which is what makes
+ * a tap on a winning colour a *reset plus a starting gun*.
  *
  * ---------------------------------------------------------------------------
  * TOUCH EVENTS, NOT POINTER EVENTS
@@ -251,7 +263,13 @@ export function FingerPicker() {
     setPhaseNow("winner");
   }, [setPhaseNow, stopCounting]);
 
-  /* The clock. Runs only while somebody is in the round. */
+  /*
+   * The clock.
+   *
+   * It reads `deadlineRef` rather than counting down a value of its own, which
+   * is what makes the deadline immovable: nothing but `startCounting` writes
+   * it, and `startCounting` refuses while a round is already under way.
+   */
   useEffect(() => {
     if (phase !== "counting") return;
 
@@ -347,10 +365,11 @@ export function FingerPicker() {
       const wasWinner = phaseRef.current === "winner";
       setFingersNow(next);
 
-      // One tap on the winning colour clears it. The finger that did it then
-      // joins the next round, which is what makes tap-and-hold start it — and
-      // `reset` is called *after* the new list is installed so that it counts
-      // the hand that is actually on the screen.
+      // One tap on the winning colour clears it *and* starts the next round's
+      // clock, so everybody has five seconds to get a finger down — which is a
+      // better reset than one that waits for somebody to go first. `reset` is
+      // called after the new list is installed so it counts the hand that is
+      // actually on the screen.
       if (arriving && wasWinner) {
         reset();
         return;
@@ -360,19 +379,27 @@ export function FingerPicker() {
       // start a new round underneath.
       if (wasWinner) return;
 
-      if (next.length === 0) {
-        // A round nobody is in is not a round: the clock stops and the number
-        // goes back to five rather than running down to a draw with no
-        // entrants.
-        if (countingRef.current) stopCounting();
-        return;
-      }
-
-      // Ignored while the clock is already running, so this is safe whether it
-      // is the first hand of a fresh round or the tenth of one under way.
-      startCounting();
+      /*
+       * Ignored while the clock is already running, which is the whole rule.
+       * Once a round has started its deadline does not move, so hands may come
+       * and go as much as they like and the number goes on counting the five
+       * seconds it promised. Only the *last* moment matters: `draw` reads the
+       * fingers that are on the glass when the clock reaches zero.
+       *
+       * There is deliberately nothing here that stops it. An empty screen
+       * mid-round used to cancel the round, which read as "removing a finger
+       * restarts the countdown" — the last hand lifts, the number snaps back to
+       * five, and putting it down again begins the whole thing afresh. A child
+       * repositioning a finger should not cost everybody five seconds.
+       *
+       * A round that runs out with nobody on the screen simply has no winner,
+       * and `draw` puts it back to waiting. That is the only cost of never
+       * cancelling; it is five seconds at worst, and for those five seconds
+       * anybody may still join.
+       */
+      if (next.length > 0) startCounting();
     },
-    [reset, setFingersNow, startCounting, stopCounting],
+    [reset, setFingersNow, startCounting],
   );
 
   /** `event.touches` — every finger on the screen — as plain data. */
@@ -530,7 +557,14 @@ export function FingerPicker() {
         >
           {showing}
         </span>
-        {phase === "waiting" ? (
+        {/*
+          Shown whenever there is nothing on the glass, counting or not. A
+          round now runs to its deadline even if everybody lets go, so a
+          screen with a number ticking down and no circles on it is a real
+          state — and without this line it would look like a fault rather than
+          like five seconds anybody may still join.
+        */}
+        {fingers.length === 0 && phase !== "winner" ? (
           <span
             className="mt-6 px-8 text-center text-lg font-semibold sm:text-xl"
             style={{ color: PICKER_DIM }}

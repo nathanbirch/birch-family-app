@@ -12,24 +12,41 @@ for what that means and why.
 
 | Phase | What is on the screen |
 |---|---|
-| `waiting` | Near-black, a dim **5**, and "Everyone put a finger on the screen". |
-| `counting` | A pulsing filled circle under each finger; the number counts 5 → 1. |
+| `waiting` | No round running. Near-black, a dim **5**, and "Everyone put a finger on the screen". |
+| `counting` | A round is under way; the number counts 5 → 1, with a pulsing filled circle under each finger. |
 | `winner` | The winning colour floods out from that finger, confetti from every edge, five seconds of solid colour, then it clears itself. |
 
-Two more rules that make it one gesture rather than a set of buttons:
+### The deadline does not move
 
-- **Lift every finger mid-count and the clock stops**, back to five. A round
-  nobody is in is not a round, and it must not run down to a draw with no
-  entrants.
-- **A tap during `winner` resets it immediately** — and because the tapping
-  finger is then a finger on the screen, it starts the next round on the way
-  down. Lifting it goes back to waiting. That is one gesture doing the obvious
-  thing in both directions.
+The first hand down starts a round, and from that instant the five seconds are
+fixed. Hands may arrive and leave as much as they like — a child repositioning
+a finger, one joining late, one giving up — and the number goes on counting the
+five seconds it promised. **Only the last moment counts**: the draw is made from
+whoever is on the glass when the clock reaches zero.
+
+This is the rule the component owns, and it is the one that took two goes to
+get right. Adding a finger never restarted the clock, but the screen going
+*empty* used to cancel the round outright — so with one finger down, lifting it
+snapped the number back to five and putting it down again began the whole thing
+afresh. From the other side of the iPad that is "I moved my finger and it
+started over".
+
+A round that runs out with nobody on the screen has no winner and goes quietly
+back to waiting. That is the only cost of never cancelling, it is five seconds
+at worst, and for those five seconds anybody may still join — which is what
+turns a tap on a winning colour into a reset *and* a starting gun. The
+instruction line is shown whenever the screen is empty, counting or not, so a
+number ticking down over nothing reads as an invitation rather than a fault.
+
+### One gesture, both directions
+
+**A tap during `winner` resets it immediately** — and because the tapping finger
+is then a finger on the screen, it starts the next round's clock on the way
+down, giving everybody five seconds to join.
 
 Fingers that are still down when a round clears itself are **kept**: they are
-physically still there, they will never send another `pointerdown`, and the
-next round starts for them rather than waiting for a gesture that is not
-coming.
+physically still there, they will never send another touch event of their own,
+and the next round starts with them in it.
 
 ## The numbers
 
@@ -171,11 +188,12 @@ else on it is colour and position.
 |---|---|
 | `config/picker.ts` | The timings, the ten colours, the dark. |
 | `lib/picker/game.ts` | The draw, the clock, the flood geometry. Pure. |
-| `components/picker/FingerPicker.tsx` | The state machine and the pointers. |
+| `components/picker/FingerPicker.tsx` | The state machine, the touches, and the immovable deadline. |
 | `components/picker/EdgeConfetti.tsx` | Paper from four sides. |
 | `app/(app)/picker/page.tsx` | Almost nothing; everything is in the overlay. |
 | `app/globals.css` | `finger-pulse` and `confetti-burst`. |
 | `tests/finger-picker.test.ts` | Fairness, the countdown, and the flood covering every corner. |
+| `tests/picker-board.test.tsx` | The round under hands that come and go, with fake timers. |
 
 ## Changing it
 
