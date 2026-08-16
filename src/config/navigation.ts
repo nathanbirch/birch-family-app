@@ -137,17 +137,25 @@ export type NavIconName =
  *   than a corner.
  *
  * ---------------------------------------------------------------------------
- * WHY THE TOOLS ARE STILL NOT IN IT
+ * THE TOOLS ARE IN IT TOO
  * ---------------------------------------------------------------------------
- * The Note and the Finger Picker have `bar: null` even though there is now
- * room for them, and that is a decision rather than an oversight. See
- * `NavGroup`: they are not destinations. You do not navigate to a scribble pad,
- * you pick one up — which is also why `last-page-storage` refuses to remember
- * either of them as the page you were last on. A tab is a claim that somewhere
- * is a place you go back to, and for these two it would be the wrong claim.
+ * The Note and the Finger Picker shipped with `bar: null`, on the argument that
+ * they are not destinations — you do not navigate to a scribble pad, you pick
+ * one up — so a tab would be claiming something about them that is not true.
  *
- * They are one tap from the dashboard, on the Handy shelf, which is where a
- * thing you pick up belongs.
+ * That argument was made while the bar was still a scarce resource, and it does
+ * not survive the bar becoming a strip. A tab costs nothing now, and the case
+ * against was never that a tab would *hurt*; it was that a tab was worth more
+ * than they were. So they have places, near the end, and the Handy shelf on the
+ * dashboard stays as well — the shelf is how somebody finds a tool the first
+ * time, the tab is how they get back to it the twentieth.
+ *
+ * One thing the old argument was right about survives untouched:
+ * `last-page-storage` still refuses to remember either of them as the page you
+ * were last on. Being reachable and being *resumed* are different questions. A
+ * tab is about the first; opening the app two days later onto a black screen
+ * waiting for five fingers is about the second, and it is still not resuming
+ * anything.
  */
 export const NAV_ITEMS: readonly NavItem[] = [
   {
@@ -222,7 +230,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Note",
     title: "The Note",
     description: "A pad on the fridge. Write on it with the pencil; it stays until it is cleared.",
-    bar: null,
+    bar: 8,
     icon: "note",
     group: "tool",
   },
@@ -231,7 +239,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Picker",
     title: "Finger Picker",
     description: "Everyone puts a finger on the screen. After five, it picks one.",
-    bar: null,
+    bar: 9,
     icon: "picker",
     group: "tool",
   },
@@ -240,7 +248,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Account",
     title: "Account",
     description: "Theme, sign out, and what this app is.",
-    bar: 8,
+    bar: 10,
     icon: "account",
   },
 ] as const;

@@ -4,9 +4,10 @@ Everybody puts a finger on the screen, a number counts down from five, and one
 of them is picked at random. Their colour floods the screen and confetti comes
 in from all four sides.
 
-Reached from the **Handy** row on the dashboard, at `/picker`. Like the Note,
-it is a *tool* rather than a page — see [The Note](note.md#why-it-is-not-a-page)
-for what that means and why.
+At `/picker`, reached from a tab in the bottom bar or from the **Handy** row on
+the dashboard. Like the Note it is a *tool* rather than a page — see
+[The Note](note.md#why-it-is-a-tool-rather-than-a-page) for what that means, and
+for why neither is the page the app reopens on.
 
 ## The round
 

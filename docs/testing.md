@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **1,306 tests across 61 files.**
+Vitest with jsdom and Testing Library. **1,307 tests across 61 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -449,18 +449,19 @@ where the app decides what a visitor is told, so every branch is pinned:
 *(The mocked `redirect()` throws, as the real one does, so a bug that let the
 action continue past it would fail rather than pass silently.)*
 
-### `navigation.test.ts` — 22 tests
+### `navigation.test.ts` — 23 tests
 The nav config that the tab bar and the dashboard are both generated from:
 
 - Unique routes, exactly one Home, and Home never in the scrolling part
 - Labels short enough for a tab, which is a fixed 68px in the strip
 - The strip comes out sorted by its place, Stars first and Account last
 - The dashboard lists every page except itself
-- **Every page has a tab now that the bar scrolls** — an absent page is an
-  omission rather than a considered trade-off
-- **No tool has one**, even though there is room. A tab is a claim that
-  somewhere is a place you go back to, and for a scribble pad it is the wrong
-  claim
+- **Everything has a tab now that the bar scrolls**, tools included — an absent
+  entry is an omission rather than a considered trade-off
+- **Nothing is reachable only by typing a URL**: every entry is in the bar or on
+  the dashboard, and today all of them are in both
+- **The tools are still not resumed on a cold start**, tab or no tab — reachable
+  and resumed are different questions
 - **Pages and tools together are exactly the dashboard** — the two sections are
   a rendering decision, not a second source of truth
 - **The page list stays at eight or fewer**, which is the point past which

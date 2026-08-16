@@ -10,6 +10,7 @@ import {
   getNavStripItems,
   isActivePath,
 } from "@/config/navigation";
+import { isKnownPage } from "@/lib/last-page-storage";
 
 /*
  * The bottom bar and the dashboard are both generated from `NAV_ITEMS`, so
@@ -57,30 +58,34 @@ describe("navigation items", () => {
     }
   });
 
-  it("carries every page in the bar, now that it scrolls", () => {
+  it("carries everything in the bar, tools included", () => {
     /*
-     * The five-slot limit is gone, so a *page* being absent from the bar is no
-     * longer a considered trade-off — it is an omission. Tools are a different
-     * thing and are checked separately below.
+     * The five-slot limit is gone, so an entry absent from the bar is no longer
+     * a considered trade-off — it is an omission. Home is pinned rather than in
+     * the strip; everything else has a place in it.
      */
     const strip = getNavStripItems().map((item) => item.href);
     for (const item of NAV_ITEMS) {
-      if (item.group === "tool" || item.bar === "home") continue;
+      if (item.bar === "home") continue;
       expect(strip).toContain(item.href);
     }
   });
 
-  it("keeps anything off the bar reachable from the dashboard", () => {
-    const offBar = NAV_ITEMS.filter((item) => item.bar === null);
+  it("leaves nothing reachable only by typing a URL", () => {
+    /*
+     * The guarantee underneath both lists. Nothing has `bar: null` today, but
+     * if something ever does, it has to be on the dashboard — a page in
+     * `NAV_ITEMS` that is in neither place exists and cannot be tapped.
+     */
     const barHrefs = [
       getNavHome().href,
       ...getNavStripItems().map((item) => item.href),
     ];
     const cardHrefs = DASHBOARD_ITEMS.map((item) => item.href);
-    for (const item of offBar) {
-      expect(barHrefs).not.toContain(item.href);
-      // Otherwise the page would be unreachable by tapping anything at all.
-      expect(cardHrefs).toContain(item.href);
+    for (const item of NAV_ITEMS) {
+      const reachable =
+        barHrefs.includes(item.href) || cardHrefs.includes(item.href);
+      expect(reachable).toBe(true);
     }
   });
 });
@@ -145,15 +150,27 @@ describe("dashboard cards", () => {
     expect(DASHBOARD_PAGES.length).toBeLessThanOrEqual(8);
   });
 
-  it("never puts a tool in the bottom bar", () => {
+  it("keeps the tools on their shelf as well as in the bar", () => {
     /*
-     * There is room for them now, and they are still out. A tab is a claim
-     * that somewhere is a place you go back to; for a scribble pad and a
-     * finger picker that would be the wrong claim, which is the same reason
-     * `last-page-storage` refuses to remember either of them. See `NavGroup`.
+     * Both, not either. The shelf is how somebody finds a tool the first time;
+     * the tab is how they get back to it the twentieth. They were kept out of
+     * the bar while it held five, and that argument did not survive the bar
+     * becoming a strip — see `config/navigation.ts`.
+     */
+    expect(DASHBOARD_TOOLS.length).toBeGreaterThan(0);
+    for (const item of DASHBOARD_TOOLS) {
+      expect(typeof item.bar).toBe("number");
+    }
+  });
+
+  it("still refuses to reopen the app on a tool", () => {
+    /*
+     * Reachable and *resumed* are different questions, and giving the tools
+     * tabs only answered the first. Launching two days later onto a black
+     * screen waiting for five fingers is not picking up where anybody left off.
      */
     for (const item of DASHBOARD_TOOLS) {
-      expect(item.bar).toBeNull();
+      expect(isKnownPage(item.href)).toBe(false);
     }
   });
 

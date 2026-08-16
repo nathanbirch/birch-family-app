@@ -3,8 +3,9 @@
 A pad on the fridge, in the app. Write on it with the Apple Pencil; it is still
 there tomorrow, and it stays until somebody clears it.
 
-Reached from the **Handy** row on the dashboard, at `/note`. It is a *tool*
-rather than a page — see [the navigation note](#why-it-is-not-a-page) below.
+At `/note`, reached from a tab in the bottom bar or from the **Handy** row on
+the dashboard. It is a *tool* rather than a page — see
+[the navigation note](#why-it-is-a-tool-rather-than-a-page) below.
 
 ## What it does
 
@@ -148,18 +149,21 @@ because nobody closes a note app — they close the lid. Three things flush it:
 tap on the bottom bar looks like). `beforeunload` is unreliable on mobile
 Safari and is not used.
 
-## Why it is not a page
+## Why it is a tool rather than a page
 
 `NavGroup` in `config/navigation.ts` splits the dashboard into pages and tools.
 The Note is a tool: you do not go to it to find something out, you pick it up
-for a minute. Two consequences follow:
+for a minute. Two consequences survive:
 
 - It gets a small card in the **Handy** row rather than a full-width card, so
-  the page list stays short enough to take in without scrolling.
+  the page list stays short enough to take in without scrolling. It also has a
+  tab in the bottom bar — the shelf is how somebody finds it the first time, the
+  tab is how they get back to it the twentieth.
 - It is **not** remembered by the last-page memory (`lib/last-page-storage.ts`).
   Open it from the Calendar, close the app, and it reopens on the Calendar —
   launching two days later onto a note that has already been read is not
-  resuming anything.
+  resuming anything. Reachable and *resumed* are different questions, and having
+  a tab only answers the first.
 
 ## The files
 
