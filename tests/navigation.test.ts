@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   DASHBOARD_ITEMS,
+  DASHBOARD_PAGES,
+  DASHBOARD_TOOLS,
   NAV_ITEMS,
   PLANNED_FEATURES,
   getNavBarItems,
@@ -96,6 +98,35 @@ describe("dashboard cards", () => {
     for (const item of [...DASHBOARD_ITEMS, ...PLANNED_FEATURES]) {
       expect(item.title.length).toBeGreaterThan(0);
       expect(item.description.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("splits the cards into pages and tools, losing none of either", () => {
+    // The two sections are a rendering decision, not a second source of truth:
+    // together they must still be exactly what the dashboard used to show.
+    expect([...DASHBOARD_PAGES, ...DASHBOARD_TOOLS].map((item) => item.href).sort()).toEqual(
+      DASHBOARD_ITEMS.map((item) => item.href).sort(),
+    );
+    expect(DASHBOARD_PAGES.some((item) => item.group === "tool")).toBe(false);
+    expect(DASHBOARD_TOOLS.every((item) => item.group === "tool")).toBe(true);
+  });
+
+  it("keeps the page list short enough not to need scrolling past", () => {
+    /*
+     * The reason `NavGroup` exists. Every page card is full width and about
+     * 88px tall; past eight of them, Account — which is at the bottom — falls
+     * below the fold on a phone, and the dashboard stops being a screen you
+     * take in at a glance. If this fails, the next thing to build is the
+     * "More" sheet that `config/navigation.ts` has been putting off.
+     */
+    expect(DASHBOARD_PAGES.length).toBeLessThanOrEqual(8);
+  });
+
+  it("never puts a tool in the bottom bar", () => {
+    // A tool is something you pick up from the dashboard. Giving one a tab
+    // would spend one of five slots on something opened once a week.
+    for (const item of DASHBOARD_TOOLS) {
+      expect(item.slot).toBeNull();
     }
   });
 

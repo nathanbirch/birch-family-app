@@ -57,3 +57,18 @@ export const LAST_PAGE_STORAGE_KEY = "birch-family-app:last-page:v1";
  * decide for the other. Defaults to on when the key is absent.
  */
 export const SOUND_STORAGE_KEY = "birch-family-app:sound:v1";
+
+/**
+ * The handwritten note, and nothing else about it.
+ *
+ * Deliberately device-local rather than a database collection. A note on the
+ * fridge belongs to the fridge: it is written on the iPad in the kitchen and
+ * read on the iPad in the kitchen, and syncing it would mean deciding what
+ * happens when two people write at once — a genuinely hard question for a
+ * feature whose entire value is that it is as simple as a sticky note.
+ *
+ * The consequence is worth stating plainly rather than discovering: clear this
+ * browser's data and the note is gone. That is the same deal a real sticky
+ * note offers.
+ */
+export const NOTE_STORAGE_KEY = "birch-family-app:note:v1";

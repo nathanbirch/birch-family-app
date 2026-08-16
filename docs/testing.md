@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **1,129 tests across 55 files.**
+Vitest with jsdom and Testing Library. **1,275 tests across 60 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -449,13 +449,18 @@ where the app decides what a visitor is told, so every branch is pinned:
 *(The mocked `redirect()` throws, as the real one does, so a bug that let the
 action continue past it would fail rather than pass silently.)*
 
-### `navigation.test.ts` — 17 tests
+### `navigation.test.ts` — 21 tests
 The nav config that the tab bar and the dashboard are both generated from:
 
 - Unique routes, exactly one Home, at most one page per side slot
 - Labels short enough for a tab; no more than the five a bottom bar can hold
 - Bar order is left → home → right
 - The dashboard lists every page except itself
+- **Pages and tools together are exactly the dashboard**, and no tool takes a
+  tab — the two sections are a rendering decision, not a second source of truth
+- **The page list stays at eight or fewer**, which is the point past which
+  Account falls below the fold on a phone. If that fails, the "More" sheet
+  `config/navigation.ts` keeps deferring is finally due
 - Nothing is advertised as "coming soon" that already exists
 - Active-tab matching: exact for Home, sub-routes for the rest, and
   **`/turns` must not match `/turns-plan`** — the bug a naive `startsWith`
@@ -466,7 +471,7 @@ The `useSyncExternalStore` contract for both preferences: a stable snapshot, a
 server snapshot that matches what the server renders, subscriber notification,
 and picking up a change made in **another tab**.
 
-### `last-page.test.tsx` — 14 tests
+### `last-page.test.tsx` — 21 tests
 Reopening the app on the page you were last using:
 
 - A real page is stored and read back; `/login` and anything not in
@@ -478,6 +483,9 @@ Reopening the app on the page you were last using:
 - The redirect does not overwrite the page it is redirecting to
 - **Home stays reachable after a restore** — the once-per-page-load guard, and
   the one behaviour that would make the feature infuriating if it broke
+- **A tool is not somewhere you were.** `/note` and `/picker` are neither
+  remembered nor allowed to overwrite what is, so opening the Note from the
+  Calendar still reopens on the Calendar
 
 ### `health.test.tsx` — 15 tests
 The five healthy lists, where the risk is not a crash but a **quiet rewrite**.
@@ -665,6 +673,56 @@ one design rule — every label four words or fewer, every category title one
 word — which is what cut "Do a load of laundry" down to "Do a load". Plus the
 Dad Bucks contract: cheapest first, no gap wider than two, and the five prices
 the family had already set.
+
+### `note-strokes.test.ts` — 35 tests
+The Note's model, which is the half of that page nobody can check by looking at
+it. Three groups matter:
+
+- **The pad is not square.** `y` runs 0-1 over a sheet two-thirds as tall as it
+  is wide, so every measurement corrects for the aspect ratio. A test pins the
+  full height of the pad at two-thirds of a width — without it the eraser
+  under-reaches downwards by a third and nobody can say why.
+- **The eraser measures to segments, not points.** An underline drawn as two
+  points has nothing in its middle to find; the test rubs at exactly that spot.
+  It also asserts that rubbing at blank paper returns the *same array object*,
+  because the pad compares by identity to decide whether to push an undo entry
+  — a fresh array would put fifty identical states on the stack per wipe.
+- **A stored note can be anything.** Truncated JSON, a version from a future
+  build, a `1e999` that `JSON.parse` turns into `Infinity`, a tool that no
+  longer exists. Every one of them must mean "blank pad" or "one stroke fewer",
+  never a crash on a page whose only job is to show a message to a child.
+
+Plus the storage format's two promises: inks and nibs stored by *id* so the
+palette can be re-tuned under notes already written (asserted by there being no
+`#` anywhere in the output), and a thousand points fitting in under 40KB.
+
+### `note-store.test.ts` — 21 tests
+The pad's actual promise — that a note written today is there tomorrow:
+
+- The debounce writes **once** for a burst of strokes, and can be flushed
+  immediately when the iPad's lid comes down
+- A device that refuses to save (quota, storage off) leaves the note on screen
+  and says so, rather than quietly losing it
+- The server snapshot is the **same object every time**, which is the
+  `useSyncExternalStore` contract and an infinite render loop when broken
+- Undo and redo do not record the moves they make, so undo can still reach the
+  beginning; anything new throws the redo stack away
+- **Clear removes the stored copy at once** — not on the debounce — and is
+  still one Undo away, which re-saves it
+
+### `finger-picker.test.ts` — 21 tests
+The draw settles arguments between five children, so fairness is checked rather
+than assumed:
+
+- A hundred thousand rounds land within a percentage point of a fifth each
+- It can never return an index that is not on the screen, including for a
+  `random` of exactly 1 — `Math.random()` is documented as below it, but a
+  picker that can crash at a birthday party should not depend on that
+- `-1` when every finger lifted before the buzzer, so nobody wins by absence
+- The countdown holds each number for its whole second and never shows more
+  than it started with, even if the tab was suspended and the clock jumped
+- The flood covers **every corner from every starting point** — the wedge of
+  background left by measuring to the nearest corner is the bug this catches
 
 ## Conventions
 

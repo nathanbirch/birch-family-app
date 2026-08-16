@@ -15,9 +15,24 @@
 import { LAST_PAGE_STORAGE_KEY } from "@/config/app";
 import { NAV_ITEMS } from "@/config/navigation";
 
-/** `true` when `value` is one of the app's real pages. */
+/**
+ * `true` when `value` is one of the app's real pages.
+ *
+ * Tools are excluded, deliberately. `NavGroup` draws the line: a page is
+ * somewhere you were, and reopening it is picking up where you left off. A
+ * tool is something you had in your hand for a minute, and launching the app
+ * two days later into a black screen waiting for five fingers — or onto a pad
+ * showing a note that has already been read — is not resuming anything. It is
+ * the app guessing wrong in the most confusing way available.
+ *
+ * The effect of leaving one out is that it is neither remembered nor allowed
+ * to overwrite what is: open the Note from the Calendar, close the app, and it
+ * reopens on the Calendar.
+ */
 export function isKnownPage(value: string): boolean {
-  return NAV_ITEMS.some((item) => item.href === value);
+  return NAV_ITEMS.some(
+    (item) => item.href === value && item.group !== "tool",
+  );
 }
 
 /**

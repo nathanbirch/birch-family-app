@@ -56,6 +56,21 @@ describe("last page storage", () => {
     expect(readLastPage()).toBeNull();
   });
 
+  it("does not treat a tool as somewhere you were", () => {
+    /*
+     * Neither remembered nor allowed to overwrite what is. Launching the app
+     * two days later into a black screen waiting for five fingers is the app
+     * guessing wrong in the most confusing way available — and opening the
+     * Note from the Calendar should still reopen on the Calendar.
+     */
+    expect(isKnownPage("/note")).toBe(false);
+    expect(isKnownPage("/picker")).toBe(false);
+
+    expect(writeLastPage("/calendar")).toBe(true);
+    expect(writeLastPage("/picker")).toBe(false);
+    expect(readLastPage()).toBe("/calendar");
+  });
+
   it("ignores a stale page left by an older build", () => {
     // A route that has since been deleted must not strand the app on a 404.
     window.localStorage.setItem(LAST_PAGE_STORAGE_KEY, "/chores");

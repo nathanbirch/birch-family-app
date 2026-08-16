@@ -29,8 +29,16 @@ src/app/
     ├── ceremonies/[week]/   /ceremonies/…  one week's award ceremony
     │   └── page.tsx
     ├── calendar/page.tsx   /calendar  the family Google Calendar
+    ├── note/page.tsx       /note      the pad on the fridge — a *tool*
+    ├── picker/page.tsx     /picker    who goes first — a *tool*
     └── account/page.tsx    /account   theme, sign out, app info
 ```
+
+The last two are marked as tools rather than pages, which is a distinction
+`config/navigation.ts` makes and the dashboard renders: a page is somewhere you
+go, a tool is something you pick up for a minute. See [the Note](note.md) and
+[Finger Picker](picker.md). `/picker` is also the one route that paints over
+the tab bar — five hands land on an iPad at once and none of them aim.
 
 Everything inside `(app)` is protected by *where the file is*, not by
 remembering to add it to a list: the group's layout calls `requireUser()` before
@@ -140,9 +148,11 @@ here, strongly typed, with no logic beyond simple lookups.
 
 | File | Holds |
 |---|---|
-| `app.ts` | App name, rotation start date, the three `localStorage` keys |
+| `app.ts` | App name, rotation start date, every `localStorage` key |
 | `db.ts` | The database name and every collection name |
-| `navigation.ts` | The pages, the tab bar layout, the planned-feature cards |
+| `navigation.ts` | The pages, the tools, the tab bar layout, the planned-feature cards |
+| `note.ts` | The Note's tools, inks, nibs, papers and the pad's fixed shape |
+| `picker.ts` | Finger Picker's timings and its ten circle colours |
 | `mantras.ts` | The family mantras, their verbatim quotes and sources |
 | `health.ts` | The five healthy lists, transcribed from the sheets on the wall |
 | `family.ts` | The seven people: names, roles, identifying colours, faces, photos |
@@ -197,6 +207,12 @@ calendar/CalendarBoard  the client island; owns the view, layout and cursor
 ├── TimeGrid            the hour grid — Day (1 column) or Week (7)
 └── MonthView           six rows of seven, with event chips
 calendar/CalendarNotice not connected, or connected and failing
+
+note/StickyNote       pointer events into strokes, and two stacked canvases
+note/NoteToolbar      the tray: tools, nibs, inks, papers, undo, clear
+picker/FingerPicker   the full-screen overlay, the clock and the draw
+picker/EdgeConfetti   paper fired inward from all four edges
+
 PageBackground        the soft themed shapes behind every page
 LastPageMemory        renders nothing; reopens the app on the last page used
 

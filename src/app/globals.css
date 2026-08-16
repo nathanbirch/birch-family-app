@@ -477,6 +477,86 @@ body,
   animation: coin-shine 2600ms ease-in-out infinite;
 }
 
+/* ---------------------------------------------------------------- */
+/* The Finger Picker                                                 */
+/* ---------------------------------------------------------------- */
+
+/*
+ * A finger circle breathing while the clock runs.
+ *
+ * Scale only, on an inner element — the outer one carries the
+ * `translate(-50%, -50%)` that centres the circle on the fingertip. Putting
+ * both on one element would mean repeating the translate in every keyframe,
+ * and any drift between the two would make the circle wander off the finger.
+ *
+ * The swell is small on purpose. This runs on up to ten circles at once for
+ * five seconds; anything more emphatic stops reading as "waiting" and starts
+ * reading as "something is wrong".
+ */
+@keyframes finger-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.13);
+  }
+}
+
+.finger-pulse {
+  animation: finger-pulse var(--pulse-duration, 1400ms) ease-in-out infinite;
+  /*
+   * Each circle is offset into the cycle by a fraction of a period, so ten of
+   * them breathe out of step rather than throbbing in unison — which looks
+   * like a machine rather than like ten separate people waiting.
+   */
+  animation-delay: var(--pulse-delay, 0ms);
+  will-change: transform;
+}
+
+/*
+ * Confetti fired inward from an edge of the screen.
+ *
+ * Different from `confetti-fall` in the one way that matters: paper thrown
+ * *from* somewhere decelerates and then drops, where paper falling merely
+ * drifts. `--burst-y1` is where the piece is at the top of its arc and
+ * `--burst-y2` is where it ends up; for a piece launched from the bottom edge
+ * the first is well above the second, which is what produces the throw.
+ *
+ * Six properties set inline per piece, and nothing but `transform` and
+ * `opacity` animated, so a couple of hundred of them stay on the compositor —
+ * the same bargain `confetti-fall` makes, and the reason neither needs a
+ * canvas or a library.
+ */
+@keyframes confetti-burst {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  55% {
+    transform: translate3d(calc(var(--burst-x) * 0.74), var(--burst-y1), 0)
+      rotate(calc(var(--burst-spin) * 0.55));
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--burst-x), var(--burst-y2), 0)
+      rotate(var(--burst-spin));
+    opacity: 0;
+  }
+}
+
+.burst-piece {
+  animation-name: confetti-burst;
+  animation-timing-function: cubic-bezier(0.16, 0.68, 0.36, 1);
+  animation-fill-mode: both;
+  will-change: transform, opacity;
+}
+
 @media (prefers-reduced-motion: reduce) {
   /*
    * Every reveal is simply already there. This has to be spelled out — see the
@@ -517,8 +597,18 @@ body,
    * The celebration is announced in words as well, so nothing is lost — see
    * `components/stars/Confetti.tsx`.
    */
-  .confetti-piece {
+  .confetti-piece,
+  .burst-piece {
     display: none;
+  }
+
+  /*
+   * The circles sit still rather than breathing. The countdown number is doing
+   * the work of saying "something is about to happen" anyway, and ten pulsing
+   * discs is exactly the sort of thing this setting exists to switch off.
+   */
+  .finger-pulse {
+    animation: none;
   }
 
   /* …and visible, since the animation that would have revealed them is gone. */

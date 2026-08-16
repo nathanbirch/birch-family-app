@@ -6,7 +6,11 @@ import { CalendarCardBadge } from "@/components/dashboard/CalendarCardBadge";
 import { MottoBanner } from "@/components/motto/MottoBanner";
 import { SeatingCardBadge } from "@/components/dashboard/SeatingCardBadge";
 import { APP_NAME } from "@/config/app";
-import { DASHBOARD_ITEMS, PLANNED_FEATURES } from "@/config/navigation";
+import {
+  DASHBOARD_PAGES,
+  DASHBOARD_TOOLS,
+  PLANNED_FEATURES,
+} from "@/config/navigation";
 import { requireUser } from "@/lib/auth/dal";
 import { upcomingEvents } from "@/lib/calendar/events";
 import { loadCalendarFeed } from "@/lib/calendar/feed";
@@ -58,7 +62,7 @@ export default async function DashboardPage() {
           Pages
         </h2>
         <ul className="animate-soft-rise flex flex-col gap-3">
-          {DASHBOARD_ITEMS.map((item) => (
+          {DASHBOARD_PAGES.map((item) => (
             <li key={item.href}>
               <Link
                 href={item.href}
@@ -102,6 +106,55 @@ export default async function DashboardPage() {
                 </span>
 
                 <ChevronRight />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/*
+        The tools.
+        -----------------------------------------------------------------
+        Below the pages and above Coming Soon, in the small two-across shape
+        rather than a full-width card. That is not a demotion — see `NavGroup`
+        — it is what these two are: things you pick up for a minute, not
+        places you go. Ten full-width cards would also mean scrolling the
+        dashboard to reach Account, which is the one thing the page has always
+        managed to avoid.
+      */}
+      <section aria-labelledby="tools-heading" className="mt-8">
+        <h2
+          id="tools-heading"
+          className="mb-3 px-1 text-xs font-bold uppercase tracking-wider"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          Handy
+        </h2>
+        <ul className="animate-soft-rise grid grid-cols-2 gap-3">
+          {DASHBOARD_TOOLS.map((item) => (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                className="app-card themed-transition flex h-full flex-col gap-2 p-4 transition-transform active:scale-[0.97]"
+              >
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-xl"
+                  style={{
+                    backgroundColor: "var(--color-primary)",
+                    color: "var(--color-on-primary)",
+                  }}
+                >
+                  <NavIcon name={item.icon} className="h-5 w-5" />
+                </span>
+                <span className="text-sm font-bold leading-tight">
+                  {item.title}
+                </span>
+                <span
+                  className="text-xs leading-snug"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
+                  {item.description}
+                </span>
               </Link>
             </li>
           ))}

@@ -30,6 +30,8 @@ Start here if you are picking it up cold:
 | [Accessibility](accessibility.md) | What's been done and what it guarantees. |
 | [Testing](testing.md) | What each test file covers, how to run them, current coverage. |
 | [The Bored Page](bored.md) | Three pictures for a bored child, and what a Dad Buck is worth. |
+| [The Note](note.md) | The pad on the fridge: the Apple Pencil, why it is not in the database, and how a stroke is stored. |
+| [Finger Picker](picker.md) | Who goes first: the five-second draw, and why it is provably fair. |
 | [Maintenance](maintenance.md) | Recipes for common changes, plus troubleshooting. |
 | [Family-context API](family-api/README.md) | The read-only endpoint the private Birch Family Custom GPT calls, and everything that guards it. |
 
@@ -62,6 +64,11 @@ Birches** lists — plus an account page; the weekly celebration report and
 rewards are planned, and are listed on the dashboard so the app itself is the
 roadmap. Mantras and Healthy have a dashboard card but no tab: the bar holds
 five, and Stars took the tab because five children open it several times a day.
+Below the page cards there is now a second, smaller shelf — **Handy** — holding
+the two *tools*: [the Note](note.md), a pad you write on with an Apple Pencil
+that stays until it is cleared, and [Finger Picker](picker.md), which settles
+who goes first. Neither is a destination, which is why neither is a full card
+and neither is remembered as the page you were last on.
 The
 seating is still almost entirely self-contained: seven people, two places to
 sit, the five children rotating through five numbered positions on a fixed

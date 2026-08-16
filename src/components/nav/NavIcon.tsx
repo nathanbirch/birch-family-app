@@ -167,8 +167,52 @@ function BoredIcon({ className }: IconProps) {
   );
 }
 
+/**
+ * A pencil laid across a page — the Note.
+ *
+ * The pencil is drawn nib-down-left at the angle a right-hander holds one, and
+ * it overlaps the page rather than sitting beside it, because a page on its own
+ * is a document icon and this is not a document: it is something you write on.
+ */
+function NoteIcon({ className }: IconProps) {
+  return (
+    <svg {...SHARED} className={className} aria-hidden="true">
+      <path d="M18.6 12.4V19a1.9 1.9 0 0 1-1.9 1.9H6.4A1.9 1.9 0 0 1 4.5 19V6.6a1.9 1.9 0 0 1 1.9-1.9h6.3" />
+      <path d="m20.2 3.6 1.1 1.1a1.3 1.3 0 0 1 0 1.9l-7.6 7.6-2.8.7.7-2.8 7.6-7.6a1.3 1.3 0 0 1 2 .1Z" />
+      <path d="M8.2 16.6h4.6" />
+    </svg>
+  );
+}
+
+/**
+ * Three fingertips on a screen — the Finger Picker.
+ *
+ * Circles of unequal size, because that is what the page itself shows: several
+ * dots pulsing at different moments. One is drawn filled to stand for the one
+ * that gets chosen, which is the whole point of the tool and the only thing
+ * that distinguishes this from a generic cluster of dots.
+ */
+function PickerIcon({ className }: IconProps) {
+  return (
+    <svg {...SHARED} className={className} aria-hidden="true">
+      <circle cx="8.1" cy="8.6" r="3.1" />
+      <circle cx="16.6" cy="7.4" r="2.3" />
+      <circle
+        cx="13.4"
+        cy="16.2"
+        r="3.6"
+        fill="currentColor"
+        stroke="none"
+      />
+      <circle cx="5.6" cy="16.8" r="2.1" />
+    </svg>
+  );
+}
+
 const ICONS = {
   seats: SeatsIcon,
+  note: NoteIcon,
+  picker: PickerIcon,
   health: HealthIcon,
   bored: BoredIcon,
   home: HomeIcon,

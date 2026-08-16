@@ -46,7 +46,30 @@ export type NavItem = {
   slot: NavSlot | null;
   /** Key into `NAV_ICONS`. */
   icon: NavIconName;
+  /**
+   * Which section of the dashboard this belongs to. Omitted means `"page"`,
+   * which is what nearly everything is — see `NavGroup`.
+   */
+  group?: NavGroup;
 };
+
+/**
+ * A destination, or a thing you pick up.
+ *
+ * Every entry in `NAV_ITEMS` was a **page** until the Note and the Finger
+ * Picker arrived. Those two are not pages in the sense the rest are: you do
+ * not go to them to find something out. You open one, use it for a minute in
+ * the room you are standing in, and close it. The Note is a pad you scribble
+ * on; the Picker settles an argument about who goes first.
+ *
+ * That distinction earns its own word because it is what finally answers the
+ * "More sheet" argument written out at length below. The sheet was overdue on
+ * the count of dashboard-only *pages*; it is not the answer for a **tool**,
+ * because a tool wants to be grabbed, not navigated to. Tools get their own
+ * compact row on the dashboard — two across, like Coming Soon — which keeps
+ * the page list from growing to ten full-width cards you have to scroll.
+ */
+export type NavGroup = "page" | "tool";
 
 export type NavIconName =
   | "seats"
@@ -57,7 +80,9 @@ export type NavIconName =
   | "health"
   | "bored"
   | "stars"
-  | "report";
+  | "report"
+  | "note"
+  | "picker";
 
 /**
  * The live pages.
@@ -116,6 +141,26 @@ export type NavIconName =
  * row to have said so. That is worth reading as a warning: if a *fifth*
  * dashboard-only page turns up and the reasoning has to be written a third
  * time, the reasoning is wrong and the sheet is overdue.
+ *
+ * ---------------------------------------------------------------------------
+ * THE FIFTH AND SIXTH ARRIVED, AND THE WARNING ABOVE WAS RIGHT
+ * ---------------------------------------------------------------------------
+ * The Note and the Finger Picker are entries five and six. By the rule written
+ * directly above, that is where the excuses stop.
+ *
+ * They stop here in a different way than expected, though. The honest reading
+ * of those two is that they are not pages at all — see `NavGroup`. A "More"
+ * sheet is a list of *destinations* that did not fit; putting a scribble pad
+ * behind two taps and a slide-up would be the worst possible home for it, and
+ * the Picker gets opened mid-argument with five children shouting, which is
+ * not the moment for a menu.
+ *
+ * So: four dashboard-only pages, unchanged, and the sheet is still the right
+ * answer for the *fifth page*. What shipped instead is a second, smaller shelf
+ * on the dashboard for the two tools, which costs the page list nothing.
+ *
+ * That is a real answer, not a third excuse — but it is only an answer for
+ * tools. If a fifth dashboard-only **page** turns up, build the sheet.
  *
  * Account sits at the far right rather than beside Home. It is the one tab
  * nobody opens daily, so it takes the least reachable corner and Calendar —
@@ -190,6 +235,24 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: "report",
   },
   {
+    href: "/note",
+    label: "Note",
+    title: "The Note",
+    description: "A pad on the fridge. Write on it with the pencil; it stays until it is cleared.",
+    slot: null,
+    icon: "note",
+    group: "tool",
+  },
+  {
+    href: "/picker",
+    label: "Picker",
+    title: "Finger Picker",
+    description: "Everyone puts a finger on the screen. After five, it picks one.",
+    slot: null,
+    icon: "picker",
+    group: "tool",
+  },
+  {
     href: "/account",
     label: "Account",
     title: "Account",
@@ -202,6 +265,28 @@ export const NAV_ITEMS: readonly NavItem[] = [
 /** The dashboard lists every page except the dashboard itself. */
 export const DASHBOARD_ITEMS: readonly NavItem[] = NAV_ITEMS.filter(
   (item) => item.slot !== "home",
+);
+
+/**
+ * The full-width cards: somewhere to go.
+ *
+ * Still one card per page, still in `NAV_ITEMS` order, still exactly what the
+ * dashboard rendered before tools existed.
+ */
+export const DASHBOARD_PAGES: readonly NavItem[] = DASHBOARD_ITEMS.filter(
+  (item) => (item.group ?? "page") === "page",
+);
+
+/**
+ * The small cards: something to pick up.
+ *
+ * Two across, below the pages and above Coming Soon. They are deliberately the
+ * same shape as the Coming Soon cards rather than a shrunken page card — the
+ * dashboard already says "small square card = not a destination", and reusing
+ * that shape means the tools read as a drawer of implements at a glance.
+ */
+export const DASHBOARD_TOOLS: readonly NavItem[] = DASHBOARD_ITEMS.filter(
+  (item) => item.group === "tool",
 );
 
 /**

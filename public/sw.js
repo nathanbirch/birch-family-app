@@ -76,8 +76,22 @@
  * nothing asks for any more). Both are the v5-v7 case again — a phone holding
  * the old shell would keep a dead `/report` link on its dashboard and go on
  * playing a sound the app no longer references.
+ *
+ * v11: the Note and Finger Picker arrived, and with them the Handy row on the
+ * dashboard. The v9 case exactly — a phone holding a cached dashboard would go
+ * on painting one with no Handy row on it, and the two tools would be
+ * unreachable from the one screen they are reached from, on precisely the
+ * devices most likely to want them.
+ *
+ * Neither page is added to the precache below, deliberately, and for opposite
+ * reasons. The Note is worth having offline and *gets* there by itself: it is
+ * opened often, the runtime cache keeps it after the first visit, and its
+ * contents never came from the network in the first place. Finger Picker is a
+ * page you open when five people are in the room, which is not the situation
+ * anyone is in with no signal — and precaching a route costs every device a
+ * fetch on install whether or not it is ever opened.
  */
-const CACHE_VERSION = "v10";
+const CACHE_VERSION = "v11";
 const CACHE_NAME = `birch-family-app-${CACHE_VERSION}`;
 const APP_SHELL = "/";
 
