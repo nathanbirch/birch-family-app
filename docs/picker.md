@@ -92,12 +92,35 @@ works with a trackpad. That discriminator matters: an Apple Pencil raises touch
 events *as well as* pointer events on iOS, so anything looser would count the
 same finger twice.
 
-`touchcancel` is treated exactly like a lift. It is not an error case — it is
-what iPadOS sends when it claims a handful of fingers as a system gesture, and
-those fingers really are gone as far as this page is concerned. If fingers
-still disappear on a particular iPad, check **Settings → Home Screen &
-Multitasking → Gestures**: a four- or five-finger swipe or pinch is an OS
-gesture that no web page can opt out of.
+### The sixth finger on an iPhone
+
+An iPhone screen reads **five** simultaneous touches. An iPad reads ten. When a
+sixth finger lands on an iPhone, iOS does not ignore it — it fires
+`touchcancel` for *every* touch on the screen at once, with an empty `touches`
+list.
+
+Taken at face value, that says "everybody let go", and the board was wiped
+mid-round. A child reaching in to join the game emptied it for everyone else,
+which is the worst available response to somebody wanting to play.
+
+So a cancel that takes *everything* is not believed. The circles stay, the
+clock keeps running, and the round is drawn between the hands already down. The
+sixth child does not get in — the phone physically cannot see them — but nobody
+loses their place, and on a screen that size a sixth finger has nowhere to go
+anyway.
+
+A cancel that takes *some* touches is believed: that is the browser reporting a
+real change, and `event.touches` still lists everyone remaining.
+
+The frozen list is marked as no longer verified. The next real touch event
+replaces it wholesale, and `reset` throws it away rather than starting a fresh
+round from fingers nobody can confirm are still there — without which a
+cancelled round would restart itself every five seconds for ever.
+
+The same handling covers the other cause of a full cancel: a four- or
+five-finger swipe or pinch on an iPad is an OS gesture that no web page can opt
+out of. If that keeps interrupting rounds, the switch is **Settings → Home
+Screen & Multitasking → Gestures**.
 
 Colours are handed out by `nextColourIndex` — the lowest one nobody is holding,
 so a finger that lifts frees its colour for the next one down. The palette's

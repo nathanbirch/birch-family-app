@@ -151,6 +151,15 @@ export function FingerPicker() {
    */
   const coloursRef = useRef(new Map<number, number>());
 
+  /**
+   * Whether the finger list is one the browser has stopped confirming.
+   *
+   * Set when a `touchcancel` takes every touch at once — see
+   * `handleTouchCancel` for the iPhone behaviour that causes it. Cleared by
+   * the next real touch event, and honoured by `reset`.
+   */
+  const frozenRef = useRef(false);
+
   const setFingersNow = useCallback((next: readonly Finger[]) => {
     fingersRef.current = next;
     setFingers(next);
@@ -195,12 +204,27 @@ export function FingerPicker() {
     setFlooded(false);
     setConfetti(false);
 
+    /*
+     * A frozen list is one a cancel left behind — see `handleTouchCancel`.
+     * Those circles were worth keeping for the round they were already in, but
+     * they are not evidence that anybody is still touching the screen, and
+     * starting a fresh round off them would draw a winner nobody is playing
+     * for and then do it again five seconds later, for ever.
+     */
+    if (frozenRef.current) {
+      frozenRef.current = false;
+      coloursRef.current.clear();
+      setFingersNow([]);
+      stopCounting();
+      return;
+    }
+
     if (fingersRef.current.length > 0) {
       startCounting();
       return;
     }
     stopCounting();
-  }, [startCounting, stopCounting]);
+  }, [setFingersNow, startCounting, stopCounting]);
 
   const draw = useCallback(() => {
     countingRef.current = false;
@@ -297,9 +321,9 @@ export function FingerPicker() {
    */
   const applyFingers = useCallback(
     (raw: readonly RawFinger[], arriving: boolean) => {
-      // One tap on the winning colour clears it. The finger that did it then
-      // joins the round below, which is what makes tap-and-hold start the next.
-      if (arriving && phaseRef.current === "winner") reset();
+      // Whatever the browser has just told us is the truth, so the frozen list
+      // left behind by a cancelled round is no longer anything to protect.
+      frozenRef.current = false;
 
       const colours = coloursRef.current;
 
@@ -320,11 +344,21 @@ export function FingerPicker() {
         return { id: finger.id, x: finger.x, y: finger.y, colour };
       });
 
+      const wasWinner = phaseRef.current === "winner";
       setFingersNow(next);
+
+      // One tap on the winning colour clears it. The finger that did it then
+      // joins the next round, which is what makes tap-and-hold start it — and
+      // `reset` is called *after* the new list is installed so that it counts
+      // the hand that is actually on the screen.
+      if (arriving && wasWinner) {
+        reset();
+        return;
+      }
 
       // The flood owns the screen; a finger sliding across it must not quietly
       // start a new round underneath.
-      if (phaseRef.current === "winner") return;
+      if (wasWinner) return;
 
       if (next.length === 0) {
         // A round nobody is in is not a round: the clock stops and the number
@@ -356,6 +390,42 @@ export function FingerPicker() {
 
   const handleTouchChange = useCallback(
     (event: React.TouchEvent<HTMLDivElement>) => applyFingers(touchList(event), false),
+    [applyFingers],
+  );
+
+  /**
+   * A touch the browser has taken away rather than the person lifting it.
+   *
+   * This exists because of one specific thing an iPhone does. Its screen reads
+   * **five** fingers — the iPad reads ten — and when a sixth lands, iOS does
+   * not ignore it: it cancels *every* touch on the screen at once. The list
+   * that arrives here is empty, and taking it at face value wiped the board
+   * mid-round. A child reaching in to join emptied the game for everybody,
+   * which is the worst possible response to somebody wanting to play.
+   *
+   * So a cancel that takes everything is not believed. The circles stay where
+   * they are, the clock keeps running, and the round is drawn between the
+   * hands that were already down. The sixth child does not get in — an iPhone
+   * physically cannot see them — but nobody loses their place, and on a screen
+   * that size a sixth finger has nowhere to go anyway.
+   *
+   * A cancel that takes *some* touches is a different thing, and is believed:
+   * that is the browser reporting a real change, and `event.touches` still
+   * lists everyone left.
+   *
+   * `frozenRef` marks the list as no longer verified. The next real touch
+   * event replaces it wholesale, and `reset` throws it away rather than
+   * starting a fresh round off fingers nobody can confirm are still there —
+   * without which a cancelled round would restart itself for ever.
+   */
+  const handleTouchCancel = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => {
+      if (event.touches.length === 0 && fingersRef.current.length > 0) {
+        frozenRef.current = true;
+        return;
+      }
+      applyFingers(touchList(event), false);
+    },
     [applyFingers],
   );
 
@@ -433,13 +503,7 @@ export function FingerPicker() {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchChange}
       onTouchEnd={handleTouchChange}
-      /*
-       * `touchcancel` is not an error case here — it is what iPadOS sends when
-       * it decides a handful of fingers was a system gesture. Treating it the
-       * same as a lift is the only honest response: those fingers really are
-       * gone as far as this page is concerned.
-       */
-      onTouchCancel={handleTouchChange}
+      onTouchCancel={handleTouchCancel}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
