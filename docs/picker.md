@@ -39,7 +39,7 @@ All of them are in `config/picker.ts`, because they are the design.
 |---|---|---|
 | `PICKER_SECONDS` | 5 | Long enough for a fifth child to get a finger down, short enough that nobody lets go. |
 | `PICKER_HOLD_MS` | 5000 | Solid colour after the flood finishes. Long enough to see who won, short enough that the next round starts before the argument restarts. |
-| `PICKER_FLOOD_MS` | 1000 | The colour expanding to fill the screen. |
+| `PICKER_FLOOD_MS` | 1500 | The colour expanding to fill the screen. Measured *before* the hold, so lengthening it does not eat into the five seconds of solid colour. |
 | `PICKER_CIRCLE_PX` | 132 | About two fingers wide. The circle is a token saying *you are in the draw*, not a cursor — everyone can already see where their own finger is. |
 
 ## The draw
@@ -56,15 +56,16 @@ the nearest leaves a wedge of background showing for the whole round.
 
 ### The flood is timed, and the easing matters more than the duration
 
-A full second, on a curve that is very nearly linear
-(`cubic-bezier(0.4, 0.06, 0.42, 1)`), reaching the corners at about 890ms.
+A second and a half, on a curve that is very nearly linear
+(`cubic-bezier(0.4, 0.06, 0.42, 1)`), reaching the corners at about 1.3s.
 
 Both halves of that are deliberate, and the second is the one that is easy to
 get wrong. The flood originally used the springy ease-out the rest of the app
 uses, which is 90% finished in the first quarter of its duration — so
 lengthening the transition changed nothing anybody could see. The colour still
 hit the edges in a couple of hundred milliseconds and spent the rest of the
-second imperceptibly finishing off.
+time imperceptibly finishing off. Fixing the curve is what made the duration
+mean anything; only then was it worth spending more of it.
 
 An ease-out is right when the destination is the point and the journey is
 overhead. Here the journey *is* the point: the circle leaving the winning

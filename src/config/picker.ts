@@ -17,13 +17,24 @@ export const PICKER_HOLD_MS = 5000;
 /**
  * How long the winning colour takes to flood the screen.
  *
- * A full second, deliberately slower than it wants to be. The flood is not a
- * transition between two screens — it is the *announcement*, and it starts at
- * the winning finger. Watching it leave that spot is how everybody round the
- * table sees whose colour it was; at 900ms it was over before the five of them
- * had finished looking down at their own hands.
+ * A second and a half, deliberately slower than it wants to be. The flood is
+ * not a transition between two screens — it is the *announcement*, and it
+ * starts at the winning finger. Watching it leave that spot is how everybody
+ * round the table sees whose colour it was.
+ *
+ * It has been lengthened twice, which is worth recording because the first
+ * attempt taught the wrong lesson. At 900ms it was over before five children
+ * had finished looking down at their own hands; going to 1000ms changed
+ * nothing anybody could see, because the *easing* was doing the damage rather
+ * than the duration — see the curve on the flood itself. With a near-linear
+ * curve the duration finally means what it says, and half a second more is
+ * the difference between seeing which finger it came from and inferring it
+ * afterwards from the colour.
+ *
+ * `PICKER_HOLD_MS` is measured from the end of this, so lengthening the flood
+ * does not eat into the five seconds of solid colour.
  */
-export const PICKER_FLOOD_MS = 1000;
+export const PICKER_FLOOD_MS = 1500;
 
 /** One full grow-and-shrink of a waiting circle. */
 export const PICKER_PULSE_MS = 1400;
