@@ -157,20 +157,20 @@ The card around each drawing themes normally, so they never look pasted on.
 
 ---
 
-## Why it is not in the tab bar
+## It was not in the tab bar for a long time
 
-It is on the dashboard, reached from there, with `slot: null` — the third page
-in the app to be dashboard-only, after Mantras and Healthy.
+For most of this app's life the bar had five fixed slots, and Bored was the
+third page left out of it — after Mantras and Healthy. The long note in
+`src/config/navigation.ts` argued each time about whether that was the moment to
+build a "More" sheet, and each time the answer was no.
 
-The long note in `src/config/navigation.ts` says a third dashboard-only page is
-the point at which a "More" sheet should be built, and that is still true. It
-shipped without one anyway, deliberately: **the dashboard is the better home
-for this page, not a consolation prize.** The bar is for pages you open with an
-intention already formed — where do I sit, what is on today. A bored child has
-no intention; that is the whole condition. The home screen is where they land,
-so the card is already in front of them without a tap, and a "More" sheet would
-put it one tap *further* away.
+The reasoning held up, and it is worth keeping because it is about this page
+specifically: **the dashboard was the better home, not a consolation prize.** A
+tab is for a page you open with an intention already formed — where do I sit,
+what is on today. A bored child has no intention; that is the whole condition.
+The home screen is where they land, so the card is already in front of them
+without a tap, and a "More" sheet would have put it one tap *further* away.
 
-The count still stands. The next page to need a home is the one that should
-build the sheet, and by then there will be four candidates to put in it rather
-than three.
+The bar scrolls now, so the question has gone away rather than been answered.
+Bored has a place in the strip *and* keeps its card, which is the right outcome
+for the one page in the app you arrive at without meaning to.

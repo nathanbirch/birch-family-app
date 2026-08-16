@@ -58,7 +58,7 @@ context payload).
 
 A private family app behind a single shared login. Signing in lands you on a
 dashboard with a card per page; a bottom tab bar moves between them, with Home
-in the middle. Today there are five real features — the **seating rotation**,
+pinned to the left of a strip that scrolls. Today there are five real features — the **seating rotation**,
 the **star charts**, the **family mantras**, the **calendar** and the **Healthy
 Birches** lists — plus an account page; the weekly celebration report and
 rewards are planned, and are listed on the dashboard so the app itself is the

@@ -230,9 +230,10 @@ describe("the page is wired into the app", () => {
     expect(bored!.icon).toBe("bored");
   });
 
-  it("is reached from the dashboard rather than the bottom bar", () => {
-    // The bar holds five and is full. See the long note in config/navigation.ts
-    // for why the dashboard is the better home for this page anyway.
-    expect(bored!.slot).toBeNull();
+  it("has a place in the bottom bar now that the bar scrolls", () => {
+    // It was reached from the dashboard alone while the bar held five. The
+    // strip lifted that limit, and a bored child should not have to go via
+    // Home. See the note in config/navigation.ts.
+    expect(typeof bored!.bar).toBe("number");
   });
 });

@@ -150,7 +150,7 @@ here, strongly typed, with no logic beyond simple lookups.
 |---|---|
 | `app.ts` | App name, rotation start date, every `localStorage` key |
 | `db.ts` | The database name and every collection name |
-| `navigation.ts` | The pages, the tools, the tab bar layout, the planned-feature cards |
+| `navigation.ts` | The pages, the tools, where each sits in the tab bar, the planned-feature cards |
 | `note.ts` | The Note's tools, inks, nibs, papers and the pad's fixed shape |
 | `picker.ts` | Finger Picker's timings and its ten circle colours |
 | `mantras.ts` | The family mantras, their verbatim quotes and sources |
@@ -187,7 +187,8 @@ deliberately split from the store beside it for exactly that reason.
 ### `src/components/` — the rendering
 
 ```
-nav/BottomNav         the tab bar; nav/NavIcon holds the icon set
+nav/BottomNav         the tab bar: Home pinned, the rest on a scrolling strip
+nav/NavIcon           the icon set
 mantras/MantraCard    one mantra: ours in large type, theirs in a blockquote
 mantras/MantraOfDay   client island; today's mantra, rolls over at midnight
 health/HealthArt      the five flat drawings, and the palette they tint with

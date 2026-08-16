@@ -79,7 +79,7 @@ are not stored. Reopening on the five cards is the better behaviour here anyway.
 
 ## Where it sits in the navigation
 
-Healthy is the first page with **`slot: null`** in
+Healthy was the first page with **no place in the bar** in
 [`navigation.ts`](../src/config/navigation.ts): it has a dashboard card but no
 tab in the bottom bar. The bar holds five, it already had five, and the four it
 would have pushed against are all things you open and close in seconds — where

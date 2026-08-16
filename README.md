@@ -94,9 +94,11 @@ npm start          # serve the production build locally
   least able to read their way out of it. The Money list prices jobs in **Dad
   Bucks** (`Đ`). See [The Bored Page](docs/bored.md).
 - **Account** (`/account`) — who's signed in, the theme picker, sign out.
-- **Bottom tab bar** — Turns · Stars · Home · Calendar · Account. Mantras and
-  Healthy are reached from the dashboard: the bar holds five, and a sixth tab
-  is too narrow to hit.
+- **Bottom tab bar** — Home pinned on the left, then every page on a strip that
+  scrolls sideways: Stars · Turns · Calendar · Bored · Ceremony · Healthy ·
+  Mantras · Account. Home never scrolls away and is always drawn more strongly
+  than the rest; the current page is a filled pill, and the strip slides itself
+  so that pill is on screen.
 - Ten themes including a dark one. Installable as a PWA.
 
 - **Family-context API** (`/api/family/v1/family-context`) — an

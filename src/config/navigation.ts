@@ -15,19 +15,23 @@
  * bottom bar also survives the on-screen keyboard and the browser chrome that
  * hides and reappears as you scroll, which a sticky top bar does not.
  *
- * The bar holds up to five destinations. Past that, tap targets get too narrow
- * to hit reliably and the pattern should change to a "More" sheet.
+ * Home is pinned to the left of it and every other page sits in a strip beside
+ * it that scrolls sideways — see the note on `NAV_ITEMS` for why it stopped
+ * being five fixed slots.
  */
 
 /**
- * Which slot an item takes in the bar, in left-to-right order.
+ * Where an item sits in the bottom bar.
  *
- * Home keeps its own slot name because it is the anchor, not because it is
- * always the geometric middle: with an even number of pages something has to
- * sit off-centre. Home is placed just right of centre, which on a phone held
- * one-handed is the easiest point on the bar to reach, not the hardest.
+ * `"home"` is the pinned button on the far left, which never moves and never
+ * scrolls out of reach. A **number** is a place in the strip beside it,
+ * lowest first. `null` means the bar does not carry it at all.
+ *
+ * The numbers are not indexes and do not have to be contiguous — they are sort
+ * keys, so a page can be moved along the strip by changing one number rather
+ * than by shuffling the whole list.
  */
-export type NavSlot = "far-left" | "left" | "home" | "right" | "far-right";
+export type NavBarPlace = "home" | number;
 
 /**
  * How much vertical space the fixed bar occupies, as a CSS length.
@@ -57,11 +61,10 @@ export type NavItem = {
   /** One line on the dashboard card explaining what the page is for. */
   description: string;
   /**
-   * Which bar position this occupies, or `null` for a page that is reached
-   * from the dashboard only. See the note on `NAV_ITEMS` — the bar is full,
-   * and a sixth tab would make every tap target too narrow to hit.
+   * Where this sits in the bottom bar, or `null` for something reached from
+   * the dashboard only. See `NavBarPlace`.
    */
-  slot: NavSlot | null;
+  bar: NavBarPlace | null;
   /** Key into `NAV_ICONS`. */
   icon: NavIconName;
   /**
@@ -105,84 +108,46 @@ export type NavIconName =
 /**
  * The live pages.
  *
- * The bar is full: five slots, five tabs. When Healthy arrived it became the
- * first page with `slot: null` — it is on the dashboard, and reached from
- * there, but it is not in the bar. That was chosen over displacing an existing
- * tab because the four it would push against are all things you open *and
- * close* in a few seconds (where do I sit, what's on today, sign out), whereas
- * Healthy is a page you sit and read. It is also the honest option: squeezing
- * a sixth tab in would take every target below the size a thumb reliably hits,
- * which is the whole reason the limit exists.
+ * ---------------------------------------------------------------------------
+ * THE BAR USED TO HOLD FIVE, AND MOST OF THIS FILE WAS THE ARGUMENT ABOUT IT
+ * ---------------------------------------------------------------------------
+ * For most of this app's life the bottom bar had five fixed slots, because
+ * five is as many tap targets as fit across a phone before each one is too
+ * narrow for a thumb. Every page after the fifth went on the dashboard
+ * instead, and each time one did, the comment here grew another section
+ * arguing about whether that was the moment to build a "More" sheet. Healthy,
+ * then Bored, then Ceremonies, then the two tools — four rounds of it, ending
+ * each time in "not yet".
  *
- * Stars then took the second tab off Mantras rather than becoming a second
- * dashboard-only page, by the criteria in the paragraph above: it is opened
- * every single day by five children, several times a day, and it is the only
- * page in the app you go to in order to *do* something rather than to read
- * something. Mantras is a page you sit with occasionally, which is exactly the
- * profile Healthy has, so it now sits beside it on the dashboard.
+ * The sheet was never built and now never will be. The bar **scrolls**: Home
+ * is pinned on the left where it cannot move, and every other page sits in a
+ * strip beside it that slides sideways under a thumb. That answers the whole
+ * argument rather than settling it, because the constraint the argument was
+ * about — five targets across 360 pixels — is not a constraint on a strip that
+ * is allowed to be wider than the screen.
  *
- * If a seventh page ever needs a home, that is the point to build the "More"
- * sheet rather than pushing a third page onto the dashboard alone.
+ * Two things the old rounds got right are kept, and are the reason the strip
+ * has an order rather than just a list:
+ *
+ *   **Stars is first.** It is opened every day by five children, several times
+ *   a day, and it is the only page you go to in order to *do* something rather
+ *   than to read something.
+ *   **Account is last.** It is the one nobody opens daily, so it takes the
+ *   least reachable end — which on a strip is the far side of a scroll rather
+ *   than a corner.
  *
  * ---------------------------------------------------------------------------
- * THAT POINT HAS NOW ARRIVED, AND THE SHEET STILL IS NOT BUILT
+ * WHY THE TOOLS ARE STILL NOT IN IT
  * ---------------------------------------------------------------------------
- * Bored is the third dashboard-only page, which is exactly the threshold the
- * paragraph above names. It shipped without the sheet anyway, deliberately, and
- * the reasoning is worth writing down rather than leaving as an oversight:
+ * The Note and the Finger Picker have `bar: null` even though there is now
+ * room for them, and that is a decision rather than an oversight. See
+ * `NavGroup`: they are not destinations. You do not navigate to a scribble pad,
+ * you pick one up — which is also why `last-page-storage` refuses to remember
+ * either of them as the page you were last on. A tab is a claim that somewhere
+ * is a place you go back to, and for these two it would be the wrong claim.
  *
- * The dashboard is not a consolation prize for Bored — it is the better home
- * for it. The bar is for the pages you open with an intention already formed
- * ("where do I sit", "what's on today"). A bored child has no intention; they
- * have opened the app precisely because they do not know what they want. The
- * home screen is where they land, so the card is already in front of them
- * without a tap, and a "More" sheet would put it one tap *further* away than
- * it is now.
- *
- * So the rule stands and the count is real — three is where a "More" sheet
- * becomes the right answer. The next page to need a home is the one that
- * should build it, and by then there will be four candidates to put in it
- * rather than three, which makes the sheet easier to justify and better to
- * design. See docs/bored.md.
- *
- * ---------------------------------------------------------------------------
- * THE FOURTH ONE HAS NOW ARRIVED TOO, AND STILL NO SHEET
- * ---------------------------------------------------------------------------
- * Ceremonies is the fourth dashboard-only page. It has the profile the
- * paragraph above describes for a sheet — but it also has a shape none of the
- * others do: it is looked at *once a week*, on a Monday, and never twice. A
- * tab (or a slot in a sheet) is for somewhere you go repeatedly; a card on the
- * home screen is exactly right for somewhere you go when it is new, because
- * the home screen is where you land and the card is already in front of you.
- *
- * The sheet is therefore still unbuilt, and this is now the second page in a
- * row to have said so. That is worth reading as a warning: if a *fifth*
- * dashboard-only page turns up and the reasoning has to be written a third
- * time, the reasoning is wrong and the sheet is overdue.
- *
- * ---------------------------------------------------------------------------
- * THE FIFTH AND SIXTH ARRIVED, AND THE WARNING ABOVE WAS RIGHT
- * ---------------------------------------------------------------------------
- * The Note and the Finger Picker are entries five and six. By the rule written
- * directly above, that is where the excuses stop.
- *
- * They stop here in a different way than expected, though. The honest reading
- * of those two is that they are not pages at all — see `NavGroup`. A "More"
- * sheet is a list of *destinations* that did not fit; putting a scribble pad
- * behind two taps and a slide-up would be the worst possible home for it, and
- * the Picker gets opened mid-argument with five children shouting, which is
- * not the moment for a menu.
- *
- * So: four dashboard-only pages, unchanged, and the sheet is still the right
- * answer for the *fifth page*. What shipped instead is a second, smaller shelf
- * on the dashboard for the two tools, which costs the page list nothing.
- *
- * That is a real answer, not a third excuse — but it is only an answer for
- * tools. If a fifth dashboard-only **page** turns up, build the sheet.
- *
- * Account sits at the far right rather than beside Home. It is the one tab
- * nobody opens daily, so it takes the least reachable corner and Calendar —
- * which is checked constantly — takes the slot next to Home.
+ * They are one tap from the dashboard, on the Handy shelf, which is where a
+ * thing you pick up belongs.
  */
 export const NAV_ITEMS: readonly NavItem[] = [
   {
@@ -191,7 +156,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     title: "Whose Turn",
     description:
       "Whose turn for which seat this week, and for Bella and Leia tonight.",
-    slot: "far-left",
+    bar: 2,
     icon: "seats",
   },
   {
@@ -200,7 +165,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     title: "Star Charts",
     description:
       "Chores, learning and hygiene — every star, all in one place.",
-    slot: "left",
+    bar: 1,
     icon: "stars",
   },
   {
@@ -208,7 +173,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Mantras",
     title: "Family Mantras",
     description: "The things we say to each other, and where they came from.",
-    slot: null,
+    bar: 7,
     icon: "mantras",
   },
   {
@@ -216,7 +181,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Home",
     title: "Home",
     description: "Everything, all in one place.",
-    slot: "home",
+    bar: "home",
     icon: "home",
   },
   {
@@ -224,7 +189,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Calendar",
     title: "Calendar",
     description: "The family's Google Calendar, by day, week or month.",
-    slot: "right",
+    bar: 3,
     icon: "calendar",
   },
   {
@@ -233,7 +198,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     title: "Healthy Birches",
     description:
       "The five lists off the wall: body, mind, feelings, spirit and home.",
-    slot: null,
+    bar: 6,
     icon: "health",
   },
   {
@@ -241,7 +206,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Bored",
     title: "Bored?",
     description: "Inside, outside, or earn some Dad Bucks.",
-    slot: null,
+    bar: 4,
     icon: "bored",
   },
   {
@@ -249,7 +214,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Ceremony",
     title: "Ceremonies",
     description: "Last week's award ceremony: every star, and what it was worth.",
-    slot: null,
+    bar: 5,
     icon: "report",
   },
   {
@@ -257,7 +222,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Note",
     title: "The Note",
     description: "A pad on the fridge. Write on it with the pencil; it stays until it is cleared.",
-    slot: null,
+    bar: null,
     icon: "note",
     group: "tool",
   },
@@ -266,7 +231,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Picker",
     title: "Finger Picker",
     description: "Everyone puts a finger on the screen. After five, it picks one.",
-    slot: null,
+    bar: null,
     icon: "picker",
     group: "tool",
   },
@@ -275,14 +240,14 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Account",
     title: "Account",
     description: "Theme, sign out, and what this app is.",
-    slot: "far-right",
+    bar: 8,
     icon: "account",
   },
 ] as const;
 
 /** The dashboard lists every page except the dashboard itself. */
 export const DASHBOARD_ITEMS: readonly NavItem[] = NAV_ITEMS.filter(
-  (item) => item.slot !== "home",
+  (item) => item.bar !== "home",
 );
 
 /**
@@ -349,18 +314,44 @@ export const PLANNED_FEATURES: readonly PlannedFeature[] = [
 ] as const;
 
 /**
- * Ordered for the bar, left to right. Missing slots are simply absent, and a
- * page with no slot at all never appears here.
+ * The pinned button on the far left of the bar.
+ *
+ * Home is the only thing in the bar that is never scrolled away from, which is
+ * what makes the strip beside it safe to scroll at all: however far along
+ * somebody has pushed it, the way back to the middle of the app is exactly
+ * where it always is.
+ *
+ * It throws rather than returning `undefined`. A bar with no Home is not a
+ * degraded bar, it is a broken app, and failing at the point of the mistake is
+ * more useful than rendering a strip with a hole on the left.
  */
-export function getNavBarItems(): readonly BarNavItem[] {
-  const order: NavSlot[] = ["far-left", "left", "home", "right", "far-right"];
-  return order
-    .map((slot) => NAV_ITEMS.find((item) => item.slot === slot))
-    .filter((item): item is BarNavItem => item !== undefined);
+export function getNavHome(): NavItem {
+  const home = NAV_ITEMS.find((item) => item.bar === "home");
+  if (!home) {
+    throw new Error(
+      'No NAV_ITEM has `bar: "home"`. The bottom bar needs a pinned Home ' +
+        "button. Check config/navigation.ts.",
+    );
+  }
+  return home;
 }
 
-/** A page that actually has a place in the bar. */
-export type BarNavItem = NavItem & { slot: NavSlot };
+/** A page with a numbered place in the scrolling strip. */
+export type StripNavItem = NavItem & { bar: number };
+
+/**
+ * The scrolling strip, in order, left to right.
+ *
+ * Sorted by the number rather than by position in `NAV_ITEMS`, so the strip's
+ * order and the dashboard's are free to differ — and they do. The dashboard is
+ * a list you read down; the strip is a row you reach along, and the two do not
+ * want the same order.
+ */
+export function getNavStripItems(): readonly StripNavItem[] {
+  return NAV_ITEMS.filter(
+    (item): item is StripNavItem => typeof item.bar === "number",
+  ).sort((a, b) => a.bar - b.bar);
+}
 
 /**
  * Whether `href` is the page currently shown.

@@ -6,7 +6,8 @@ import {
   DASHBOARD_TOOLS,
   NAV_ITEMS,
   PLANNED_FEATURES,
-  getNavBarItems,
+  getNavHome,
+  getNavStripItems,
   isActivePath,
 } from "@/config/navigation";
 
@@ -23,15 +24,19 @@ describe("navigation items", () => {
   });
 
   it("has exactly one home, and it is the dashboard", () => {
-    const home = NAV_ITEMS.filter((item) => item.slot === "home");
+    const home = NAV_ITEMS.filter((item) => item.bar === "home");
     expect(home).toHaveLength(1);
     expect(home[0].href).toBe("/");
+    expect(getNavHome().href).toBe("/");
   });
 
-  it("puts at most one page in each side slot", () => {
-    for (const slot of ["far-left", "left", "right", "far-right"] as const) {
-      expect(NAV_ITEMS.filter((item) => item.slot === slot).length).toBeLessThanOrEqual(1);
-    }
+  it("keeps Home out of the strip, so a scroll can never hide it", () => {
+    /*
+     * The one thing the bar guarantees. However far the strip has been pushed
+     * along, the way back to the middle of the app is exactly where it always
+     * is — which is only true while Home is not in the part that moves.
+     */
+    expect(getNavStripItems().map((item) => item.href)).not.toContain("/");
   });
 
   it("starts every route at the root", () => {
@@ -42,27 +47,35 @@ describe("navigation items", () => {
 
   it("keeps bar labels short enough to fit a phone", () => {
     /*
-     * A tab is about 69px wide on a 360px phone, and "Calendar" — eight
-     * characters at 0.7rem — is already most of it. The label truncates inside
-     * its own tab rather than pushing its neighbours around, and ten is the
-     * point past which the ellipsis would start eating real letters.
+     * A tab in the strip is a fixed 4.25rem — 68px — and "Calendar" at
+     * 0.65rem is already most of it. The label truncates inside its own tab
+     * rather than pushing its neighbours along the strip, and ten is the point
+     * past which the ellipsis would start eating real letters.
      */
     for (const item of NAV_ITEMS) {
       expect(item.label.length).toBeLessThanOrEqual(10);
     }
   });
 
-  it("stays within the five destinations a bottom bar can hold", () => {
-    // Pages with no slot are reached from the dashboard and cost the bar
-    // nothing; it is the *tabs* that have to stay at five or fewer, because
-    // past that the targets are too narrow for a thumb.
-    const tabs = NAV_ITEMS.filter((item) => item.slot !== null);
-    expect(tabs.length).toBeLessThanOrEqual(5);
+  it("carries every page in the bar, now that it scrolls", () => {
+    /*
+     * The five-slot limit is gone, so a *page* being absent from the bar is no
+     * longer a considered trade-off — it is an omission. Tools are a different
+     * thing and are checked separately below.
+     */
+    const strip = getNavStripItems().map((item) => item.href);
+    for (const item of NAV_ITEMS) {
+      if (item.group === "tool" || item.bar === "home") continue;
+      expect(strip).toContain(item.href);
+    }
   });
 
-  it("keeps dashboard-only pages off the bar but on the dashboard", () => {
-    const offBar = NAV_ITEMS.filter((item) => item.slot === null);
-    const barHrefs = getNavBarItems().map((item) => item.href);
+  it("keeps anything off the bar reachable from the dashboard", () => {
+    const offBar = NAV_ITEMS.filter((item) => item.bar === null);
+    const barHrefs = [
+      getNavHome().href,
+      ...getNavStripItems().map((item) => item.href),
+    ];
     const cardHrefs = DASHBOARD_ITEMS.map((item) => item.href);
     for (const item of offBar) {
       expect(barHrefs).not.toContain(item.href);
@@ -73,18 +86,28 @@ describe("navigation items", () => {
 });
 
 describe("bar ordering", () => {
-  it("returns the slots in left-to-right order, skipping empty ones", () => {
-    const order = ["far-left", "left", "home", "right", "far-right"];
-    const slots = getNavBarItems().map((item) => item.slot);
-    // Whatever is configured, the bar must come out in bar order — and the
-    // one empty slot must simply not appear rather than leaving a gap.
-    expect(slots).toEqual([...slots].sort((a, b) => order.indexOf(a) - order.indexOf(b)));
-    expect(slots).toContain("home");
+  it("comes out sorted by its place, not by config order", () => {
+    // The strip's order and the dashboard's are free to differ, and they do:
+    // one is a list you read down, the other a row you reach along.
+    const places = getNavStripItems().map((item) => item.bar);
+    expect(places).toEqual([...places].sort((a, b) => a - b));
   });
 
-  it("renders every page that asked for a slot", () => {
-    const slotted = NAV_ITEMS.filter((item) => item.slot !== null);
-    expect(getNavBarItems()).toHaveLength(slotted.length);
+  it("renders every page that asked for a place", () => {
+    const placed = NAV_ITEMS.filter((item) => typeof item.bar === "number");
+    expect(getNavStripItems()).toHaveLength(placed.length);
+  });
+
+  it("puts Stars first and Account last", () => {
+    /*
+     * The two orderings carried over from the old five-slot bar, and the only
+     * two the strip's order is really *about*. Stars is opened several times a
+     * day by five children; Account is opened by nobody daily, so it takes the
+     * end that needs a scroll.
+     */
+    const strip = getNavStripItems();
+    expect(strip[0].href).toBe("/stars");
+    expect(strip[strip.length - 1].href).toBe("/account");
   });
 });
 
@@ -123,10 +146,14 @@ describe("dashboard cards", () => {
   });
 
   it("never puts a tool in the bottom bar", () => {
-    // A tool is something you pick up from the dashboard. Giving one a tab
-    // would spend one of five slots on something opened once a week.
+    /*
+     * There is room for them now, and they are still out. A tab is a claim
+     * that somewhere is a place you go back to; for a scribble pad and a
+     * finger picker that would be the wrong claim, which is the same reason
+     * `last-page-storage` refuses to remember either of them. See `NavGroup`.
+     */
     for (const item of DASHBOARD_TOOLS) {
-      expect(item.slot).toBeNull();
+      expect(item.bar).toBeNull();
     }
   });
 

@@ -26,10 +26,11 @@ four steps and no wiring:
 Putting the file inside the `(app)` group is what protects it — the group's
 layout runs the auth check for everything beneath it.
 
-> The bottom bar holds **at most five** destinations, and only three slots
-> (`left`, `home`, `right`) are modelled today. Past that, tap targets get too
-> narrow and the pattern needs to change to a "More" sheet. `navigation.test.ts`
-> fails if you exceed five.
+> Give it a `bar` number and it appears in the bottom bar's scrolling strip,
+> lowest first — the numbers are sort keys, not indexes, so moving a page along
+> the strip is one edit. `bar: null` keeps it off the bar entirely, which is
+> what the two *tools* do. Home is `bar: "home"` and is pinned outside the
+> scroll; `navigation.test.ts` fails if a second page claims it.
 
 ---
 

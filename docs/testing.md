@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **1,282 tests across 60 files.**
+Vitest with jsdom and Testing Library. **1,297 tests across 60 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -449,18 +449,22 @@ where the app decides what a visitor is told, so every branch is pinned:
 *(The mocked `redirect()` throws, as the real one does, so a bug that let the
 action continue past it would fail rather than pass silently.)*
 
-### `navigation.test.ts` — 21 tests
+### `navigation.test.ts` — 22 tests
 The nav config that the tab bar and the dashboard are both generated from:
 
-- Unique routes, exactly one Home, at most one page per side slot
-- Labels short enough for a tab; no more than the five a bottom bar can hold
-- Bar order is left → home → right
+- Unique routes, exactly one Home, and Home never in the scrolling part
+- Labels short enough for a tab, which is a fixed 68px in the strip
+- The strip comes out sorted by its place, Stars first and Account last
 - The dashboard lists every page except itself
-- **Pages and tools together are exactly the dashboard**, and no tool takes a
-  tab — the two sections are a rendering decision, not a second source of truth
+- **Every page has a tab now that the bar scrolls** — an absent page is an
+  omission rather than a considered trade-off
+- **No tool has one**, even though there is room. A tab is a claim that
+  somewhere is a place you go back to, and for a scribble pad it is the wrong
+  claim
+- **Pages and tools together are exactly the dashboard** — the two sections are
+  a rendering decision, not a second source of truth
 - **The page list stays at eight or fewer**, which is the point past which
-  Account falls below the fold on a phone. If that fails, the "More" sheet
-  `config/navigation.ts` keeps deferring is finally due
+  Account falls below the fold on the dashboard
 - Nothing is advertised as "coming soon" that already exists
 - Active-tab matching: exact for Home, sub-routes for the rest, and
   **`/turns` must not match `/turns-plan`** — the bug a naive `startsWith`

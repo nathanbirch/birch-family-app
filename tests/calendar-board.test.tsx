@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CalendarBoard } from "@/components/calendar/CalendarBoard";
 import type { CalendarEvent } from "@/lib/calendar/events";
-import { NAV_ITEMS, getNavBarItems } from "@/config/navigation";
+import { NAV_ITEMS, getNavStripItems } from "@/config/navigation";
 
 /*
  * The board reads the *device's* date after mount, so these tests fix it: the
@@ -295,18 +295,18 @@ describe("navigation", () => {
     expect(hrefs).toContain("/calendar");
   });
 
-  it("keeps the bar within the five slots it can hold", () => {
-    expect(getNavBarItems().length).toBeLessThanOrEqual(5);
+  it("gives every tab in the strip a distinct place", () => {
+    // The numbers are sort keys, so two pages sharing one would order by
+    // whichever `sort` happened to prefer — stable in practice, arbitrary by
+    // contract, and a strip that reshuffled itself on a Node upgrade.
+    const places = getNavStripItems().map((item) => item.bar);
+    expect(new Set(places).size).toBe(places.length);
   });
 
-  it("gives every bar item a distinct slot", () => {
-    // Only the *slotted* pages have to be distinct. `null` is not a slot, and
-    // more than one page is reached from the dashboard alone — Mantras and
-    // Healthy — so counting those in would fail for no good reason.
-    const slots = NAV_ITEMS.map((item) => item.slot).filter(
-      (slot) => slot !== null,
-    );
-    expect(new Set(slots).size).toBe(slots.length);
+  it("keeps Calendar near the reachable end of the strip", () => {
+    // It is checked constantly, so it should not be behind a scroll.
+    const calendar = NAV_ITEMS.find((item) => item.href === "/calendar")!;
+    expect(calendar.bar).toBeLessThanOrEqual(3);
   });
 });
 

@@ -115,6 +115,24 @@ body,
     0 12px 32px -18px var(--color-shadow);
 }
 
+/*
+ * The scrolling half of the bottom bar.
+ *
+ * The scrollbar is hidden rather than styled. It is a bar of tab targets on a
+ * touchscreen, where nothing draws one anyway; on a desktop it would be a grey
+ * line across the bottom of the app, permanently, for a row that already says
+ * it scrolls by fading at whichever end has more — see `fadeFor` in
+ * `BottomNav.tsx`.
+ */
+.nav-strip {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.nav-strip::-webkit-scrollbar {
+  display: none;
+}
+
 /* Screen-reader-only, but still focusable when it needs to be. */
 .sr-only:not(:focus):not(:active) {
   position: absolute;
