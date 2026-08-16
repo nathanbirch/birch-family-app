@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { isStarDealId } from "@/config/deals";
 import { CHILD_IDS, type ChildId } from "@/config/family";
-import { STAR_DAY_COUNT } from "@/config/stars";
+import { STAR_MAX_DAY_COUNT } from "@/config/stars";
 import { requireUser } from "@/lib/auth/dal";
 import { familyNow } from "@/lib/family-api/time";
 
@@ -35,7 +35,12 @@ const ToggleSchema = z.object({
   /** The Monday of the week, `YYYY-MM-DD`. */
   weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "That is not a date."),
   taskId: z.string().min(1).max(64),
-  dayIndex: z.number().int().min(0).max(STAR_DAY_COUNT - 1),
+  /*
+   * The widest a week ever is. The real gate is `openDayIndex` below, which
+   * knows which week this is and what day it is where the children are; this
+   * only keeps a nonsense number out of the parser.
+   */
+  dayIndex: z.number().int().min(0).max(STAR_MAX_DAY_COUNT - 1),
   value: z.boolean(),
 });
 
@@ -86,7 +91,7 @@ export async function setStar(input: {
       ok: false,
       message:
         openIndex === -1
-          ? "Stars can only be coloured in Monday to Friday."
+          ? "Stars can only be coloured in Monday to Saturday."
           : "Only today's star can be coloured in.",
     };
   }

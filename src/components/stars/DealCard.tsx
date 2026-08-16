@@ -13,7 +13,7 @@ import { Confetti } from "./Confetti";
  * ---------------------------------------------------------------------------
  * WHY THE REST OF THE WEEK IS NOT ON IT
  * ---------------------------------------------------------------------------
- * The three chart cards draw all five columns, because the week is the picture
+ * The three chart cards draw every column, because the week is the picture
  * and a child looking at Wednesday should see what Monday came to. A deal
  * cannot work that way: it is a thing that *pops up*. Thursday's deal shown on
  * Monday is no longer a surprise, and — more practically — it is an invitation
@@ -21,8 +21,8 @@ import { Confetti } from "./Confetti";
  * dishonesty `openDayIndex()` exists to prevent.
  *
  * So the card shows today's deal and the ones already gone, and nothing ahead.
- * At the weekend, when there is no open day left in the week and nothing to
- * spoil, it shows all five.
+ * On a Sunday, when the week is over and there is nothing left to spoil, it
+ * shows all of them.
  *
  * ---------------------------------------------------------------------------
  * WHY TODAY'S IS A DIFFERENT SHAPE FROM THE OTHERS
@@ -58,9 +58,9 @@ export function DealCard({
 
   const today = slots.find((slot) => slot.dayIndex === todayIndex) ?? null;
   /*
-   * Everything already gone. On a weekday that is the days before today; at the
-   * weekend the week is closed and there is nothing left to give away, so all
-   * five are shown at once.
+   * Everything already gone. On a chart day that is the days before today; on
+   * a Sunday the week is closed and there is nothing left to give away, so the
+   * whole week is shown at once.
    */
   const past = slots.filter((slot) =>
     todayIndex === -1 ? true : slot.dayIndex < todayIndex,
@@ -115,7 +115,7 @@ export function DealCard({
           style={{ color: "var(--color-text-muted)" }}
         >
           {todayIndex === -1
-            ? "No deal at the weekend — the next one lands on Monday."
+            ? "No deal on Sunday — the next one lands on Monday."
             : "No deal today."}
         </p>
       )}

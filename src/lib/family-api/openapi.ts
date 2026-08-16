@@ -413,7 +413,7 @@ export function buildOpenApiDocument(): YamlValue {
                         type: "string",
                         enum: ["complete", "incomplete", "not-tracked-today"],
                         description:
-                          "`not-tracked-today` means it is the weekend — the charts run Monday to Friday, so nothing is owed today.",
+                          "`not-tracked-today` means it is Sunday — the charts run Monday to Saturday, so nothing is owed today.",
                       },
                     },
                   },

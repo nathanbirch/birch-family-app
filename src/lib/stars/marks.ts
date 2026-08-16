@@ -6,7 +6,7 @@ import type { Collection, ObjectId } from "mongodb";
 import { COLLECTIONS } from "@/config/db";
 import { isStarDealId } from "@/config/deals";
 import { CHILD_IDS, type ChildId } from "@/config/family";
-import { STAR_DAY_COUNT, isStarTaskId } from "@/config/stars";
+import { STAR_MAX_DAY_COUNT, isStarTaskId } from "@/config/stars";
 import { reportDegraded } from "@/lib/data-health";
 import { getCollection } from "@/lib/db";
 
@@ -198,9 +198,20 @@ export async function setStarMark(
   if (!isStarMarkId(taskId)) {
     throw new Error(`Unknown star task: "${taskId}".`);
   }
-  if (!Number.isInteger(dayIndex) || dayIndex < 0 || dayIndex >= STAR_DAY_COUNT) {
+  /*
+   * The widest a week ever is, not the width of *this* week. Storage is one
+   * shape for every week (see `STAR_MAX_DAY_COUNT`), and which of those columns
+   * a particular week actually offers is enforced where it belongs — the
+   * Server Action checks `openDayIndex`, which knows both the week and the
+   * family's clock, and refuses everything except the day that is happening.
+   */
+  if (
+    !Number.isInteger(dayIndex) ||
+    dayIndex < 0 ||
+    dayIndex >= STAR_MAX_DAY_COUNT
+  ) {
     throw new Error(
-      `Day ${dayIndex} is outside the ${STAR_DAY_COUNT}-day week.`,
+      `Day ${dayIndex} is outside the ${STAR_MAX_DAY_COUNT}-day week.`,
     );
   }
 
@@ -219,7 +230,7 @@ export async function setStarMark(
               {
                 [taskId]: {
                   $map: {
-                    input: { $range: [0, STAR_DAY_COUNT] },
+                    input: { $range: [0, STAR_MAX_DAY_COUNT] },
                     as: "day",
                     in: {
                       $cond: [
@@ -309,7 +320,7 @@ function normaliseMarks(raw: Record<string, unknown>): StarMarks {
     if (!isStarMarkId(taskId)) continue;
     const source = Array.isArray(row) ? row : [];
     marks[taskId] = Array.from(
-      { length: STAR_DAY_COUNT },
+      { length: STAR_MAX_DAY_COUNT },
       (_, day) => source[day] === true,
     );
   }

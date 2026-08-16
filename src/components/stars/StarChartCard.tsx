@@ -12,12 +12,13 @@ import { StarRow } from "./StarRow";
  *
  * The three sit stacked on one page rather than behind tabs, because on the
  * fridge they are three sheets side by side and a child checks all three in
- * one pass. The `M T W T F` header repeats on each card so the columns are
- * still labelled after you have scrolled past the first one.
+ * one pass. The day header repeats on each card so the columns are still
+ * labelled after you have scrolled past the first one.
  */
 export function StarChartCard({
   section,
   marks,
+  dayCount,
   todayIndex,
   accent,
   accentInk,
@@ -27,6 +28,8 @@ export function StarChartCard({
 }: {
   section: ChartSection;
   marks: StarMarks;
+  /** How many columns this week has. See `starDayCount`. */
+  dayCount: number;
   todayIndex: number;
   /** The child's own identifying colour, from `config/family.ts`. */
   accent: string;
@@ -41,7 +44,7 @@ export function StarChartCard({
   celebrationColors: readonly string[];
   onToggle: (taskId: string, dayIndex: number, value: boolean) => void;
 }) {
-  const totals = tally(marks, section.tasks);
+  const totals = tally(marks, section.tasks, dayCount);
 
   return (
     /*
@@ -93,7 +96,7 @@ export function StarChartCard({
       <div className="mb-1 flex items-center gap-2 px-2" aria-hidden="true">
         <span className="min-w-0 flex-1" />
         <span className="flex shrink-0">
-          {STAR_DAY_LABELS.map((day, index) => (
+          {STAR_DAY_LABELS.slice(0, dayCount).map((day, index) => (
             <span
               key={index}
               className="flex h-5 w-11 items-center justify-center text-[0.7rem] font-bold"
@@ -116,6 +119,7 @@ export function StarChartCard({
             key={task.id}
             task={task}
             row={rowFor(marks, task.id)}
+            dayCount={dayCount}
             todayIndex={todayIndex}
             onToggle={(day, value) => onToggle(task.id, day, value)}
           />

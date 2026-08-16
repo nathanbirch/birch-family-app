@@ -321,16 +321,65 @@ export const STAR_TASKS: readonly StarTask[] = [
 ] as const;
 
 /**
- * The five columns on every chart: Monday to Friday.
+ * The widest a chart week ever is: Monday to Saturday.
  *
- * The charts print `M T W T F` and nothing else, so a star cannot be earned at
- * the weekend. Everything downstream — the stored marks array, the grid, the
- * "whole row" reward — is five wide because of this one constant.
+ * This is the *storage* width and the validation ceiling, not the number of
+ * columns any particular week has — see `starDayCount`. Rows are always kept
+ * this wide so that one shape comes out of the database whatever week it came
+ * from, and a week that is narrower than this simply never looks at the last
+ * column.
+ *
+ * Sunday has no column and never will. It is the day the ceremony happens, and
+ * a chart you could still be filling in during your own awards night is a
+ * chart the awards night cannot be trusted to have counted.
  */
-export const STAR_DAY_COUNT = 5;
+export const STAR_MAX_DAY_COUNT = 6;
 
-/** Column headings, exactly as printed. Index 0 is Monday. */
-export const STAR_DAY_LABELS = ["M", "T", "W", "T", "F"] as const;
+/**
+ * The Monday from which Saturday counts.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THIS IS A DATE AND NOT SIMPLY A SIX
+ * ---------------------------------------------------------------------------
+ * The charts ran Monday to Friday until this. Saturday was added because the
+ * family wanted it, and the obvious change — make the constant a 6 and be done
+ * — would have quietly rewritten every week already earned.
+ *
+ * Not the stars themselves: those are stored per day and none of them moves.
+ * What moves is everything measured *against* the width of a week. A child who
+ * filled a row all the way across in July would stop having filled it, because
+ * five is no longer all the way; every past week's "possible" would grow by a
+ * fifth, so every past percentage would fall; and `praiseFor` would downgrade
+ * a perfect week to "What a week!" for a Saturday nobody was ever offered.
+ *
+ * The first ceremony to run under this change covers a week that ran Monday to
+ * Friday, so that is not a hypothetical — it is what the family would have
+ * watched.
+ *
+ * So the width is a property of the *week*, anchored here, exactly as the
+ * rotation start date and the chore anchor are. Weeks before this Monday are
+ * five days wide for ever; weeks from it are six.
+ */
+export const SATURDAY_FROM_WEEK = "2026-08-17";
+
+/**
+ * How many columns the week beginning `weekStartIso` has.
+ *
+ * A plain string comparison, which is exact rather than lax: ISO dates sort as
+ * strings precisely as they sort as calendar days, so this needs no parsing
+ * and cannot pick up a timezone on the way.
+ */
+export function starDayCount(weekStartIso: string): number {
+  return weekStartIso >= SATURDAY_FROM_WEEK ? STAR_MAX_DAY_COUNT : 5;
+}
+
+/**
+ * Column headings, exactly as printed. Index 0 is Monday.
+ *
+ * The full six. A narrower week takes `.slice(0, starDayCount(week))` rather
+ * than having a list of its own, so there is one place a day is named.
+ */
+export const STAR_DAY_LABELS = ["M", "T", "W", "T", "F", "S"] as const;
 
 /** Full day names, for screen readers and the report. */
 export const STAR_DAY_NAMES = [
@@ -339,6 +388,7 @@ export const STAR_DAY_NAMES = [
   "Wednesday",
   "Thursday",
   "Friday",
+  "Saturday",
 ] as const;
 
 const TASKS_BY_ID = new Map(STAR_TASKS.map((task) => [task.id, task]));

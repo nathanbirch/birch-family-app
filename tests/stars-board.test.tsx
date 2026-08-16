@@ -5,6 +5,7 @@ import { StarsBoard } from "@/components/stars/StarsBoard";
 import { CHORE_POOLS } from "@/config/chore-rotation";
 import { SOUND_STORAGE_KEY } from "@/config/app";
 import { CHILD_IDS } from "@/config/family";
+import { SATURDAY_FROM_WEEK } from "@/config/stars";
 import type { StarMarks, WeekMarks } from "@/lib/stars/counting";
 import { getDealForChild } from "@/lib/stars/deals";
 import { getTasksForChild } from "@/lib/stars/tasks";
@@ -668,5 +669,51 @@ describe("the Star Deal", () => {
       labels.add(dealStar().getAttribute("aria-label")!);
     }
     expect(labels.size).toBe(5);
+  });
+});
+
+describe("how wide the week is drawn", () => {
+  /*
+   * The board is handed a `weekStart` and must draw the week that actually
+   * was: five columns before Saturday was offered, six from then on. Getting
+   * this from the week rather than from a constant is what stops an old week
+   * growing a Saturday nobody could have earned — see `SATURDAY_FROM_WEEK`.
+   */
+  function columnsFor(weekStart: string): number {
+    const view = render(
+      <StarsBoard
+        initialDateIso={weekStart}
+        weekStart={weekStart}
+        pools={CHORE_POOLS}
+        marks={blankWeek()}
+      />,
+    );
+    const stars = view.container.querySelectorAll(
+      'button[aria-label*="Tidy room on"]',
+    );
+    const count = stars.length;
+    view.unmount();
+    return count;
+  }
+
+  it("draws five columns for a week that ran Monday to Friday", () => {
+    expect(columnsFor("2026-08-10")).toBe(5);
+  });
+
+  it("draws six for a week that includes Saturday", () => {
+    expect(columnsFor(SATURDAY_FROM_WEEK)).toBe(6);
+  });
+
+  it("names the sixth column Saturday, and never a seventh", () => {
+    render(
+      <StarsBoard
+        initialDateIso={SATURDAY_FROM_WEEK}
+        weekStart={SATURDAY_FROM_WEEK}
+        pools={CHORE_POOLS}
+        marks={blankWeek()}
+      />,
+    );
+    expect(screen.getByLabelText(/Tidy room on Saturday/)).toBeDefined();
+    expect(screen.queryByLabelText(/Tidy room on Sunday/)).toBeNull();
   });
 });

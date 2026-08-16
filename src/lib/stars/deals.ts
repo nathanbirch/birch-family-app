@@ -42,10 +42,10 @@
  * ---------------------------------------------------------------------------
  * THE CHART-DAY NUMBER
  * ---------------------------------------------------------------------------
- * Days are counted in *chart* days, not calendar days: five to a week, Monday
- * to Friday, because that is the only kind of day a star can be earned on. If
- * the count ran over the calendar, every weekend would silently skip two deals
- * and two sevenths of this list would never be offered to anybody.
+ * Days are counted in *chart* days, not calendar days: Monday to Saturday,
+ * because that is the only kind of day a star can be earned on. If the count
+ * ran over the calendar, every Sunday would silently skip a deal and a seventh
+ * of this list would never be offered to anybody.
  */
 
 import {
@@ -55,8 +55,8 @@ import {
   type StarDeal,
 } from "@/config/deals";
 import { CHILD_IDS, type ChildId } from "@/config/family";
-import { STAR_DAY_COUNT } from "@/config/stars";
-import { differenceInCalendarWeeks, parseLocalDate } from "@/lib/dates";
+import { STAR_MAX_DAY_COUNT, starDayCount } from "@/config/stars";
+import { differenceInCalendarWeeks, parseLocalDate, toIsoDate } from "@/lib/dates";
 
 /** One child's deal for one day of the week. */
 export type DealSlot = {
@@ -86,7 +86,18 @@ export function dealDayNumber(monday: Date, dayIndex: number): number {
         `date. Check config/deals.ts.`,
     );
   }
-  return differenceInCalendarWeeks(anchor, monday) * STAR_DAY_COUNT + dayIndex;
+  /*
+   * The stride is the *widest* a week can be, not the width of this one, so
+   * that every day of every week gets its own number and two weeks can never
+   * land on the same one. A five-day week simply leaves its last number
+   * unused, which costs nothing — the list cycles anyway.
+   *
+   * It also leaves the deals already earned exactly where they were. The
+   * anchor week is week zero, where this is `0 * stride + dayIndex` whatever
+   * the stride is, and the anchor week is the only week that has ever had
+   * deals in it.
+   */
+  return differenceInCalendarWeeks(anchor, monday) * STAR_MAX_DAY_COUNT + dayIndex;
 }
 
 /**
@@ -215,7 +226,7 @@ export function getDealForChild(
   dayIndex: number,
   childId: ChildId,
 ): StarDeal | null {
-  if (dayIndex < 0 || dayIndex >= STAR_DAY_COUNT) return null;
+  if (dayIndex < 0 || dayIndex >= starDayCount(toIsoDate(monday))) return null;
   return dealsForDay(dealDayNumber(monday, dayIndex))[childId];
 }
 
@@ -232,7 +243,8 @@ export function getWeekDealsForChild(
   childId: ChildId,
 ): DealSlot[] {
   const slots: DealSlot[] = [];
-  for (let dayIndex = 0; dayIndex < STAR_DAY_COUNT; dayIndex += 1) {
+  const days = starDayCount(toIsoDate(monday));
+  for (let dayIndex = 0; dayIndex < days; dayIndex += 1) {
     const deal = getDealForChild(monday, dayIndex, childId);
     if (deal) slots.push({ dayIndex, deal });
   }

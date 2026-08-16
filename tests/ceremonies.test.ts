@@ -10,7 +10,7 @@ import {
 import { CHORE_POOLS } from "@/config/chore-rotation";
 import { CHILD_IDS, type ChildId } from "@/config/family";
 import { centsForStars } from "@/config/rewards";
-import { STAR_DAY_COUNT } from "@/config/stars";
+import { starDayCount } from "@/config/stars";
 import { parseLocalDate, toIsoDate } from "@/lib/dates";
 import type { WeekMarks } from "@/lib/stars/counting";
 import {
@@ -36,6 +36,8 @@ import { parseWeekStart } from "@/lib/stars/week";
  */
 
 const WEEKS = ["2026-07-20", "2026-07-27", "2026-08-03"] as const;
+/* All three predate `SATURDAY_FROM_WEEK`, so all three are five wide. */
+const DAYS = starDayCount(WEEKS[0]);
 
 function blankWeek(): WeekMarks {
   return Object.fromEntries(CHILD_IDS.map((id) => [id, {}])) as WeekMarks;
@@ -49,7 +51,7 @@ function fillChart(
   chart: "hygiene" | "chores",
 ) {
   for (const task of getChartTasksForChild(CHORE_POOLS, monday, childId, chart)) {
-    marks[childId][task.id] = Array.from({ length: STAR_DAY_COUNT }, () => true);
+    marks[childId][task.id] = Array.from({ length: DAYS }, () => true);
   }
 }
 

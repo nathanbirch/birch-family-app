@@ -8,12 +8,14 @@ import {
   type SpanCeremony,
 } from "@/config/ceremonies";
 import { requireUser } from "@/lib/auth/dal";
-import { addDays, formatDateRange, parseLocalDate } from "@/lib/dates";
+import { formatDateRange, parseLocalDate } from "@/lib/dates";
 import { familyNow } from "@/lib/family-api/time";
 import { getMarksForWeeks, getWeekMarks } from "@/lib/stars/marks";
 import {
   buildSpanReport,
   buildWeekReport,
+  ceremonyDateFor,
+  ceremonyDateLabel,
   isCompletedWeek,
 } from "@/lib/stars/report";
 import { getChorePools } from "@/lib/stars/rotation-store";
@@ -32,8 +34,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const monday = parseWeekStart(week);
   return {
+    // Titled by the Sunday it is held on, which is what the family calls it.
     title: monday
-      ? `Ceremony · ${formatDateRange(monday, addDays(monday, 4))}`
+      ? `Ceremony · ${ceremonyDateLabel(ceremonyDateFor(week))}`
       : "Ceremonies",
   };
 }
@@ -44,7 +47,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  * ---------------------------------------------------------------------------
  * WHAT THE URL IS ALLOWED TO BE
  * ---------------------------------------------------------------------------
- * `/ceremonies/2026-08-03`, and only ever a Monday that has already been and gone.
+ * `/ceremonies/2026-08-10`, and only ever a Monday whose week is already over.
+ * The URL is the week's Monday; the *title* is the Sunday the ceremony is held
+ * on, which is the day the family names it by. See `ceremonyDateFor`.
  * Two checks, and both 404 rather than falling back to something:
  *
  * - `parseWeekStart` rejects anything that is not a Monday, exactly as the
@@ -92,7 +97,7 @@ export default async function ReportWeekPage({ params }: PageProps) {
   ]);
 
   const report = buildWeekReport(pools, monday, marks);
-  const dateLabel = formatDateRange(monday, addDays(monday, 4));
+  const dateLabel = ceremonyDateLabel(report.ceremonyDate);
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-4 pt-6 sm:px-6 sm:pt-10">

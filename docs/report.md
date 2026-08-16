@@ -31,19 +31,38 @@ retire a task and last month's report loses it. That is the same trade
 
 ## Which week
 
-A week is reportable once it is **over**. The chart runs Monday to Friday but
-the week does not end until Sunday night, so the report for the week of the 3rd
-appears on Monday the 10th and is the newest one for exactly seven days — which
-is what makes the big card at the top of the page a card that sits there for a
-week rather than something anybody has to publish.
+A week is reportable once its last star has been earned. The chart runs Monday
+to **Saturday**, so a week is over on Saturday night and its ceremony is held
+the next afternoon — which is what makes **Sunday the awards day**, and why no
+star can be earned on one. The ceremony for the week of the 10th goes up on
+Sunday the 16th and is the newest one for exactly seven days, so the big card at
+the top of the page sits there for a week rather than having to be published.
 
-`latestCompletedWeekStart()` steps once, at midnight on Monday, and then holds.
+This used to wait for Monday, back when the chart ran Monday to Friday and
+Sunday was simply a day with no column. Left alone it would have had the family
+sitting down on a Sunday afternoon to watch a ceremony the app did not think
+existed yet.
+
+`latestCompletedWeekStart()` steps once, at midnight on Sunday, and then holds.
 The current week and every week after it are refused outright: `/ceremonies/…` for
 this week 404s rather than showing a ceremony for a Wednesday half of which has
 not happened, and a hand-typed URL for October cannot conjure a page of zeroes
 presented as a result. A Monday is the only shape of URL accepted at all —
 `parseWeekStart` rejects anything else, exactly as the star-charts action does
 — with one exception, which is the next section.
+
+## What a ceremony is called
+
+By the **Sunday it is held on**: "Sunday, August 16", not "Aug 10 – Aug 15".
+That is the name the family gives it — a ceremony is an afternoon, not a date
+range — and it is what titles the card, the archive row, the title slide and
+the browser tab. `ceremonyDateFor()` is the Monday plus six days, which is
+Sunday whether the week was five columns wide or six; deliberately *not*
+`weekEnd + 1`, because a five-day week ends on a Friday and its ceremony is
+still on the Sunday.
+
+The URL is still the week's Monday (`/ceremonies/2026-08-10`). The week it
+covers is still on every slide. Only the headline changed.
 
 ## A ceremony that spans several weeks
 

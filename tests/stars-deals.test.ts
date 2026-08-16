@@ -12,7 +12,13 @@ import {
   type DealTier,
 } from "@/config/deals";
 import { CHILD_IDS } from "@/config/family";
-import { CHARTS, STAR_DAY_COUNT, STAR_TASKS, isStarTaskId } from "@/config/stars";
+import {
+  CHARTS,
+  STAR_MAX_DAY_COUNT,
+  STAR_TASKS,
+  isStarTaskId,
+  starDayCount,
+} from "@/config/stars";
 import { parseLocalDate, startOfWeekMonday, toIsoDate } from "@/lib/dates";
 import { tallyDeals, isDealTaken, isDayComplete } from "@/lib/stars/counting";
 import {
@@ -45,6 +51,8 @@ function localDate(iso: string): Date {
 const ANCHOR = localDate(DEAL_ANCHOR_WEEK);
 /** Monday of the week the charts were photographed. */
 const AUGUST = localDate("2026-08-10");
+/* The anchor week ran Monday to Friday: it predates `SATURDAY_FROM_WEEK`. */
+const DAYS = starDayCount("2026-08-10");
 
 /** A whole cycle of the list and a bit, in chart-days. */
 const CYCLE = STAR_DEALS.length;
@@ -190,45 +198,60 @@ describe("the two promises", () => {
     }
   });
 
-  it("keeps a whole school week free of repeats, which is stronger than asked", () => {
-    // Consecutive windows are disjoint sets, so five chart-days is twenty-five
-    // different deals and nobody sees one twice inside a week.
+  it("keeps a whole week free of repeats, which is stronger than asked", () => {
+    // Consecutive windows are disjoint sets, so six chart-days is thirty
+    // different deals and nobody sees one twice inside a week. Checked at the
+    // widest a week can be, which is the hardest case: a narrower week is a
+    // prefix of this one.
     for (let dayNumber = 0; dayNumber < CYCLE; dayNumber += 1) {
       for (const childId of CHILD_IDS) {
         const week = Array.from(
-          { length: STAR_DAY_COUNT },
+          { length: STAR_MAX_DAY_COUNT },
           (_, offset) => dealsForDay(dayNumber + offset)[childId]!.id,
         );
-        expect(new Set(week).size).toBe(STAR_DAY_COUNT);
+        expect(new Set(week).size).toBe(STAR_MAX_DAY_COUNT);
       }
     }
   });
 });
 
 describe("which day is which", () => {
-  it("counts in chart days, so weekends never swallow a deal", () => {
-    // Monday to Friday of the anchor week is 0-4, and the next Monday is 5 —
-    // not 7. Count over the calendar and two sevenths of the list would never
-    // be offered to anybody.
+  it("counts in chart days, so Sunday never swallows a deal", () => {
+    // The stride is a chart week, not a calendar one — count over the calendar
+    // and a seventh of the list would never be offered to anybody.
     expect(dealDayNumber(ANCHOR, 0)).toBe(0);
     expect(dealDayNumber(ANCHOR, 4)).toBe(4);
-    expect(dealDayNumber(localDate("2026-08-17"), 0)).toBe(5);
-    expect(dealDayNumber(localDate("2026-08-24"), 2)).toBe(12);
+    expect(dealDayNumber(localDate("2026-08-17"), 0)).toBe(STAR_MAX_DAY_COUNT);
+    expect(dealDayNumber(localDate("2026-08-24"), 2)).toBe(
+      STAR_MAX_DAY_COUNT * 2 + 2,
+    );
+  });
+
+  it("leaves the deals already earned exactly where they were", () => {
+    /*
+     * The anchor week is week zero, so its day numbers are `dayIndex` itself
+     * whatever the stride is — which is what made widening the week safe. It
+     * is also the only week that has ever had deals in it, so nothing already
+     * ticked could move onto a different deal and stop counting.
+     */
+    for (let dayIndex = 0; dayIndex < DAYS; dayIndex += 1) {
+      expect(dealDayNumber(ANCHOR, dayIndex)).toBe(dayIndex);
+    }
   });
 
   it("runs backwards, because a past week has a real answer", () => {
     // Unlike the chore rotation there is no laminated chart to disagree with:
     // a deal is derived from the calendar, so a ceremony for an old week shows
     // exactly what was on offer that week rather than inventing a history.
-    expect(dealDayNumber(localDate("2026-08-03"), 0)).toBe(-5);
-    const before = dealsForDay(-5);
+    expect(dealDayNumber(localDate("2026-08-03"), 0)).toBe(-STAR_MAX_DAY_COUNT);
+    const before = dealsForDay(-STAR_MAX_DAY_COUNT);
     for (const childId of CHILD_IDS) expect(before[childId]).not.toBeNull();
   });
 
   it("gives the same answer to the page, the action and the ceremony", () => {
     for (const childId of CHILD_IDS) {
       const slots = getWeekDealsForChild(AUGUST, childId);
-      expect(slots).toHaveLength(STAR_DAY_COUNT);
+      expect(slots).toHaveLength(DAYS);
 
       for (const slot of slots) {
         expect(getDealForChild(AUGUST, slot.dayIndex, childId)!.id).toBe(
@@ -257,9 +280,20 @@ describe("which day is which", () => {
     expect(isDealForChild(AUGUST, 2, "hannah", "tidy-room")).toBe(false);
   });
 
-  it("has no deal outside the Monday-to-Friday week", () => {
+  it("has no deal outside the week's own columns", () => {
     expect(getDealForChild(AUGUST, -1, "hannah")).toBeNull();
-    expect(getDealForChild(AUGUST, STAR_DAY_COUNT, "hannah")).toBeNull();
+    // The anchor week is five wide, so day five is Saturday and it had none.
+    expect(getDealForChild(AUGUST, DAYS, "hannah")).toBeNull();
+  });
+
+  it("offers a Saturday deal once a week is wide enough for one", () => {
+    const later = localDate("2026-08-24");
+    expect(getWeekDealsForChild(later, "hannah")).toHaveLength(
+      STAR_MAX_DAY_COUNT,
+    );
+    expect(getDealForChild(later, 5, "hannah")).not.toBeNull();
+    // Sunday is never a chart day, however wide the week gets.
+    expect(getDealForChild(later, 6, "hannah")).toBeNull();
   });
 
   it("asks about the week's own Monday, whatever day it is handed", () => {
@@ -281,9 +315,9 @@ describe("what a deal is worth", () => {
   it("counts nothing when nothing was taken", () => {
     expect(tallyDeals({}, slots)).toEqual({
       earned: 0,
-      possible: STAR_DAY_COUNT * DEAL_STAR_VALUE,
+      possible: DAYS * DEAL_STAR_VALUE,
       taken: 0,
-      offered: STAR_DAY_COUNT,
+      offered: DAYS,
     });
   });
 

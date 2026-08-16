@@ -6,7 +6,7 @@ import { isRowComplete } from "@/lib/stars/counting";
 import { StarButton } from "./StarButton";
 
 /**
- * One task and its five stars.
+ * One task and its week of stars.
  *
  * The layout is the paper chart's: the job on the left, the week running away
  * to the right. A filled row lights up, because on the chart that is the thing
@@ -16,16 +16,22 @@ import { StarButton } from "./StarButton";
 export function StarRow({
   task,
   row,
+  dayCount,
   todayIndex,
   onToggle,
 }: {
   task: StarTask;
   row: readonly boolean[];
-  /** 0-4 when today is a weekday of this week, otherwise -1. */
+  /**
+   * How many columns this week has — five before Saturday was offered, six
+   * after. See `starDayCount`.
+   */
+  dayCount: number;
+  /** The column that may be tapped today, or -1 on a Sunday or an old week. */
   todayIndex: number;
   onToggle: (dayIndex: number, value: boolean) => void;
 }) {
-  const complete = isRowComplete(row);
+  const complete = isRowComplete(row, dayCount);
 
   return (
     <li
@@ -51,14 +57,14 @@ export function StarRow({
       </span>
 
       <span className="flex shrink-0">
-        {STAR_DAY_LABELS.map((_, day) => (
+        {STAR_DAY_LABELS.slice(0, dayCount).map((_, day) => (
           <StarButton
             key={day}
             filled={row[day] === true}
             isToday={day === todayIndex}
-            // Every column but today's, and all five at the weekend — the
-            // chart is a record of days, not a grid to fill in. See
-            // `openDayIndex()` in `lib/stars/week.ts`.
+            // Every column but today's, and every one of them on a Sunday or
+            // in a week that is over — the chart is a record of days, not a
+            // grid to fill in. See `openDayIndex()` in `lib/stars/week.ts`.
             locked={day !== todayIndex}
             label={`${task.label} on ${STAR_DAY_NAMES[day]}`}
             onToggle={(value) => onToggle(day, value)}

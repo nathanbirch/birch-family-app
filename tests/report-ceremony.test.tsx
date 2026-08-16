@@ -6,7 +6,7 @@ import { childSlideMs } from "@/components/report/timing";
 import { CHORE_POOLS } from "@/config/chore-rotation";
 import { SOUND_STORAGE_KEY } from "@/config/app";
 import { CHILD_IDS, type ChildId } from "@/config/family";
-import { STAR_DAY_COUNT } from "@/config/stars";
+import { starDayCount } from "@/config/stars";
 import { parseLocalDate } from "@/lib/dates";
 import type { WeekMarks } from "@/lib/stars/counting";
 import { buildSpanReport, buildWeekReport } from "@/lib/stars/report";
@@ -33,6 +33,8 @@ const playback = vi.hoisted(() => ({
 vi.mock("@/lib/stars/fanfare", () => playback);
 
 const MONDAY = parseLocalDate("2026-08-03")!;
+/* A Monday-to-Friday week: it predates `SATURDAY_FROM_WEEK`. */
+const DAYS = starDayCount("2026-08-03");
 
 function report() {
   const marks = Object.fromEntries(
@@ -42,7 +44,7 @@ function report() {
   // One filled chart, so there is something for the slides to count.
   for (const child of ["hannah", "james"] as ChildId[]) {
     for (const task of getChartTasksForChild(CHORE_POOLS, MONDAY, child, "hygiene")) {
-      marks[child][task.id] = Array.from({ length: STAR_DAY_COUNT }, () => true);
+      marks[child][task.id] = Array.from({ length: DAYS }, () => true);
     }
   }
 
@@ -333,7 +335,7 @@ describe("a ceremony that spans several weeks", () => {
           "hygiene",
         )) {
           marks.hannah[task.id] = Array.from(
-            { length: STAR_DAY_COUNT },
+            { length: DAYS },
             () => true,
           );
         }

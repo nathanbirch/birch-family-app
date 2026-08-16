@@ -1,81 +1,115 @@
 import { describe, expect, it } from "vitest";
 
-import { getWeekStartIso, parseWeekStart } from "@/lib/stars/week";
+import { SATURDAY_FROM_WEEK, starDayCount } from "@/config/stars";
+import { parseLocalDate } from "@/lib/dates";
+import { getWeekStartIso, openDayIndex, parseWeekStart } from "@/lib/stars/week";
 
-/**
- * Which week a star belongs to, and which day of it may be coloured in.
- *
- * Small module, disproportionate blast radius: the page renders a chart from
- * these answers and the Server Action re-derives the same answers to decide
- * whether to accept the tick. If they ever disagreed, a star could be drawn as
- * tappable and refused a tap later.
+/*
+ * Which day of a chart may be coloured in, which is the one rule the whole
+ * star system rests on. It is checked in two places that must never disagree —
+ * the buttons on the page, and the Server Action on the way in — so it is one
+ * function, and this is where it is pinned down.
  */
 
-function localDate(iso: string, hour = 12, minute = 0): Date {
-  const [year, month, day] = iso.split("-").map(Number);
-  return new Date(year, month - 1, day, hour, minute, 0, 0);
-}
+const day = (iso: string) => parseLocalDate(iso)!;
 
-describe("naming the week", () => {
-  it("names every day of one week after the same Monday", () => {
-    // 3 August 2026 is a Monday; the 9th is the Sunday that closes it.
-    for (let day = 3; day <= 9; day += 1) {
-      expect(getWeekStartIso(localDate(`2026-08-0${day}`))).toBe("2026-08-03");
-    }
-    expect(getWeekStartIso(localDate("2026-08-10"))).toBe("2026-08-10");
+/** The week Saturday first counted, and the one before it. */
+const SIX_DAY = SATURDAY_FROM_WEEK; // Monday 2026-08-17
+const FIVE_DAY = "2026-08-10";
+
+describe("which week a date belongs to", () => {
+  it("runs Monday to Sunday, so Sunday belongs to the week it closes", () => {
+    expect(getWeekStartIso(day("2026-08-17"))).toBe("2026-08-17");
+    expect(getWeekStartIso(day("2026-08-22"))).toBe("2026-08-17");
+    // The Sunday. It is the seventh day of *this* week, not the first of next
+    // — which is what makes it the day that week's ceremony is held.
+    expect(getWeekStartIso(day("2026-08-23"))).toBe("2026-08-17");
+    expect(getWeekStartIso(day("2026-08-24"))).toBe("2026-08-24");
   });
 
-  it("puts Sunday in the week that has already started, not the one about to", () => {
-    // The classic off-by-one: `getDay()` calls Sunday 0, which would make it
-    // the *first* day of the coming week rather than the last of this one.
-    expect(getWeekStartIso(localDate("2026-08-09"))).toBe("2026-08-03");
-  });
-
-  it("does not care what time of day it is", () => {
-    for (const hour of [0, 1, 9, 12, 18, 23]) {
-      expect(getWeekStartIso(localDate("2026-08-05", hour))).toBe("2026-08-03");
-    }
-  });
-
-  it("crosses a month and a year boundary", () => {
-    expect(getWeekStartIso(localDate("2026-09-02"))).toBe("2026-08-31");
-    expect(getWeekStartIso(localDate("2027-01-01"))).toBe("2026-12-28");
+  it("accepts only a Monday as a week key", () => {
+    expect(parseWeekStart("2026-08-17")).not.toBeNull();
+    // Anything else would create a second, offset set of documents for the
+    // same seven days.
+    expect(parseWeekStart("2026-08-18")).toBeNull();
+    expect(parseWeekStart("2026-08-23")).toBeNull();
+    expect(parseWeekStart("not-a-date")).toBeNull();
   });
 });
 
-describe("parsing a stored week key", () => {
-  it("accepts a Monday", () => {
-    const parsed = parseWeekStart("2026-08-03");
-    expect(parsed).not.toBeNull();
-    expect(parsed!.getDay()).toBe(1);
-  });
+describe("which column may be coloured in", () => {
+  it("opens each day of a six-day week in turn", () => {
+    const monday = day(SIX_DAY);
+    const expected = [
+      ["2026-08-17", 0],
+      ["2026-08-18", 1],
+      ["2026-08-19", 2],
+      ["2026-08-20", 3],
+      ["2026-08-21", 4],
+      ["2026-08-22", 5],
+    ] as const;
 
-  it("refuses any other day", () => {
-    // Otherwise a hand-crafted request could open a second, offset set of
-    // documents covering the same seven days — two charts for one week.
-    for (const notMonday of [
-      "2026-08-04",
-      "2026-08-05",
-      "2026-08-08",
-      "2026-08-09",
-    ]) {
-      expect(parseWeekStart(notMonday)).toBeNull();
+    for (const [date, column] of expected) {
+      expect(openDayIndex(monday, day(date))).toBe(column);
     }
   });
 
-  it("refuses anything that is not a date at all", () => {
-    for (const rubbish of [
-      "",
-      "  ",
-      "not-a-date",
-      "2026-8-3",
-      "26-08-03",
-      "2026-13-01",
-      "2026-02-30",
-      "2026-08-03T00:00:00Z",
-      "../../etc/passwd",
-    ]) {
-      expect(parseWeekStart(rubbish)).toBeNull();
+  it("opens Saturday, which is the whole point of a six-day week", () => {
+    expect(openDayIndex(day(SIX_DAY), day("2026-08-22"))).toBe(5);
+  });
+
+  it("opens nothing at all on a Sunday", () => {
+    /*
+     * Sunday is the ceremony. A chart that could still be filled in during the
+     * awards night is a chart the awards night cannot be trusted to have
+     * counted — so the whole board goes read-only, for the week that is ending
+     * and for the week about to start alike.
+     */
+    expect(openDayIndex(day(SIX_DAY), day("2026-08-23"))).toBe(-1);
+    expect(openDayIndex(day("2026-08-24"), day("2026-08-23"))).toBe(-1);
+  });
+
+  it("leaves Saturday shut in a week that predates it", () => {
+    // The Saturday of the old five-day week. Nobody was offered it at the
+    // time, and going back to tick it now would invent a star.
+    expect(openDayIndex(day(FIVE_DAY), day("2026-08-14"))).toBe(4);
+    expect(openDayIndex(day(FIVE_DAY), day("2026-08-15"))).toBe(-1);
+    expect(openDayIndex(day(FIVE_DAY), day("2026-08-16"))).toBe(-1);
+  });
+
+  it("shuts every column of a week that is not the current one", () => {
+    // Ahead: Friday coloured in on Monday because the row looks better full.
+    expect(openDayIndex(day("2026-08-24"), day(SIX_DAY))).toBe(-1);
+    // Behind: Sunday-night catching up, a week reconstructed from memory.
+    expect(openDayIndex(day(SIX_DAY), day("2026-08-26"))).toBe(-1);
+  });
+
+  it("agrees with the width the rest of the app uses", () => {
+    // The two answers come from different places — one counts days from the
+    // Monday, the other reads the anchor — and a week where they disagreed
+    // would draw a column nobody could tap, or refuse one that was drawn.
+    for (const week of [FIVE_DAY, SIX_DAY, "2026-07-20", "2026-09-07"]) {
+      const monday = day(week);
+      const columns = starDayCount(week);
+
+      for (let offset = 0; offset < 7; offset += 1) {
+        const date = new Date(monday);
+        date.setDate(date.getDate() + offset);
+        expect(openDayIndex(monday, date)).toBe(offset < columns ? offset : -1);
+      }
+    }
+  });
+
+  it("never opens a seventh column, however far the anchor moves", () => {
+    // Sunday has no column and never will: `STAR_DAY_NAMES` has six entries
+    // and this is the guard that stops a widened week reaching past them.
+    for (const week of [FIVE_DAY, SIX_DAY, "2030-01-07"]) {
+      const monday = day(week);
+      expect(starDayCount(week)).toBeLessThanOrEqual(6);
+      const sunday = new Date(monday);
+      sunday.setDate(sunday.getDate() + 6);
+      expect(sunday.getDay()).toBe(0);
+      expect(openDayIndex(monday, sunday)).toBe(-1);
     }
   });
 });

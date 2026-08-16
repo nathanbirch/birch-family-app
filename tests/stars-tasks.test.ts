@@ -4,8 +4,8 @@ import { CHORE_POOLS, cycleLengthOf, type ChorePool } from "@/config/chore-rotat
 import { CHILD_IDS } from "@/config/family";
 import {
   CHARTS,
-  STAR_DAY_COUNT,
   STAR_DAY_NAMES,
+  STAR_MAX_DAY_COUNT,
   getChart,
   getChartTasks,
   getRotatingTasks,
@@ -68,10 +68,12 @@ describe("looking things up in the config", () => {
     expect(rotating.every((task) => task.assign.kind === "rotating")).toBe(true);
   });
 
-  it("names five weekdays, matching the five columns", () => {
-    expect(STAR_DAY_NAMES).toHaveLength(STAR_DAY_COUNT);
+  it("names Monday to Saturday, matching the widest a chart gets", () => {
+    expect(STAR_DAY_NAMES).toHaveLength(STAR_MAX_DAY_COUNT);
     expect(STAR_DAY_NAMES[0]).toBe("Monday");
-    expect(STAR_DAY_NAMES[STAR_DAY_COUNT - 1]).toBe("Friday");
+    expect(STAR_DAY_NAMES[STAR_MAX_DAY_COUNT - 1]).toBe("Saturday");
+    // Sunday is the ceremony, not a column, and must never appear here.
+    expect(STAR_DAY_NAMES).not.toContain("Sunday");
   });
 
   it("reports how long a pool takes to come back round", () => {
@@ -104,12 +106,12 @@ describe("one child's tasks", () => {
     }
   });
 
-  it("counts five stars per row on offer", () => {
+  it("counts one star per row per day on offer", () => {
     for (const childId of CHILD_IDS) {
       const rows = getTasksForChild(CHORE_POOLS, AUGUST, childId).length;
       expect(
-        getWeeklyStarTotal(CHORE_POOLS, AUGUST, childId, STAR_DAY_COUNT),
-      ).toBe(rows * STAR_DAY_COUNT);
+        getWeeklyStarTotal(CHORE_POOLS, AUGUST, childId, STAR_MAX_DAY_COUNT),
+      ).toBe(rows * STAR_MAX_DAY_COUNT);
     }
   });
 

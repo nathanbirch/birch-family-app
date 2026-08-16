@@ -1,7 +1,7 @@
 # Star charts
 
 Three laminated charts hang on the fridge — chores, summer learning and hygiene
-— each with a column per child and a row of five stars, Monday to Friday, per
+— each with a column per child and a row of stars, Monday to Saturday, per
 task. This page is all three of them in one place, on a phone, with the stars
 tappable.
 
@@ -181,13 +181,40 @@ the same child and week.
 A star records a day, so the only column that can be coloured in is the one
 that is actually happening. Friday cannot be filled in on Monday because the
 row looks better full, and Monday cannot be filled in on Thursday from memory.
-The other four columns are still *drawn* — the week is the picture — but they
-are `disabled`, and a locked empty star is faded much further than a locked
-earned one, so the eye lands on the column that is open.
+The other columns are still *drawn* — the week is the picture — but they are
+`disabled`, and a locked empty star is faded much further than a locked earned
+one, so the eye lands on the column that is open.
 
-At the weekend there is no open column at all: the chart runs Monday to Friday.
-That is the one case the page says out loud, because otherwise every star is
-faded and nothing explains why.
+On a **Sunday** there is no open column at all. Sunday is the awards day, not a
+chart day: a chart still being filled in during the ceremony is a chart the
+ceremony cannot be trusted to have counted. That is the one case the page says
+out loud, because otherwise every star is faded and nothing explains why.
+
+### How wide a week is
+
+The charts ran Monday to **Friday** until 17 August 2026 and run Monday to
+**Saturday** from that Monday on. The width is a property of the *week*
+(`starDayCount`), anchored at `SATURDAY_FROM_WEEK`, and not a constant.
+
+That distinction is the whole point. Widening every week at once would not move
+a single stored star — those are kept per day and none of them changes — but it
+would rewrite everything measured *against* the width of a week:
+
+- a row filled all the way across in July would stop being filled, because five
+  is no longer all the way;
+- every past week's `possible` would grow by a fifth, so every past percentage
+  would fall;
+- `praiseFor` would downgrade a perfect week to "What a week!" for a Saturday
+  nobody was ever offered.
+
+The first ceremony to run under the change covered a week that ran Monday to
+Friday, so none of that was hypothetical — it is what the family would have
+watched.
+
+Rows are still *stored* six wide whatever week they belong to
+(`STAR_MAX_DAY_COUNT`), so one shape comes out of the database; a narrower week
+simply never looks at its last column, and `tally` slices to the week's own
+width so a stray `true` in a column nobody was offered cannot become a star.
 
 [`openDayIndex()`](../src/lib/stars/week.ts) is the only definition of the
 rule. The chart disables the buttons with it and `setStar` re-checks the *same
@@ -204,7 +231,7 @@ feature and not a checkbox.
 
 ## On the page
 
-One child at a time. The paper chart shows five columns because it is A3 and
+One child at a time. The paper chart shows every child because it is A3 and
 taped to a fridge; on a 390px phone that would be 25 targets about 14px each,
 well under the ~44px a thumb hits reliably. So the phone gives one child's
 chart full width and puts the other four one tap away — which is also the order
@@ -365,17 +392,22 @@ every celebration is also announced in words in a `role="status"` line, which
 is what a screen reader hears in any case — the confetti is `aria-hidden`
 decoration.
 
-## A week that straddles a month
+## A week has one deal, end to end
 
-Chores change hands on the 1st; the chart's week runs Monday to Friday. So a
-week can straddle two rotations. The rule, in
-[`week.ts`](../src/lib/stars/week.ts): the current week asks the rotation about
-*today*, and any other week asks about its own Monday. A chore handed over on a
-Wednesday therefore appears on the new child's chart with Monday and Tuesday
-blank — which is exactly what happened.
+Chores used to change hands on the 1st, which meant a week could straddle two
+rotations and the chart had to ask "who holds this *today*" for the current
+week and "who held it that Monday" for any other. `referenceDateFor()` existed
+to answer that, and it is gone.
 
-The Server Action re-derives that same reference date before accepting a tick,
-so the page and the endpoint can never disagree about whose chore it is.
+The chores swap every **Monday morning** now, so a week is a whole number of
+rotations and every day in it has the same answer. The chart, the Server Action
+and the ceremony all ask about the week's own Monday, and there is exactly one
+date a week is ever asked about — which is what makes it impossible for the
+page and the endpoint to disagree about whose chore it is.
+
+Anything that wants *now* rather than the week — the countdown to the next swap
+— uses now directly. They are different questions and they no longer share a
+function.
 
 ## Changing the charts
 
@@ -499,8 +531,8 @@ and the test says so. Add them five at a time, in the pattern.
 The card shows today's deal and the ones already gone, and **nothing ahead**.
 Thursday's deal shown on Monday is no longer a surprise, and — more practically —
 it is an invitation to clean the bathroom on Monday and tick it on Thursday,
-which is what `openDayIndex()` exists to prevent. At the weekend, when there is
-nothing left to spoil, all five are shown.
+which is what `openDayIndex()` exists to prevent. On a Sunday, when the week is
+over and there is nothing left to spoil, the whole week is shown.
 
 The Server Action checks a deal against the **day** rather than the week:
 `isDealForChild()` rejects yesterday's deal filed against today, a sibling's

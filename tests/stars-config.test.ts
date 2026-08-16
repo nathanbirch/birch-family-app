@@ -4,8 +4,10 @@ import { CHORE_POOLS } from "@/config/chore-rotation";
 import { CHILD_IDS, type ChildId } from "@/config/family";
 import {
   CHARTS,
-  STAR_DAY_COUNT,
+  SATURDAY_FROM_WEEK,
   STAR_DAY_LABELS,
+  STAR_MAX_DAY_COUNT,
+  starDayCount,
   STAR_TASKS,
   getChartTasks,
 } from "@/config/stars";
@@ -51,9 +53,32 @@ describe("the task list", () => {
     }
   });
 
-  it("has five weekday columns, as printed", () => {
-    expect(STAR_DAY_COUNT).toBe(5);
-    expect(STAR_DAY_LABELS).toEqual(["M", "T", "W", "T", "F"]);
+  it("has six columns at its widest: Monday to Saturday", () => {
+    expect(STAR_MAX_DAY_COUNT).toBe(6);
+    expect(STAR_DAY_LABELS).toEqual(["M", "T", "W", "T", "F", "S"]);
+  });
+
+  it("gives a week before Saturday was offered five columns, for ever", () => {
+    /*
+     * The whole reason `starDayCount` takes a week rather than being a
+     * constant. Widening every week at once would not move a single stored
+     * star, but it would rewrite everything measured *against* a week: a July
+     * row filled all the way across would stop being filled, and every past
+     * ceremony's percentage would fall for a Saturday nobody was offered.
+     */
+    expect(starDayCount("2026-07-20")).toBe(5);
+    expect(starDayCount("2026-08-10")).toBe(5);
+  });
+
+  it("gives the anchor week and everything after it six", () => {
+    expect(starDayCount(SATURDAY_FROM_WEEK)).toBe(6);
+    expect(starDayCount("2026-08-24")).toBe(6);
+    expect(starDayCount("2030-01-07")).toBe(6);
+  });
+
+  it("switches on a Monday, so no week is half one width and half the other", () => {
+    const anchor = new Date(`${SATURDAY_FROM_WEEK}T12:00:00`);
+    expect(anchor.getDay()).toBe(1);
   });
 });
 
@@ -153,12 +178,17 @@ describe("counting a week", () => {
   const tasks = getTasksForChild(CHORE_POOLS, AUGUST, "clara");
 
   it("treats a task that was never ticked as a blank row", () => {
-    expect(rowFor({}, "tidy-room")).toEqual([false, false, false, false, false]);
+    // Always the full six. A row is a storage shape; the week's own width is
+    // `starDayCount`, and it is applied when the row is counted, not read.
+    expect(rowFor({}, "tidy-room")).toEqual([
+      false, false, false, false, false, false,
+    ]);
   });
 
   it("pads and trims a row that was stored badly", () => {
     expect(rowFor({ "tidy-room": [true] }, "tidy-room")).toEqual([
       true,
+      false,
       false,
       false,
       false,
@@ -171,7 +201,7 @@ describe("counting a week", () => {
       "tidy-room": [true, true, true, true, true],
       piano: [true, true, false, false, false],
     };
-    const result = tally(marks, tasks);
+    const result = tally(marks, tasks, 5);
 
     expect(result.earned).toBe(7);
     expect(result.possible).toBe(tasks.length * 5);
@@ -179,9 +209,34 @@ describe("counting a week", () => {
     expect(result.rows).toBe(tasks.length);
   });
 
+  it("counts the same marks out of six in a six-day week", () => {
+    // The stars do not move; the denominator does. This is exactly what
+    // anchoring the width protects the archive from.
+    const marks = { "tidy-room": [true, true, true, true, true, false] };
+    const only = tasks.filter((task) => task.id === "tidy-room");
+
+    expect(tally(marks, only, 5)).toMatchObject({ earned: 5, possible: 5, completeRows: 1 });
+    expect(tally(marks, only, 6)).toMatchObject({ earned: 5, possible: 6, completeRows: 0 });
+  });
+
+  it("ignores a mark in a column the week never offered", () => {
+    /*
+     * Rows are stored six wide whatever week they belong to, so a five-day
+     * week has a sixth column sitting there. A `true` in it — from a bad
+     * write, or from a mark made before the week was narrowed — must not
+     * become a star nobody could have earned.
+     */
+    const marks = { "tidy-room": [true, false, false, false, false, true] };
+    const only = tasks.filter((task) => task.id === "tidy-room");
+    expect(tally(marks, only, 5).earned).toBe(1);
+  });
+
   it("knows a whole row when it sees one", () => {
-    expect(isRowComplete([true, true, true, true, true])).toBe(true);
-    expect(isRowComplete([true, true, true, true, false])).toBe(false);
+    expect(isRowComplete([true, true, true, true, true], 5)).toBe(true);
+    expect(isRowComplete([true, true, true, true, false], 5)).toBe(false);
+    // Five out of six is no longer all the way across.
+    expect(isRowComplete([true, true, true, true, true, false], 6)).toBe(false);
+    expect(isRowComplete([true, true, true, true, true, true], 6)).toBe(true);
   });
 
   it("finds the charts a child was perfect on", () => {
@@ -192,12 +247,12 @@ describe("counting a week", () => {
       }
     }
 
-    expect(perfectCharts(marks, tasks, ["chores", "learning", "hygiene"])).toEqual([
-      "hygiene",
-    ]);
+    expect(
+      perfectCharts(marks, tasks, ["chores", "learning", "hygiene"], 5),
+    ).toEqual(["hygiene"]);
   });
 
   it("does not call an empty chart perfect", () => {
-    expect(perfectCharts({}, [], ["chores"])).toEqual([]);
+    expect(perfectCharts({}, [], ["chores"], 5)).toEqual([]);
   });
 });

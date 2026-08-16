@@ -77,7 +77,7 @@ export type ContextInput = {
   child: RosterChild | null;
   /**
    * Which column of the star chart today is: 0 is Monday, 4 is Friday, and
-   * `null` at the weekend, when the chart has no column at all.
+   * `null` on a Sunday, when the chart has no column at all.
    */
   starDayIndex: number | null;
   /** The identified child's rows this week. Empty when no child was named. */
@@ -364,10 +364,10 @@ function projectChores(
 /**
  * A chore's state *today*.
  *
- * At the weekend the charts have no column — they print Monday to Friday and
- * nothing else — so the honest answer is neither "done" nor "not done" but
- * "the chart does not track today". Reporting `incomplete` on a Saturday would
- * have the assistant nagging a child about a star that cannot be earned.
+ * On a Sunday the charts have no column — it is awards day, not a chart day —
+ * so the honest answer is neither "done" nor "not done" but "the chart does
+ * not track today". Reporting `incomplete` would have the assistant nagging a
+ * child about a star that cannot be earned.
  */
 function statusOf(chore: RawChore, dayIndex: number | null): ChoreStatus {
   if (dayIndex === null) return "not-tracked-today";

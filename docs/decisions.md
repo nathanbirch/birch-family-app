@@ -108,8 +108,8 @@ nothing to go stale, and two phones always agree.
 
 There is no `reports` collection. A report is the week's `starWeeks` documents
 counted through the same functions the live chart counts with, so it cannot
-drift from the charts, a star corrected on Saturday is in Sunday's report, and
-there is nothing to publish on a Monday morning.
+drift from the charts, a star corrected on Saturday night is in Sunday's
+ceremony, and there is nothing to publish on a Sunday afternoon.
 
 The other half of the decision is editorial rather than technical. The ceremony
 runs youngest first and finishes on the **family's** total. Five slides of
@@ -493,6 +493,35 @@ have swapped a fortnight of stars onto the wrong children.
 **The anchor must be a Monday, and the validator says so.** A Wednesday anchor
 would still "work" — it would just quietly move the changeover to Wednesdays,
 which nobody would notice until a chore vanished mid-week.
+
+**Saturday counts, Sunday does not, and the width is anchored to a date.**
+The charts ran Monday to Friday until 17 August 2026. Making the constant a six
+would have been one character and would have quietly rewritten every week
+already earned — not the stars, which are stored per day and do not move, but
+everything measured *against* the width of a week. A July row filled all the
+way across would have stopped being filled; every past `possible` would have
+grown by a fifth, so every past percentage would have fallen; and a perfect
+week would have been downgraded to "What a week!" for a Saturday nobody was
+ever offered. The first ceremony to run under the change covered a
+Monday-to-Friday week, so that was not hypothetical.
+
+So the width is a property of the *week* (`starDayCount`), anchored at
+`SATURDAY_FROM_WEEK`, exactly as the rotation start date and the chore anchor
+are. Rows are still stored six wide whatever week they belong to, so one shape
+comes out of the database and a narrower week simply never looks at its last
+column.
+
+**Sunday is the awards day, so it has no column at all.** A chart that could
+still be filled in during the ceremony is a chart the ceremony cannot be
+trusted to have counted. It also moved when a ceremony is published: a week now
+ends on Saturday night, so `latestCompletedWeekStart()` steps at midnight on
+Sunday rather than on Monday. Left alone, the family would have sat down on a
+Sunday afternoon to watch a ceremony the app did not think existed yet.
+
+**A ceremony is named by the Sunday it is held on**, not by the week it covers.
+"Sunday, August 16" is what somebody says; "Aug 10 – Aug 15" is what a
+spreadsheet says. The URL is still the week's Monday and every slide still
+shows the week — only the headline changed.
 
 **`referenceDateFor()` was deleted rather than kept.** It existed to answer
 "which date should the rotation be asked about for this week?", because a

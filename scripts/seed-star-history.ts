@@ -60,7 +60,7 @@ import { MongoClient } from "mongodb";
 
 import { COLLECTIONS, DB_NAME } from "../src/config/db";
 import { CHILD_IDS, type ChildId } from "../src/config/family";
-import { STAR_DAY_COUNT, getStarTask } from "../src/config/stars";
+import { getStarTask, starDayCount } from "../src/config/stars";
 
 /* -------------------------------------------------------------------------- */
 /* The transcription                                                           */
@@ -169,12 +169,20 @@ const WEEKS: readonly Week[] = [
 
 /* -------------------------------------------------------------------------- */
 
-/** `"##..."` -> `[true, true, false, false, false]`. */
-function parseRow(taskId: string, row: string): boolean[] {
-  if (row.length !== STAR_DAY_COUNT) {
+/**
+ * `"##..."` -> `[true, true, false, false, false]`.
+ *
+ * The expected length comes from the week being seeded rather than from a
+ * constant: everything back-filled off the photographs is a Monday-to-Friday
+ * week and stays five characters wide for ever, while a week seeded from
+ * `SATURDAY_FROM_WEEK` onwards needs six.
+ */
+function parseRow(weekStart: string, taskId: string, row: string): boolean[] {
+  const days = starDayCount(weekStart);
+  if (row.length !== days) {
     fail(
-      `"${taskId}" has ${row.length} days ("${row}"), and a week is ` +
-        `${STAR_DAY_COUNT}. One character per day, Monday first.`,
+      `"${taskId}" has ${row.length} days ("${row}"), and the week of ` +
+        `${weekStart} is ${days}. One character per day, Monday first.`,
     );
   }
   return Array.from(row, (character, day) => {
@@ -214,7 +222,7 @@ function build(week: Week) {
             `chart no longer has them.`,
         );
       }
-      marks[taskId] = parseRow(taskId, row);
+      marks[taskId] = parseRow(week.weekStart, taskId, row);
     }
 
     documents.push({ childId, weekStart: week.weekStart, marks });

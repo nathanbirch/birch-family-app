@@ -72,11 +72,13 @@ describe("several weeks at once", () => {
 
     const weeks = await getMarksForWeeks(["2026-08-03", "2026-07-27"]);
 
+    // Six wide whatever week it came from: rows are one storage shape, and
+    // how many of those columns a week actually offered is `starDayCount`.
     expect(weeks["2026-08-03"].clara["tidy-room"]).toEqual([
-      true, false, false, false, false,
+      true, false, false, false, false, false,
     ]);
     expect(weeks["2026-07-27"].clara["tidy-room"]).toEqual([
-      true, true, true, true, true,
+      true, true, true, true, true, false,
     ]);
   });
 

@@ -7,19 +7,26 @@
  */
 
 import { DEAL_STAR_VALUE } from "@/config/deals";
-import { STAR_DAY_COUNT, type ChartId, type StarTask } from "@/config/stars";
+import { STAR_MAX_DAY_COUNT, type ChartId, type StarTask } from "@/config/stars";
 import type { ChildId } from "@/config/family";
 import type { DealSlot } from "./deals";
 
-/** Task id -> one boolean per weekday, Monday first. Always `STAR_DAY_COUNT` long. */
+/** Task id -> one boolean per weekday, Monday first. Always `STAR_MAX_DAY_COUNT` long. */
 export type StarMarks = Record<string, boolean[]>;
 
 /** Every child's marks for one week. A child with nothing ticked has `{}`. */
 export type WeekMarks = Record<ChildId, StarMarks>;
 
-/** A fresh, unticked row. */
+/**
+ * A fresh, unticked row.
+ *
+ * Always the full six, whatever week it is for. A row is a storage shape, and
+ * one shape everywhere is what lets a five-day week and a six-day week be read
+ * by the same code — the narrower week simply never looks at the last column.
+ * See `starDayCount`.
+ */
 export function emptyRow(): boolean[] {
-  return Array.from({ length: STAR_DAY_COUNT }, () => false);
+  return Array.from({ length: STAR_MAX_DAY_COUNT }, () => false);
 }
 
 /**
@@ -32,16 +39,26 @@ export function emptyRow(): boolean[] {
 export function rowFor(marks: StarMarks, taskId: string): boolean[] {
   const row = marks[taskId];
   if (!row) return emptyRow();
-  return Array.from({ length: STAR_DAY_COUNT }, (_, day) => row[day] === true);
+  return Array.from({ length: STAR_MAX_DAY_COUNT }, (_, day) => row[day] === true);
 }
 
 export function countRow(row: readonly boolean[]): number {
   return row.reduce((total, star) => total + (star ? 1 : 0), 0);
 }
 
-/** A whole row of five — the weekly reward on the bottom of every chart. */
-export function isRowComplete(row: readonly boolean[]): boolean {
-  return countRow(row) === STAR_DAY_COUNT;
+/**
+ * A whole row — the weekly reward on the bottom of every chart.
+ *
+ * `dayCount` is the week's own width and has to be passed in rather than read
+ * from a constant. "All the way across" meant five until Saturday arrived and
+ * six after it, and a row filled in July must go on counting as filled. See
+ * `SATURDAY_FROM_WEEK`.
+ */
+export function isRowComplete(
+  row: readonly boolean[],
+  dayCount: number,
+): boolean {
+  return countRow(row.slice(0, dayCount)) === dayCount;
 }
 
 /**
@@ -95,19 +112,27 @@ export type StarTally = {
 export function tally(
   marks: StarMarks,
   tasks: readonly StarTask[],
+  dayCount: number,
 ): StarTally {
   let earned = 0;
   let completeRows = 0;
 
   for (const task of tasks) {
-    const row = rowFor(marks, task.id);
+    /*
+     * Counted over the week's own width, not the row's. A five-day week whose
+     * rows are stored six wide has a sixth column that was never on offer, and
+     * a stray `true` in it — from a bad write, or from a week that changed
+     * width under a mark somebody had already made — must not become a star
+     * nobody earned.
+     */
+    const row = rowFor(marks, task.id).slice(0, dayCount);
     earned += countRow(row);
-    if (isRowComplete(row)) completeRows += 1;
+    if (isRowComplete(row, dayCount)) completeRows += 1;
   }
 
   return {
     earned,
-    possible: tasks.length * STAR_DAY_COUNT,
+    possible: tasks.length * dayCount,
     completeRows,
     rows: tasks.length,
   };
@@ -119,9 +144,13 @@ export function tally(
  * Empty sets are *not* perfect. A child with no tasks on a chart has not aced
  * it, and the report should not congratulate them for it.
  */
-export function isPerfect(marks: StarMarks, tasks: readonly StarTask[]): boolean {
+export function isPerfect(
+  marks: StarMarks,
+  tasks: readonly StarTask[],
+  dayCount: number,
+): boolean {
   if (tasks.length === 0) return false;
-  const { earned, possible } = tally(marks, tasks);
+  const { earned, possible } = tally(marks, tasks, dayCount);
   return earned === possible;
 }
 
@@ -139,11 +168,11 @@ export function isPerfect(marks: StarMarks, tasks: readonly StarTask[]): boolean
  *
  *   **A deal is worth three stars, not one.** `DEAL_STAR_VALUE`. This is the
  *   only place in the app where one tick is worth more than one star.
- *   **A deal is one day wide, not five.** It is offered on the day it is
- *   offered and never again, so a deal's row has exactly one meaningful column
- *   — `slot.dayIndex` — and the other four are read as nothing. A child who
- *   somehow had a `true` in Friday's column of Monday's deal has not earned a
- *   star for it.
+ *   **A deal is one day wide.** It is offered on the day it is offered and
+ *   never again, so a deal's row has exactly one meaningful column —
+ *   `slot.dayIndex` — and the rest are read as nothing. A child who somehow
+ *   had a `true` in Friday's column of Monday's deal has not earned a star for
+ *   it.
  *
  * `slots` is one child's week, from `getWeekDealsForChild()`.
  */
@@ -154,7 +183,7 @@ export type DealTally = {
   possible: number;
   /** How many deals were actually done. */
   taken: number;
-  /** How many were on offer. Five in a full week. */
+  /** How many were on offer. One a day, in a full week. */
   offered: number;
 };
 
@@ -211,11 +240,13 @@ export function perfectCharts(
   marks: StarMarks,
   tasks: readonly StarTask[],
   charts: readonly ChartId[],
+  dayCount: number,
 ): ChartId[] {
   return charts.filter((chart) =>
     isPerfect(
       marks,
       tasks.filter((task) => task.chart === chart),
+      dayCount,
     ),
   );
 }

@@ -17,6 +17,7 @@ import { CHILD_IDS, getPerson, type ChildId } from "@/config/family";
 import {
   STAR_DAY_NAMES,
   getChart,
+  starDayCount,
   getStarTask,
   type ChartId,
 } from "@/config/stars";
@@ -70,9 +71,9 @@ import { StarChartCard } from "./StarChartCard";
  * ---------------------------------------------------------------------------
  * WHY ONE CHILD AT A TIME
  * ---------------------------------------------------------------------------
- * The paper chart shows five columns at once because it is A3 and taped to a
- * fridge. On a phone, five columns of five stars is 25 targets across a
- * 390-pixel screen — about 14px each, well under the ~44px a thumb hits
+ * The paper chart shows every child at once because it is A3 and taped to a
+ * fridge. On a phone, five children of six columns each is 30 targets across a
+ * 390-pixel screen — about 12px each, well under the ~44px a thumb hits
  * reliably. So the phone shows one child's chart at full size and puts the
  * other four one tap away, which is also the order a child does this in: they
  * come to fill in *their* stars.
@@ -158,7 +159,7 @@ export function StarsBoard({
   }, [date, weekStart, router]);
 
   /**
-   * Which column is today, or -1 at the weekend and in any other week.
+   * Which column is today, or -1 on a Sunday and in any other week.
    *
    * This is also the only column that can be *changed* — every other star is
    * drawn but locked. The server re-derives the same answer from the same
@@ -166,6 +167,14 @@ export function StarsBoard({
    * `openDayIndex()`.
    */
   const todayIndex = useMemo(() => openDayIndex(monday, date), [monday, date]);
+  /*
+   * How wide this week's chart is: five columns before Saturday was offered,
+   * six from `SATURDAY_FROM_WEEK` onwards. Derived once and handed down, so
+   * every card, row and total on the page agrees about how many days there
+   * were — and so an older week opened from a link is still drawn as the week
+   * it actually was.
+   */
+  const dayCount = useMemo(() => starDayCount(weekStart), [weekStart]);
 
   /*
    * The rotation is asked about the week's Monday, never about today. Chores
@@ -178,7 +187,7 @@ export function StarsBoard({
   );
 
   /*
-   * The week's five Star Deals for this child, derived from the calendar and
+   * The week's Star Deals for this child, derived from the calendar and
    * nothing else — the same function the Server Action re-checks a tap against
    * and the same one the ceremony reads the week back through. See
    * `lib/stars/deals.ts`.
@@ -192,11 +201,12 @@ export function StarsBoard({
     for (const childId of CHILD_IDS) {
       const childMarks = optimistic[childId] ?? {};
       counts[childId] =
-        tally(childMarks, getTasksForChild(pools, monday, childId)).earned +
+        tally(childMarks, getTasksForChild(pools, monday, childId), dayCount)
+          .earned +
         tallyDeals(childMarks, getWeekDealsForChild(monday, childId)).earned;
     }
     return counts;
-  }, [optimistic, pools, monday]);
+  }, [optimistic, pools, monday, dayCount]);
 
   // Memoised because `?? {}` would hand a brand-new object to the tally below
   // on every render, defeating its own memo.
@@ -205,14 +215,18 @@ export function StarsBoard({
     [optimistic, selected],
   );
   const weekTotal = useMemo(() => {
-    const charts = tally(childMarks, getTasksForChild(pools, monday, selected));
+    const charts = tally(
+      childMarks,
+      getTasksForChild(pools, monday, selected),
+      dayCount,
+    );
     const deals = tallyDeals(childMarks, dealSlots);
     return {
       ...charts,
       earned: charts.earned + deals.earned,
       possible: charts.possible + deals.possible,
     };
-  }, [childMarks, pools, monday, selected, dealSlots]);
+  }, [childMarks, pools, monday, selected, dealSlots, dayCount]);
 
   const person = getPerson(selected);
   /*
@@ -380,7 +394,7 @@ export function StarsBoard({
             {person.name}&rsquo;s Stars
           </h1>
           <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-            {formatDateRange(monday, addDays(monday, 4))} ·{" "}
+            {formatDateRange(monday, addDays(monday, dayCount - 1))} ·{" "}
             {getChoreCountdownLabel(date)}
           </p>
         </div>
@@ -434,18 +448,18 @@ export function StarsBoard({
       </p>
 
       {/*
-        Only said out loud at the weekend. On a weekday the open column is
-        washed in the accent colour and the other four are faded, which a child
-        reads without being told — but on Saturday *every* star is faded and
-        nothing explains why, so that is the one case that needs a sentence.
+        Only said out loud when the chart is shut. On a chart day the open
+        column is washed in the accent colour and the rest are faded, which a
+        child reads without being told — but on a Sunday *every* star is faded
+        and nothing explains why, so that is the case that needs a sentence.
       */}
       {todayIndex === -1 ? (
         <p
           className="text-center text-xs font-semibold"
           style={{ color: "var(--color-text-muted)" }}
         >
-          The chart is closed for the weekend — stars are coloured in on the day
-          they are earned.
+          The chart is closed on Sunday — it is awards day. Stars are coloured
+          in on the day they are earned.
         </p>
       ) : null}
 
@@ -501,6 +515,7 @@ export function StarsBoard({
             key={section.chart.id}
             section={section}
             marks={childMarks}
+            dayCount={dayCount}
             todayIndex={todayIndex}
             accent={person.avatarColor}
             accentInk={accentInk}

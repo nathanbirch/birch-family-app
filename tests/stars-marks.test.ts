@@ -63,7 +63,9 @@ describe("reading a week", () => {
     ]);
 
     const marks = await getWeekMarks("2026-08-03");
-    expect(marks.clara["tidy-room"]).toEqual([true, true, false, false, false]);
+    expect(marks.clara["tidy-room"]).toEqual([
+      true, true, false, false, false, false,
+    ]);
   });
 
   it("pads a short row and trims a long one", async () => {
@@ -79,8 +81,10 @@ describe("reading a week", () => {
     ]);
 
     const marks = await getWeekMarks("2026-08-03");
-    expect(marks.clara["tidy-room"]).toEqual([true, false, false, false, false]);
-    expect(marks.clara.piano).toHaveLength(5);
+    expect(marks.clara["tidy-room"]).toEqual([
+      true, false, false, false, false, false,
+    ]);
+    expect(marks.clara.piano).toHaveLength(6);
   });
 
   it("treats anything that is not exactly `true` as unticked", async () => {
@@ -89,12 +93,13 @@ describe("reading a week", () => {
         childId: "clara",
         weekStart: "2026-08-03",
         // Every shape a hand edit or an older build might leave behind.
-        marks: { "tidy-room": [1, "true", null, {}, undefined] },
+        marks: { "tidy-room": [1, "true", null, {}, undefined, "yes"] },
       },
     ]);
 
     const marks = await getWeekMarks("2026-08-03");
     expect(marks.clara["tidy-room"]).toEqual([
+      false,
       false,
       false,
       false,
@@ -169,8 +174,14 @@ describe("writing a star", () => {
     expect(collection.updateOne).not.toHaveBeenCalled();
   });
 
-  it("refuses a day outside the five-day week", async () => {
-    for (const day of [-1, 5, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+  it("refuses a day outside the widest a week can be", async () => {
+    /*
+     * Six is Sunday, and Sunday has no column on any chart — it is the day
+     * the ceremony happens. Which of the first six a *particular* week offers
+     * is not this function's job: the Server Action checks `openDayIndex`,
+     * which knows the week and the family's clock.
+     */
+    for (const day of [-1, 6, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
       await expect(
         setStarMark("clara", "2026-08-03", "piano", day, true),
       ).rejects.toThrow(/day/i);
@@ -186,7 +197,7 @@ describe("writing a star", () => {
     expect(options).toEqual({ upsert: true });
   });
 
-  it("rebuilds the whole row as an array of five", async () => {
+  it("rebuilds the whole row as an array of six", async () => {
     await setStarMark("clara", "2026-08-03", "piano", 2, true);
 
     const [, pipeline] = collection.updateOne.mock.calls[0];
@@ -195,9 +206,9 @@ describe("writing a star", () => {
 
     const stage = pipeline[0].$set;
     const row = stage.marks.$mergeObjects[1].piano;
-    // Five elements, built by $map over a range, so a missing row cannot be
+    // Six elements, built by $map over a range, so a missing row cannot be
     // created as an object with a "2" key.
-    expect(row.$map.input).toEqual({ $range: [0, 5] });
+    expect(row.$map.input).toEqual({ $range: [0, 6] });
     expect(row.$map.in.$cond[0]).toEqual({ $eq: ["$$day", 2] });
     expect(row.$map.in.$cond[1]).toBe(true);
     expect(stage.updatedAt).toBe("$$NOW");

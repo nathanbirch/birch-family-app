@@ -4,7 +4,7 @@ import { CHORE_POOLS } from "@/config/chore-rotation";
 import { DEAL_STAR_VALUE } from "@/config/deals";
 import { CHILD_IDS, type ChildId } from "@/config/family";
 import { CENTS_PER_STAR, centsForStars, formatMoney } from "@/config/rewards";
-import { STAR_DAY_COUNT } from "@/config/stars";
+import { starDayCount } from "@/config/stars";
 import { parseLocalDate } from "@/lib/dates";
 import type { WeekMarks } from "@/lib/stars/counting";
 import { getWeekDealsForChild } from "@/lib/stars/deals";
@@ -12,6 +12,8 @@ import {
   buildWeekReport,
   ceremonyOrder,
   isCompletedWeek,
+  ceremonyDateFor,
+  ceremonyDateLabel,
   latestCompletedWeekStart,
   praiseFor,
   reportableWeeks,
@@ -32,6 +34,8 @@ import { getChartTasksForChild, getTasksForChild } from "@/lib/stars/tasks";
 /** The Monday of the week the charts were photographed. */
 const WEEK = "2026-08-03";
 const MONDAY = parseLocalDate(WEEK)!;
+/* A Monday-to-Friday week: it predates `SATURDAY_FROM_WEEK`. */
+const DAYS = starDayCount(WEEK);
 
 function blankWeek(): WeekMarks {
   return Object.fromEntries(CHILD_IDS.map((id) => [id, {}])) as WeekMarks;
@@ -40,7 +44,7 @@ function blankWeek(): WeekMarks {
 /** Every star on `chart`, ticked, for one child. */
 function fillChart(marks: WeekMarks, childId: ChildId, chart: "hygiene" | "chores") {
   for (const task of getChartTasksForChild(CHORE_POOLS, MONDAY, childId, chart)) {
-    marks[childId][task.id] = Array.from({ length: STAR_DAY_COUNT }, () => true);
+    marks[childId][task.id] = Array.from({ length: DAYS }, () => true);
   }
 }
 
@@ -122,11 +126,11 @@ describe("counting a week", () => {
       const tasks = getTasksForChild(CHORE_POOLS, MONDAY, child.childId);
       const deals = getWeekDealsForChild(MONDAY, child.childId);
       expect(child.possible).toBe(
-        tasks.length * STAR_DAY_COUNT + deals.length * DEAL_STAR_VALUE,
+        tasks.length * DAYS + deals.length * DEAL_STAR_VALUE,
       );
       // Five deals, one a day, and every one of them countable — nobody may
       // be quietly short of a day's opportunity because of their age.
-      expect(deals).toHaveLength(STAR_DAY_COUNT);
+      expect(deals).toHaveLength(DAYS);
     }
   });
 
@@ -184,16 +188,41 @@ describe("which weeks have a report", () => {
     expect(latestCompletedWeekStart(parseLocalDate("2026-08-12")!)).toBe("2026-08-03");
   });
 
+  it("publishes the week that ends on Saturday night, on the Sunday", () => {
+    /*
+     * The change that made Sunday the awards day. A week's last star can be
+     * earned on Saturday, so by Sunday morning the week is finished and its
+     * ceremony is that afternoon — which is exactly when the family sits down
+     * to watch it. Waiting for Monday, as this used to, would have had them
+     * watching a ceremony the app did not think existed yet.
+     */
+    expect(latestCompletedWeekStart(parseLocalDate("2026-08-16")!)).toBe("2026-08-10");
+  });
+
   it("holds that answer for seven days, then steps once", () => {
+    // Sunday to Saturday: the ceremony of the 16th stays at the top of the
+    // page all week, and the next Sunday replaces it.
     const days = [
-      "2026-08-10", "2026-08-11", "2026-08-12", "2026-08-13",
-      "2026-08-14", "2026-08-15", "2026-08-16",
+      "2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19",
+      "2026-08-20", "2026-08-21", "2026-08-22",
     ];
     for (const day of days) {
-      expect(latestCompletedWeekStart(parseLocalDate(day)!)).toBe("2026-08-03");
+      expect(latestCompletedWeekStart(parseLocalDate(day)!)).toBe("2026-08-10");
     }
-    // The next Monday, and the card at the top of the page becomes a new one.
-    expect(latestCompletedWeekStart(parseLocalDate("2026-08-17")!)).toBe("2026-08-10");
+    expect(latestCompletedWeekStart(parseLocalDate("2026-08-23")!)).toBe("2026-08-17");
+  });
+
+  it("names every ceremony by the Sunday it is held on", () => {
+    // Six days after the Monday, which is Sunday whether the week was five
+    // columns wide or six — deliberately not `weekEnd + 1`.
+    expect(ceremonyDateFor("2026-08-10")).toBe("2026-08-16");
+    expect(ceremonyDateFor("2026-08-17")).toBe("2026-08-23");
+    expect(ceremonyDateLabel("2026-08-16")).toContain("16");
+
+    for (const week of ["2026-07-20", "2026-08-10", "2026-08-17"]) {
+      const sunday = parseLocalDate(ceremonyDateFor(week))!;
+      expect(sunday.getDay()).toBe(0);
+    }
   });
 
   it("refuses this week and every week after it", () => {

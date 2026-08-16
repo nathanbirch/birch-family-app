@@ -45,7 +45,7 @@ import "server-only";
 
 import { CHILD_IDS, getPerson, type ChildId } from "@/config/family";
 import { getPet, type PetId } from "@/config/pets";
-import { STAR_DAY_COUNT } from "@/config/stars";
+import { starDayCount } from "@/config/stars";
 import { civilInZoneToInstant, zoneOffsetMs } from "@/lib/calendar/civil";
 import type { CalendarEvent } from "@/lib/calendar/events";
 import { loadCalendarFeed } from "@/lib/calendar/feed";
@@ -193,16 +193,20 @@ async function gather(options: GatherOptions): Promise<ContextInput> {
 /**
  * Which column of the star chart today is.
  *
- * The charts print `M T W T F` and nothing else, so Saturday and Sunday have
- * no column and this returns `null`. `context.ts` turns that into a status of
- * `not-tracked-today` rather than into `incomplete`.
+ * Sunday has no column and never will — it is the ceremony, not a chart day —
+ * so this returns `null` and `context.ts` turns that into a status of
+ * `not-tracked-today` rather than into `incomplete`. Saturday returns `null`
+ * too for any week that predates `SATURDAY_FROM_WEEK`, which is why the week
+ * is asked rather than a constant.
  */
 function starDayIndexFor(now: FamilyNow): number | null {
   // `civilNoon`'s weekday is Boise's weekday — that is the whole point of the
-  // proxy. 0 is Sunday, so Monday is 1 and Friday is 5.
+  // proxy. 0 is Sunday, so Monday is 1 and Saturday is 6.
   const weekday = now.civilNoon.getDay();
-  if (weekday < 1 || weekday > STAR_DAY_COUNT) return null;
-  return weekday - 1;
+  if (weekday < 1) return null;
+  return weekday - 1 < starDayCount(getWeekStartIso(now.civilNoon))
+    ? weekday - 1
+    : null;
 }
 
 async function collectChores(options: {

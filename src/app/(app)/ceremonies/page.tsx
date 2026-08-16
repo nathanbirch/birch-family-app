@@ -12,6 +12,8 @@ import { getMarksForWeeks, listStarWeekStarts } from "@/lib/stars/marks";
 import {
   buildSpanReport,
   buildWeekReport,
+  ceremonyDateFor,
+  ceremonyDateLabel,
   reportableWeeks,
 } from "@/lib/stars/report";
 import { getChorePools } from "@/lib/stars/rotation-store";
@@ -27,7 +29,7 @@ const PER_PAGE = 10;
  * Every weekly report, newest first.
  *
  * The latest finished week gets the card at the top — it sits there for seven
- * days, until the next Monday makes a new one — and everything older is a
+ * days, until the next Sunday makes a new one — and everything older is a
  * plain list underneath it, ten at a time.
  *
  * ---------------------------------------------------------------------------
@@ -42,8 +44,8 @@ const PER_PAGE = 10;
  * WHOSE CLOCK DECIDES WHICH WEEK IS OVER
  * ---------------------------------------------------------------------------
  * The family's, not the server's. This runs on Vercel, where "now" is UTC, and
- * Rexburg is six or seven hours behind — so from Sunday teatime onwards a
- * server-clock page would have already published a report for a week that,
+ * Rexburg is six or seven hours behind — so from Saturday teatime onwards a
+ * server-clock page would have already published a ceremony for a week that,
  * where the children are, has not finished. `familyNow().civilNoon` is the
  * same fix the family API uses: a `Date` whose calendar fields read as
  * Rexburg's. It is only ever fed to the helpers in `lib/dates.ts`, which is
@@ -124,7 +126,7 @@ export default async function ReportPage({
           Ceremonies
         </h1>
         <p className="mt-1 text-sm" style={{ color: "var(--color-text-muted)" }}>
-          Every star of the week, and what it was worth.
+          Sunday afternoons: every star of the week, and what it was worth.
         </p>
       </header>
 
@@ -151,7 +153,10 @@ export default async function ReportPage({
         : null}
 
       {page === 1 ? (
-        <ReportHeroCard report={featured} dateLabel={labelFor(featured.weekStart)} />
+        <ReportHeroCard
+          report={featured}
+          dateLabel={ceremonyDateLabel(featured.ceremonyDate)}
+        />
       ) : null}
 
       {listed.length > 0 ? (
@@ -172,7 +177,7 @@ export default async function ReportPage({
                     parseLocalDate(week) ?? now,
                     marks[week],
                   )}
-                  dateLabel={labelFor(week)}
+                  dateLabel={ceremonyDateLabel(ceremonyDateFor(week))}
                 />
               </li>
             ))}
@@ -189,13 +194,6 @@ export default async function ReportPage({
       )}
     </main>
   );
-}
-
-/** "Aug 3 – Aug 7": Monday to Friday, which is as wide as a chart goes. */
-function labelFor(weekStart: string): string {
-  const monday = parseLocalDate(weekStart);
-  if (!monday) return weekStart;
-  return formatDateRange(monday, addDays(monday, 4));
 }
 
 /**

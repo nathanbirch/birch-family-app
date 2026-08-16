@@ -57,7 +57,12 @@ export function ReportHeroCard({
         }}
       >
         <p className="text-xs font-extrabold uppercase tracking-[0.24em] opacity-80">
-          Last week&rsquo;s report
+          {/*
+            "Report" was the old name for this and "last week" was the old
+            timing — the ceremony now happens on the Sunday the week ends, so
+            on the day itself "last week's" would be a week out.
+          */}
+          The latest ceremony
         </p>
         <h2 className="text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl">
           {dateLabel}

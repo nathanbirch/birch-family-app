@@ -22,19 +22,27 @@
  * ---------------------------------------------------------------------------
  * WHICH WEEK
  * ---------------------------------------------------------------------------
- * A week is reportable once it is *over*. The chart runs Monday to Friday but
- * the week does not end until Sunday night, so the report for the week of the
- * 3rd appears on Monday the 10th and is the newest one for exactly seven days
- * — which is what makes "the latest report" a card that sits at the top of the
- * page for a week rather than something that has to be published.
+ * A week is reportable once its last star has been earned. The chart runs
+ * Monday to Saturday, so a week is over on Saturday night and its ceremony is
+ * held the next day — which is what makes Sunday the awards day and why no
+ * star can be earned on one. The card for the week of the 10th goes up on
+ * Sunday the 16th and is the newest one for exactly seven days, so "the latest
+ * ceremony" sits at the top of the page for a week rather than having to be
+ * published.
  */
 
 import { DEALS_CHART } from "@/config/deals";
 import { getChildren, getPerson, type ChildId } from "@/config/family";
 import { CENTS_PER_STAR, centsForStars } from "@/config/rewards";
-import { CHARTS, type Chart } from "@/config/stars";
+import { CHARTS, starDayCount, type Chart } from "@/config/stars";
 import type { ChorePool } from "@/config/chore-rotation";
-import { addDays, startOfWeekMonday, toIsoDate } from "@/lib/dates";
+import {
+  addDays,
+  formatLongDate,
+  parseLocalDate,
+  startOfWeekMonday,
+  toIsoDate,
+} from "@/lib/dates";
 
 import { tally, tallyDeals, type StarMarks, type WeekMarks } from "./counting";
 import { getWeekDealsForChild } from "./deals";
@@ -92,8 +100,22 @@ export type ChildReport = {
 export type WeekReport = {
   /** The first Monday, `YYYY-MM-DD`. */
   weekStart: string;
-  /** The last Friday — the last day a star could be earned. */
+  /** The last day a star could be earned: a Friday or, since Saturday was
+   * added, a Saturday. See `starDayCount`. */
   weekEnd: string;
+  /**
+   * The Sunday this ceremony belongs to, `YYYY-MM-DD`.
+   *
+   * The day it is *held*, not a day it covers — a week's stars are all earned
+   * by Saturday night and read out the following afternoon. It is what titles
+   * the ceremony, because "the ceremony of August 16th" is how the family will
+   * refer to it and a Monday-to-Saturday range is not something anybody says
+   * out loud.
+   *
+   * For a span it is the Sunday after the *last* of its weeks, which is the
+   * earliest day the whole span could have been read out.
+   */
+  ceremonyDate: string;
   /**
    * The segment under `/ceremonies` where this ceremony lives.
    *
@@ -158,7 +180,12 @@ export function buildWeekReport(
 
   return {
     weekStart,
-    weekEnd: toIsoDate(addDays(startOfWeekMonday(monday), 4)),
+    // The last day a star could be earned: Friday for a week before Saturday
+    // was offered, Saturday after it.
+    weekEnd: toIsoDate(
+      addDays(startOfWeekMonday(monday), starDayCount(weekStart) - 1),
+    ),
+    ceremonyDate: ceremonyDateFor(weekStart),
     // A week is addressed by its own Monday. Nothing else has to be invented,
     // and a URL somebody typed from the date on the card still works.
     slug: weekStart,
@@ -236,6 +263,9 @@ export function buildSpanReport(
   return {
     weekStart: starts[0],
     weekEnd: ends[ends.length - 1],
+    // The Sunday after the *last* week it covers: the earliest afternoon the
+    // whole span could have been read out.
+    ceremonyDate: ceremonyDateFor(starts[starts.length - 1]),
     slug,
     weekCount: reports.length,
     children,
@@ -299,6 +329,13 @@ function buildChildReport(
 ): ChildReport {
   const tasks = getTasksForChild(pools, monday, childId);
   const person = getPerson(childId);
+  /*
+   * How wide *this* week was. A week that ran Monday to Friday is scored out
+   * of five for ever, however many columns the chart has grown since — see
+   * `SATURDAY_FROM_WEEK`. Reading it off the week is what stops a ceremony
+   * marking a child down for a Saturday nobody offered them.
+   */
+  const dayCount = starDayCount(toIsoDate(startOfWeekMonday(monday)));
 
   /*
    * The week's deals are recomputed from the calendar rather than read back
@@ -309,7 +346,7 @@ function buildChildReport(
 
   const charts: ChartResult[] = CHARTS.map((chart) => {
     const chartTasks = tasks.filter((task) => task.chart === chart.id);
-    const counts = tally(marks, chartTasks);
+    const counts = tally(marks, chartTasks, dayCount);
     return {
       chart,
       earned: counts.earned,
@@ -328,15 +365,15 @@ function buildChildReport(
     possible: deals.possible,
     /*
      * Zero, always. A deal is not a row: it is one day wide, so there is
-     * nothing to fill "all the way across" and counting five taken deals as
-     * five whole rows would put a number in the ceremony's "whole rows" line
-     * that does not mean what the rest of that line means.
+     * nothing to fill "all the way across" and counting a week of taken deals
+     * as a week of whole rows would put a number in the ceremony's "whole
+     * rows" line that does not mean what the rest of that line means.
      */
     completeRows: 0,
     perfect: deals.offered > 0 && deals.taken === deals.offered,
   });
 
-  const whole = tally(marks, tasks);
+  const whole = tally(marks, tasks, dayCount);
 
   return {
     childId,
@@ -358,14 +395,56 @@ function buildChildReport(
 /* ------------------------------------------------------------------ */
 
 /**
+ * The Sunday a week's ceremony is held on: the day after its last star.
+ *
+ * Six days after the Monday, which is Sunday whether the week was five columns
+ * wide or six. It is deliberately *not* `weekEnd + 1` — a five-day week ends
+ * on Friday, and its ceremony is still on the Sunday.
+ */
+export function ceremonyDateFor(weekStartIso: string): string {
+  const monday = parseLocalDate(weekStartIso);
+  if (!monday) return weekStartIso;
+  return toIsoDate(addDays(monday, 6));
+}
+
+/**
+ * How a ceremony is titled: "Sunday, August 16".
+ *
+ * The day it is held, which is the name the family gives it. A ceremony is an
+ * afternoon, not a date range — "the one on the 16th" is what somebody says,
+ * and "Aug 10 – Aug 15" is what a spreadsheet says.
+ *
+ * The week it covers is still on the page underneath, in the numbers and on
+ * every slide; it simply is not the headline any more.
+ */
+export function ceremonyDateLabel(ceremonyDate: string): string {
+  const day = parseLocalDate(ceremonyDate);
+  return day ? formatLongDate(day) : ceremonyDate;
+}
+
+/**
  * The Monday of the most recently *finished* week, `YYYY-MM-DD`.
  *
- * Not "seven days ago": the answer steps once, at midnight on Monday, and then
- * holds for the whole week. That is precisely the seven days the report card
- * sits at the top of the page for.
+ * A week finishes when its last star could have been earned, which is Saturday
+ * night — so from Sunday morning the week that is ending *is* the finished
+ * one, and its ceremony is that afternoon. On any other day the answer is the
+ * week before.
+ *
+ * This used to be "seven days ago, always", back when the ceremony was on a
+ * Monday and Sunday was simply a day with no chart. Sunday is now the awards
+ * day, and a page that waited until Monday would have the family sitting down
+ * to watch a ceremony the app did not think existed yet.
+ *
+ * Either way the answer steps exactly once a week and then holds, which is
+ * what keeps the newest ceremony at the top of the page for seven days rather
+ * than for a few hours.
  */
 export function latestCompletedWeekStart(now: Date): string {
-  return toIsoDate(addDays(startOfWeekMonday(now), -7));
+  const monday = startOfWeekMonday(now);
+  // `getDay()` is 0 on Sunday, and Sunday is the only day that belongs to the
+  // week it is closing rather than to the week it precedes.
+  const finished = now.getDay() === 0 ? monday : addDays(monday, -7);
+  return toIsoDate(finished);
 }
 
 /**

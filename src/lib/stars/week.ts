@@ -7,7 +7,7 @@
  * disagreed, a star could be drawn as tappable and then refused a tap later.
  */
 
-import { STAR_DAY_COUNT } from "@/config/stars";
+import { starDayCount } from "@/config/stars";
 import {
   differenceInCalendarDays,
   parseLocalDate,
@@ -32,7 +32,7 @@ export function parseWeekStart(value: string): Date | null {
 }
 
 /**
- * Which column of a week may be coloured in right now: 0-4, or -1 for none.
+ * Which column of a week may be coloured in right now, or -1 for none.
  *
  * ---------------------------------------------------------------------------
  * ONLY TODAY, AND ONLY TODAY
@@ -47,14 +47,25 @@ export function parseWeekStart(value: string): Date | null {
  *   **Behind.** Sunday-night catching up, four days of teeth reconstructed
  *   from memory. Kinder than the first, and just as untrue.
  *
- * So the only editable column is the one that is actually happening. The other
- * four are still *drawn* — the week is the picture, and a child looking at
+ * So the only editable column is the one that is actually happening. The
+ * others are still *drawn* — the week is the picture, and a child looking at
  * Wednesday should see what Monday and Tuesday came to — they simply cannot be
  * tapped.
  *
- * The weekend returns -1 rather than Friday: the chart runs Monday to Friday,
- * so on Saturday there is no day to record and the week is closed. The same
- * answer covers every week that is not the current one.
+ * ---------------------------------------------------------------------------
+ * AND NOTHING AT ALL ON SUNDAY
+ * ---------------------------------------------------------------------------
+ * Sunday is the seventh day of the week and has no column, so it returns -1
+ * and the whole chart goes read-only. That is not an oversight in a
+ * six-column chart — it is the day the ceremony happens, and a chart still
+ * being filled in during the awards night is a chart the awards night cannot
+ * be trusted to have counted. See `latestCompletedWeekStart`.
+ *
+ * Which columns a week *has* comes from `starDayCount`, because it depends on
+ * the week: Saturday only became available from `SATURDAY_FROM_WEEK`, and an
+ * older week must not suddenly gain a sixth day somebody could go back and
+ * tick. It cannot be tapped anyway — the week is not the current one — but the
+ * two answers should agree for the same reason everything else here does.
  *
  * This is the *only* definition of that rule. The chart disables the buttons
  * with it and the Server Action re-checks the same function on the server —
@@ -64,7 +75,7 @@ export function parseWeekStart(value: string): Date | null {
 export function openDayIndex(weekStart: Date, now: Date): number {
   const monday = startOfWeekMonday(weekStart);
   const offset = differenceInCalendarDays(monday, now);
-  return offset >= 0 && offset < STAR_DAY_COUNT ? offset : -1;
+  return offset >= 0 && offset < starDayCount(toIsoDate(monday)) ? offset : -1;
 }
 
 /*
