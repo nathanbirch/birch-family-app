@@ -1,7 +1,7 @@
 /**
  * Reading and writing the note.
  *
- * Same shape as `last-page-storage` and `theme-storage`: every access is
+ * Same shape as `sound-storage` and `theme-storage`: every access is
  * wrapped, because Safari's private mode and locked-down browsers throw on
  * `localStorage`, and a pad that cannot save is still a pad you can write on.
  *

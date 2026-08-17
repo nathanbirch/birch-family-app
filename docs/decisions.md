@@ -321,130 +321,18 @@ Three decisions inside that are not obvious:
   buy is one saved round trip, in exchange for a rule no device could be told
   to forget. Having renamed this page twice is the argument, not against it.
 
-- **The saved last page is migrated, not just validated.** `readLastPage()`
-  already ignored unknown paths, so a rename was *safe* without any change —
-  every device would simply have opened on Home once. `RENAMED_PAGES` in
-  `lib/last-page-storage.ts` maps both old paths **straight** to the current
-  one instead, so a device that skipped the middle name still catches up in a
-  single launch.
+- **The app always launches on the dashboard.** It used to reopen on whichever
+  page you were last using, with a saved path that was validated against
+  `NAV_ITEMS` and migrated through a rename table so a device holding `/seating`
+  followed it to `/turns`. All of that is gone. Reopening on last week's
+  ceremony, or on Tuesday's star chart, is a guess — and the dashboard is the
+  one screen that is never the wrong answer.
 
-The service-worker `CACHE_VERSION` bump that goes with each rename is the part
-most likely to be forgotten next time: **every cached page carries the tab
-bar**, so renaming one route makes every entry in the cache stale, not just the
-page that moved. See [PWA and offline](pwa-and-offline.md#shipping-an-update).
-
----
-
-## The AI companion runs on a parent's account, in the living room
-
-The Birch Family AI Companion is specified across fifteen documents in
-[`docs/ai/`](ai/01—birch-ai-purpose.md), and it deliberately has no code in this
-repository. It runs as a ChatGPT project on **a parent's own account**, on the
-shared tablet, in the main living area, with the family present. Four
-integration architectures were compared in
-[13—birch-ai-integration-architecture.md](ai/13—birch-ai-integration-architecture.md);
-this is Option A, chosen over building it into the app.
-
-**No child gets their own account, now or later.** This is the settled shape of
-the thing rather than a stage on the way to individual accounts, and the two
-reasons for it have different lifespans.
-
-The first is age, and it does expire. ChatGPT's minimum age is 13; as of August
-2026 the Birch children are 11, 9, 8, 6 and 4, so none of them is eligible.
-Signing a child up with a false birth date was never on the table — a system
-whose first act is a lie about a child's age, in order to teach that child
-honesty, fails before it starts.
-
-The second does not expire, and it is the one that actually decides this.
-Everything the family wants here follows from one account in a shared room:
-conversations that are simply *there*, a parent nearby, and no private channel
-between a child and a machine for anybody to discover later. An individual
-account would trade all of that for features the family does not want. So when
-the age rule stops applying, nothing changes — the arrangement was never
-waiting on it.
-
-A further reason to prefer Option A is that it cannot be wrong about family
-data, because it holds none. The app stays the sole source of truth for chores,
-rotations, stars and the calendar, and the AI is instructed to say "check the
-Birch Family App" rather than guess. Every other option adds a way for the AI to
-answer confidently from data that has quietly gone stale — which is worse than
-not answering, because nobody can tell from the outside.
-
-### Why this makes the privacy design honest rather than aspirational
-
-The AI tells children that conversations on the tablet "may be visible to your
-family or others with access." On a shared account on the family tablet that is
-simply true: the history is right there, anyone can open it, and no dashboard or
-monitoring feature has to exist for it to be so.
-
-This is also why OpenAI's parental controls are not the answer, despite being the
-obvious suggestion. They work by linking a parent to a child's **own** account,
-and they explicitly do **not** let a parent read that child's conversations. They
-would buy quiet hours and content filtering at the cost of the one property this
-whole design rests on. The supervision this family wants is not a settings page;
-it is a person in the room and a history nobody has to request.
-
-The no-secrecy posture in
-[04—birch-ai-safety-and-privacy.md](ai/04—birch-ai-safety-and-privacy.md) needs
-that sentence to be a description rather than a promise. Under this arrangement
-it is one.
-
-### What this arrangement does not do
-
-It is not a parental control. Project instructions are a strong prompt and
-nothing more: a chat started outside the project is an ordinary assistant, and a
-determined child can talk a model partway out of its instructions. The spoiler
-rule, the responsibility check and the referral-to-parents behaviour are all
-defeasible.
-
-The actual control is the one the family chose anyway — a tablet in a shared
-room, a parent nearby, and the conversations about how it gets used that
-[14—technology.md](constitution/14—technology.md) is really about. The prompt
-shapes ordinary use well. It was never the boundary.
-
-### When to revisit
-
-**Not on a birthday.** Nobody ages into a different arrangement here. Revisit
-when real use shows the children reaching for something Option A cannot do —
-which is a question about what they need, not about how old they are.
-
-Building it into the app — Option D — remains the right second stage if that
-happens, and the auth, server, family data and context schema it would need
-already exist. The argument for not building it yet
-is that nobody knows what these five children will actually use it for, and a
-month of evidence beats a year of speculation.
-
----
-
-## The GPT Action was built anyway — Option C, reversed
-
-**This reverses the paragraph above.** The read-only family-context API in
-[`docs/family-api/`](family-api/README.md) is Option C from
-[13—birch-ai-integration-architecture.md](ai/13—birch-ai-integration-architecture.md),
-which that document evaluated and rejected as *"all the security cost of Option
-D with less of the benefit."* It has now been built, as a GPT Action called by a
-private Custom GPT on the family's existing ChatGPT subscription.
-
-Recording the reversal rather than quietly editing the old page, because the
-original reasoning has not become wrong and the next person to read it deserves
-both halves.
-
-**What the objection got right, and still gets right.** It really does mean a
-public internet-facing endpoint serving children's data. The credential really
-does live inside a ChatGPT Action configuration on a parent's account, which is
-not a secret manager, and anyone who can open that GPT's editor can read it.
-That is the irreducible cost, it has not been engineered away, and it is
-[threat 1](family-api/threat-model.md) with a residual risk of Medium.
-
-**What changed.** Not the risk — the weighting. Option A is honest and it is
-also deflating: "check the app" is the right answer and it is the answer to
-almost every question a child actually asks. Option D, the version with no new
-endpoint, is a chat interface, a streaming implementation, error states, a
-retention policy and a model bill, and the family is not ready to own that. The
-Action sits between them: it costs one endpoint and no model bill, and it uses
-the subscription that is already paid for.
-
-**What was kept from the original argument.** All of it that could be:
+  Nothing replaced it. The PWA's `start_url` is `/`, so a launch lands there by
+  itself; and an app that was only *backgrounded* is handed the same document
+  back by the OS, still on the same page, with no reload. "Launch on Home,
+  resume where you were" is what those two behaviours already do once the
+  component stops overriding the first of them.
 
 - **Read-only, structurally.** The route modules export `GET` and `HEAD` and
   nothing else. The AI cannot write a star, a chore or a calendar event, which

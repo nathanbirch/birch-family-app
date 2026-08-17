@@ -73,10 +73,6 @@ looking for *what do I do when I'm mad* is one tap from the answer, the back
 button does what they expect, and each list starts at its own top. An unknown id
 `notFound()`s rather than falling back to the first sheet.
 
-[`LastPageMemory`](../src/components/LastPageMemory.tsx) remembers `/health` but
-not `/health/spirit` — `isKnownPage` matches `NAV_ITEMS` exactly, so sub-routes
-are not stored. Reopening on the five cards is the better behaviour here anyway.
-
 ## Where it sits in the navigation
 
 Healthy was the first page with **no place in the bar** in

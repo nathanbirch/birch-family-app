@@ -173,7 +173,7 @@ Pure functions. Nothing here imports React.
 | `rotation.ts` | Which week it is, who sits where, countdown copy |
 | `schedule-analysis.ts` | Schedule validation and sibling-adjacency counting |
 | `seating-summary.ts` | The screen-reader description of each scene |
-| `theme-storage.ts` / `parent-storage.ts` / `last-page-storage.ts` | Guarded `localStorage` access |
+| `theme-storage.ts` / `parent-storage.ts` / `sound-storage.ts` | Guarded `localStorage` access |
 | `theme-store.ts` / `parent-store.ts` | Tiny external stores for `useSyncExternalStore` |
 | `calendar/` | iCalendar reading, `RRULE` expansion, timezone conversion, grid layout, the feed fetch |
 | `pets/rotation.ts` | Which child sleeps with which animal tonight, and the rule that keeps them apart |
@@ -216,7 +216,6 @@ picker/FingerPicker   the full-screen overlay, the clock and the draw
 picker/EdgeConfetti   paper fired inward from all four edges
 
 PageBackground        the soft themed shapes behind every page
-LastPageMemory        renders nothing; reopens the app on the last page used
 
 SeatingBoard          the client island; owns the date and the swap
 ├── AppHeader         name, date, week badge, countdown
@@ -255,31 +254,24 @@ There are three pieces of state, and each is held the way it actually behaves:
 Both stores are module-level, so the header button and the seating board share
 one source of truth with no context provider.
 
-4. **The last page visited** — deliberately *not* a store. Nothing renders from
-   it, so there is nothing to subscribe to: `LastPageMemory` writes the current
-   path on every navigation and reads it back once per page load. See
-   [Navigation memory](#navigation-memory).
+## Where the app opens
 
-## Navigation memory
+**On the dashboard, every launch.** There is no code for this: the PWA's
+`start_url` is `/`, so tapping the home-screen icon lands on the dashboard by
+itself.
 
-Opening the app returns you to whichever page you were last on, rather than
-always to the dashboard. `LastPageMemory` sits in the `(app)` layout and is the
-whole of it.
+An app that was merely *backgrounded* is a different thing and needs no code
+either — iOS and Android hand the same document back, still on the same page,
+with no reload at all. So "launch on Home, resume where you were" falls out of
+the two behaviours the platform already has.
 
-Two rules keep it from being irritating, and both are load-bearing:
-
-- **It only redirects from `/`.** Any other entry URL — a bookmark, a shared
-  link, a reload of `/account` — wins over what is in storage. Storage is a
-  fallback for the app's own entry point, not an override.
-- **It only redirects once per page load.** Without that, tapping Home would
-  bounce straight back to Turns and the Home tab would be unreachable. The
-  guard is a module-level flag, which a fresh load resets and a client-side
-  navigation does not.
-
-The stored path is validated against `NAV_ITEMS` on the way out, so deleting or
-renaming a route can never strand someone on a 404 they have no way to clear.
-It uses `replace`, not `push`, so Back from the restored page leaves the app
-instead of returning to an entry point that immediately redirects again.
+There used to be a `LastPageMemory` component that reopened the app on
+whichever page it was last used on, with a one-shot guard so that tapping Home
+did not bounce straight back. It was removed: reopening on last week's
+ceremony, or on a star chart from Tuesday, is a guess, and the dashboard is the
+one screen that is never the wrong answer. Its `localStorage` key is not read
+by anything any more; see the note where it used to be declared in
+`config/app.ts`.
 
 ## Sizing and positioning
 

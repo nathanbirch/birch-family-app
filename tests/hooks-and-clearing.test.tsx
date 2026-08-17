@@ -4,17 +4,12 @@ import { useRef } from "react";
 
 import { useCurrentDate } from "@/hooks/useCurrentDate";
 import { useImagesReady } from "@/hooks/useImagesReady";
-import {
-  LAST_PAGE_STORAGE_KEY,
-  PARENTS_STORAGE_KEY,
-  THEME_STORAGE_KEY,
-} from "@/config/app";
-import { clearLastPage } from "@/lib/last-page-storage";
+import { PARENTS_STORAGE_KEY, THEME_STORAGE_KEY } from "@/config/app";
 import { clearParentsSwapped } from "@/lib/parent-storage";
 import { clearStoredTheme } from "@/lib/theme-storage";
 
 /**
- * The two hooks that decide *when* things happen, and the three "forget this
+ * The two hooks that decide *when* things happen, and the two "forget this
  * preference" helpers.
  *
  * `useCurrentDate` is the one every dated page depends on: seats change on a
@@ -211,15 +206,12 @@ describe("forgetting a preference", () => {
   it("removes each key, and says it did", () => {
     window.localStorage.setItem(THEME_STORAGE_KEY, "forest");
     window.localStorage.setItem(PARENTS_STORAGE_KEY, "true");
-    window.localStorage.setItem(LAST_PAGE_STORAGE_KEY, "/stars");
 
     expect(clearStoredTheme()).toBe(true);
     expect(clearParentsSwapped()).toBe(true);
-    expect(clearLastPage()).toBe(true);
 
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
     expect(window.localStorage.getItem(PARENTS_STORAGE_KEY)).toBeNull();
-    expect(window.localStorage.getItem(LAST_PAGE_STORAGE_KEY)).toBeNull();
   });
 
   it("reports failure rather than throwing when storage is unavailable", () => {
@@ -229,6 +221,5 @@ describe("forgetting a preference", () => {
 
     expect(clearStoredTheme()).toBe(false);
     expect(clearParentsSwapped()).toBe(false);
-    expect(clearLastPage()).toBe(false);
   });
 });

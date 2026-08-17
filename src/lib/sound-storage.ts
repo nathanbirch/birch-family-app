@@ -1,7 +1,7 @@
 /**
  * Whether the celebration makes a noise.
  *
- * Same shape as `theme-storage` and `last-page-storage`: every access is
+ * Same shape as `theme-storage` and `parent-storage`: every access is
  * wrapped, because Safari private mode and locked-down browsers throw on
  * `localStorage`, and a preference failing to save must never break a page.
  *

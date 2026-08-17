@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-  LAST_PAGE_STORAGE_KEY,
   PARENTS_STORAGE_KEY,
   SOUND_STORAGE_KEY,
   THEME_STORAGE_KEY,
@@ -12,13 +11,12 @@ import {
   parseLocalMonth,
   startOfNextMonth,
 } from "@/lib/dates";
-import { readLastPage, writeLastPage } from "@/lib/last-page-storage";
 import { readParentsSwapped, writeParentsSwapped } from "@/lib/parent-storage";
 import { readSoundOn, writeSoundOn } from "@/lib/sound-storage";
 import { readStoredTheme, writeStoredTheme } from "@/lib/theme-storage";
 
 /**
- * The month arithmetic the chore rotation rests on, and the four device
+ * The month arithmetic the chore rotation rests on, and the three device
  * preferences.
  *
  * The preferences share one rule that is easy to state and easy to forget:
@@ -139,12 +137,6 @@ describe("device preferences survive storage being unavailable", () => {
     expect(readParentsSwapped()).toBe(false);
   });
 
-  it("the last page falls back to 'nothing saved'", () => {
-    breakStorage();
-    expect(() => writeLastPage("/stars")).not.toThrow();
-    expect(readLastPage()).toBeNull();
-  });
-
   it("the cheer falls back to on", () => {
     breakStorage();
     expect(() => writeSoundOn(false)).not.toThrow();
@@ -156,35 +148,21 @@ describe("device preferences round-trip when storage works", () => {
   it("keeps each preference under its own key", () => {
     writeStoredTheme("forest");
     writeParentsSwapped(true);
-    writeLastPage("/stars");
     writeSoundOn(false);
 
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("forest");
     expect(window.localStorage.getItem(PARENTS_STORAGE_KEY)).toBeTruthy();
-    expect(window.localStorage.getItem(LAST_PAGE_STORAGE_KEY)).toBe("/stars");
     expect(window.localStorage.getItem(SOUND_STORAGE_KEY)).toBe("off");
 
     expect(readStoredTheme()).toBe("forest");
     expect(readParentsSwapped()).toBe(true);
-    expect(readLastPage()).toBe("/stars");
     expect(readSoundOn()).toBe(false);
   });
 
   it("ignores a stored value that is no longer valid", () => {
-    // A theme that was deleted from the config, and a page that was renamed
-    // out of the app: both must fall back rather than pin a device to a
-    // 404 or an unstyled page.
+    // A theme that was deleted from the config must fall back rather than pin
+    // a device to an unstyled page.
     window.localStorage.setItem(THEME_STORAGE_KEY, "disco-inferno");
-    window.localStorage.setItem(LAST_PAGE_STORAGE_KEY, "/chores");
-
     expect(readStoredTheme()).not.toBe("disco-inferno");
-    expect(readLastPage()).toBeNull();
-  });
-
-  it("follows a page that has been renamed", () => {
-    // The seating page has had three names; a device holding an old one is
-    // sent to where it went rather than being forgotten.
-    window.localStorage.setItem(LAST_PAGE_STORAGE_KEY, "/seating");
-    expect(readLastPage()).toBe("/turns");
   });
 });

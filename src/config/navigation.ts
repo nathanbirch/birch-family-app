@@ -149,13 +149,6 @@ export type NavIconName =
  * than they were. So they have places, near the end, and the Handy shelf on the
  * dashboard stays as well — the shelf is how somebody finds a tool the first
  * time, the tab is how they get back to it the twentieth.
- *
- * One thing the old argument was right about survives untouched:
- * `last-page-storage` still refuses to remember either of them as the page you
- * were last on. Being reachable and being *resumed* are different questions. A
- * tab is about the first; opening the app two days later onto a black screen
- * waiting for five fingers is about the second, and it is still not resuming
- * anything.
  */
 export const NAV_ITEMS: readonly NavItem[] = [
   {

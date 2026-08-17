@@ -36,9 +36,8 @@ layout runs the auth check for everything beneath it.
 
 ## Rename or move a page
 
-Done twice, for `/seating` → `/rotations` → `/turns`. It is six places, and
-the last three
-are the ones that get forgotten:
+Done twice, for `/seating` → `/rotations` → `/turns`. It is five places, and
+the last two are the ones that get forgotten:
 
 1. `git mv src/app/(app)/<old> src/app/(app)/<new>`, and rename the page
    function inside it.
@@ -52,17 +51,18 @@ are the ones that get forgotten:
    keep working — one per historical path, each pointing at the new one. Use
    `permanent: false`; see
    [Decisions](decisions.md#seats-became-turns-url-included).
-5. Add the old path to `RENAMED_PAGES` in
-   [`src/lib/last-page-storage.ts`](../src/lib/last-page-storage.ts), or every
-   device that was last on that page opens on Home instead. Point *every*
-   historical name straight at the new one rather than chaining them, so a
-   device that skipped a rename still catches up in one launch.
-6. **Bump `CACHE_VERSION` in `public/sw.js`.** Every cached page carries the
+5. **Bump `CACHE_VERSION` in `public/sw.js`.** Every cached page carries the
    tab bar, so a rename makes the whole cache stale, not just the page that
    moved.
 
-Then `npm run check` — `navigation.test.ts`, `last-page.test.tsx` and
-`proxy-matcher.test.ts` all name real paths and will point at anything missed.
+Then `npm run check` — `navigation.test.ts` and `proxy-matcher.test.ts` both
+name real paths and will point at anything missed.
+
+> There used to be a sixth step here: adding the old path to `RENAMED_PAGES` in
+> `lib/last-page-storage.ts`, so a device holding the old name in its
+> "reopen where I was" memory followed the rename instead of silently
+> forgetting. That memory is gone — the app launches on the dashboard every
+> time — so the redirect in `next.config.ts` is now the whole of it.
 
 ---
 

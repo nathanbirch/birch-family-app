@@ -40,14 +40,17 @@ export const THEME_STORAGE_KEY = "birch-family-seats:theme:v1";
 /** Whether the two parents have been swapped out of their configured seats. */
 export const PARENTS_STORAGE_KEY = "birch-family-seats:parents-swapped:v1";
 
-/**
- * The last page visited, reopened on the next cold start.
+/*
+ * There was a `LAST_PAGE_STORAGE_KEY` here, for a feature that reopened the
+ * app on whichever page it was last used on. The app now always launches on
+ * the dashboard, so nothing reads or writes it any more.
  *
- * Newer than the other two, so it carries the current app name rather than the
- * historical `birch-family-seats:` prefix. There is nothing to preserve — the
- * key has never shipped under another name.
+ * A value left behind in a browser from before the removal is inert — there is
+ * no code left that would look at it — and is deliberately not cleaned up: a
+ * one-shot deletion routine would outlive by years the handful of devices it
+ * tidied. If the key is ever wanted again, use a new name rather than this
+ * one.
  */
-export const LAST_PAGE_STORAGE_KEY = "birch-family-app:last-page:v1";
 
 /**
  * Whether the star charts cheer out loud when a column is finished.

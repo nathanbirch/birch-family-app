@@ -10,7 +10,6 @@ import {
   getNavStripItems,
   isActivePath,
 } from "@/config/navigation";
-import { isKnownPage } from "@/lib/last-page-storage";
 
 /*
  * The bottom bar and the dashboard are both generated from `NAV_ITEMS`, so
@@ -160,17 +159,6 @@ describe("dashboard cards", () => {
     expect(DASHBOARD_TOOLS.length).toBeGreaterThan(0);
     for (const item of DASHBOARD_TOOLS) {
       expect(typeof item.bar).toBe("number");
-    }
-  });
-
-  it("still refuses to reopen the app on a tool", () => {
-    /*
-     * Reachable and *resumed* are different questions, and giving the tools
-     * tabs only answered the first. Launching two days later onto a black
-     * screen waiting for five fingers is not picking up where anybody left off.
-     */
-    for (const item of DASHBOARD_TOOLS) {
-      expect(isKnownPage(item.href)).toBe(false);
     }
   });
 

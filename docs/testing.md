@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **1,334 tests across 62 files.**
+Vitest with jsdom and Testing Library. **1,310 tests across 61 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -512,22 +512,6 @@ The nav config that the tab bar and the dashboard are both generated from:
 The `useSyncExternalStore` contract for both preferences: a stable snapshot, a
 server snapshot that matches what the server renders, subscriber notification,
 and picking up a change made in **another tab**.
-
-### `last-page.test.tsx` — 21 tests
-Reopening the app on the page you were last using:
-
-- A real page is stored and read back; `/login` and anything not in
-  `NAV_ITEMS` is refused
-- A **stale path from an older build is ignored**, so a deleted route cannot
-  strand the app on a 404 nobody can clear
-- Storage that throws (Safari private mode) degrades to "no memory", not a crash
-- Landing on `/` redirects to the saved page; landing anywhere else does not
-- The redirect does not overwrite the page it is redirecting to
-- **Home stays reachable after a restore** — the once-per-page-load guard, and
-  the one behaviour that would make the feature infuriating if it broke
-- **A tool is not somewhere you were.** `/note` and `/picker` are neither
-  remembered nor allowed to overwrite what is, so opening the Note from the
-  Calendar still reopens on the Calendar
 
 ### `health.test.tsx` — 15 tests
 The five healthy lists, where the risk is not a crash but a **quiet rewrite**.

@@ -159,11 +159,9 @@ for a minute. Two consequences survive:
   the page list stays short enough to take in without scrolling. It also has a
   tab in the bottom bar — the shelf is how somebody finds it the first time, the
   tab is how they get back to it the twentieth.
-- It is **not** remembered by the last-page memory (`lib/last-page-storage.ts`).
-  Open it from the Calendar, close the app, and it reopens on the Calendar —
-  launching two days later onto a note that has already been read is not
-  resuming anything. Reachable and *resumed* are different questions, and having
-  a tab only answers the first.
+- It has a tab in the bottom bar as well as its card. Nothing is remembered
+  about where you were — the app launches on the dashboard every time — so the
+  Note is somewhere you go, never somewhere you are returned to.
 
 ## The files
 

@@ -35,11 +35,6 @@ export async function generateMetadata({
  * the back button then does what a child expects, and a long list starts at its
  * own top rather than halfway down a page that is already scrolled.
  *
- * `LastPageMemory` does not reopen the app *here* — `isKnownPage` matches
- * `NAV_ITEMS` exactly, so a sub-route is not remembered and the app comes back
- * to `/health` instead. That is the right answer anyway: a child returning the
- * next morning wants the five cards, not yesterday's list.
- *
  * An unknown id 404s rather than falling back to the first list — a mistyped
  * URL should say so, not quietly show the wrong sheet.
  */
