@@ -33,6 +33,7 @@ import { SoundToggle } from "../stars/SoundToggle";
 
 import { ChildSlide } from "./ChildSlide";
 import { FinaleSlide } from "./FinaleSlide";
+import { HoldToggle } from "./HoldToggle";
 import { SlideRail, type RailSlide } from "./SlideRail";
 import { TitleSlide } from "./TitleSlide";
 import { childSlideMs } from "./timing";
@@ -136,6 +137,15 @@ export function AwardCeremony({
   const [started, setStarted] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [offset, setOffset] = useState(0);
+  /**
+   * Whether the ceremony is being held on this slide.
+   *
+   * Not a pause in the sense a video player means it — the music carries on and
+   * so does the slide's own choreography. The only thing this stops is the
+   * clock that would have moved everybody on, because the one thing a timer
+   * cannot know is that the room is still clapping.
+   */
+  const [held, setHeld] = useState(false);
 
   const stage = useRef<HTMLDivElement>(null);
   const pointer = useRef<{
@@ -163,6 +173,14 @@ export function AwardCeremony({
     getServerSoundOnSnapshot,
   );
 
+  /*
+   * Moving on by hand lets go of the hold.
+   *
+   * Choosing a different slide — by drag, by the rail, by an arrow key — is
+   * somebody saying "on with it", and leaving the ceremony held after that
+   * would mean the next child's slide sat there until somebody noticed a
+   * button they had pressed two minutes ago.
+   */
   const go = useCallback(
     (next: number) => {
       setStage((stage) => ({
@@ -172,6 +190,7 @@ export function AwardCeremony({
       // Any deliberate move is the ceremony beginning, whether or not anybody
       // pressed Start — from here on the slides turn by themselves.
       setStarted(true);
+      setHeld(false);
     },
     [last],
   );
@@ -237,21 +256,54 @@ export function AwardCeremony({
       ? childSlideMs(report.children[current.childIndex].charts.length)
       : null;
 
-  useEffect(() => {
-    // Not before it has begun, not on the title or the finale, and not while a
-    // thumb is holding the slide still.
-    if (!started || dragging || slideDuration === null) return;
+  /*
+   * How much of this slide is still owed, in milliseconds.
+   *
+   * Held so that letting the ceremony go on *resumes* the slide rather than
+   * restarting it. Restarting is the obvious implementation and it is wrong in
+   * a way that only shows up in the room: the reveals are CSS and have already
+   * played, so a fresh full duration is ten seconds of everybody looking at a
+   * finished slide waiting for it to turn.
+   */
+  const remaining = useRef<number | null>(null);
 
-    const timer = setTimeout(
-      () =>
-        setStage((stage) => ({
-          index: Math.min(last, stage.index + 1),
-          run: stage.run + 1,
-        })),
-      slideDuration,
-    );
-    return () => clearTimeout(timer);
-  }, [started, dragging, slideDuration, index, run, last]);
+  /*
+   * A new slide is owed its whole duration.
+   *
+   * Declared *before* the timer effect on purpose. Both run when the slide
+   * changes, cleanups first and then bodies in declaration order — so this
+   * clears the previous slide's remainder after that effect's cleanup has
+   * written it and before its body reads it. The other order leaves every
+   * slide after the first inheriting the last one's leftovers.
+   */
+  useEffect(() => {
+    remaining.current = null;
+  }, [index, run]);
+
+  useEffect(() => {
+    // Not before it has begun, not on the title or the finale, not while a
+    // thumb is holding the slide still, and not while the room is still
+    // clapping.
+    if (!started || dragging || held || slideDuration === null) return;
+
+    const wait = remaining.current ?? slideDuration;
+    const from = Date.now();
+
+    const timer = setTimeout(() => {
+      remaining.current = null;
+      setStage((stage) => ({
+        index: Math.min(last, stage.index + 1),
+        run: stage.run + 1,
+      }));
+    }, wait);
+
+    return () => {
+      clearTimeout(timer);
+      // Whatever is left of this slide, kept for whenever the clock starts
+      // again — a hold, a drag, or a thumb going down.
+      remaining.current = Math.max(0, wait - (Date.now() - from));
+    };
+  }, [started, dragging, held, slideDuration, index, run, last]);
 
   /* --- Dragging -------------------------------------------------------- */
 
@@ -335,7 +387,12 @@ export function AwardCeremony({
     else if (event.key === "ArrowLeft") go(index - 1);
     else if (event.key === "Home") go(0);
     else if (event.key === "End") go(last);
-    else return;
+    // The space bar is what every media player in the world uses for this, and
+    // the ceremony is often driven from a laptop on the kitchen table. Only
+    // once it has begun, and never on a slide that has no clock to hold.
+    else if (event.key === " " && started && slideDuration !== null) {
+      setHeld((current) => !current);
+    } else return;
     event.preventDefault();
   }
 
@@ -362,14 +419,33 @@ export function AwardCeremony({
         >
           {dateLabel}
         </p>
-        <SoundToggle
-          on={soundOn}
-          onChange={toggleSound}
-          labels={{
-            on: "Turn the ceremony music off",
-            off: "Turn the ceremony music on",
-          }}
-        />
+        {/*
+          Hold and sound, together, and in that order: the one that gets
+          reached for mid-ceremony is the one nearer the thumb on a phone held
+          right-handed. The speaker is set once at the start and then left
+          alone; Hold is pressed in the middle of a slide, in a hurry, while
+          five children are shouting.
+        */}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {started ? (
+            <HoldToggle
+              held={held}
+              // The title card and the finale have no clock to hold. It is
+              // hidden rather than removed so the speaker beside it does not
+              // jump sideways on the last slide.
+              disabled={slideDuration === null}
+              onChange={setHeld}
+            />
+          ) : null}
+          <SoundToggle
+            on={soundOn}
+            onChange={toggleSound}
+            labels={{
+              on: "Turn the ceremony music off",
+              off: "Turn the ceremony music on",
+            }}
+          />
+        </div>
       </div>
 
       <div
@@ -457,6 +533,7 @@ export function AwardCeremony({
       </div>
 
       <SlideRail
+        paused={held}
         slides={rail}
         index={index}
         durationMs={dragging ? null : slideDuration}

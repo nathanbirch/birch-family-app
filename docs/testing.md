@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **1,328 tests across 62 files.**
+Vitest with jsdom and Testing Library. **1,334 tests across 62 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -285,12 +285,20 @@ What is pinned here is what can be wrong *without being visible*:
 The config is mocked per test, so these assert the *invariant* rather than
 whatever playlist happens to be configured today.
 
-### `report-ceremony.test.tsx` — 23 tests
+### `report-ceremony.test.tsx` — 29 tests
 The award ceremony driving itself, and being driven.
 
 - **A playlist song plays *instead of* the fanfare, never both.** Two pieces of
   music at once is not a richer ceremony, it is a mess, and it is exactly what
   an `await` in the wrong place produces
+- **Hold stops the slides and nothing else** — the music is untouched, which is
+  the whole reason it is not called Pause
+- **Letting go resumes the slide rather than restarting it**, and the *next*
+  slide still gets its whole duration rather than inheriting the remainder.
+  Both are invisible until you are standing in front of it: one is ten dead
+  seconds on a finished slide, the other is a slide that turns early
+- **Moving on by hand lets go of the hold**, so a held ceremony cannot be left
+  stuck on a child nobody is looking at any more
 - **A song that arrives after the speaker was turned off does not play.**
   Starting one is asynchronous and the speaker can be tapped inside that
   moment; React state would still read "on" in the closure that is waiting

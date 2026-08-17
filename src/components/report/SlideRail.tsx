@@ -21,7 +21,7 @@
  * The fill is a CSS animation whose duration is handed in from `timing.ts` —
  * the same number the auto-advance timer uses — so the bar arriving at the end
  * and the slide turning over are the same moment rather than two that happen
- * to be close.
+ * to be close. Holding the ceremony freezes both together; see `paused`.
  */
 
 export type RailSlide = {
@@ -37,11 +37,22 @@ export function SlideRail({
   index,
   /** How long the current slide runs for, or `null` when it does not turn. */
   durationMs,
+  paused = false,
   onSelect,
 }: {
   slides: readonly RailSlide[];
   index: number;
   durationMs: number | null;
+  /**
+   * Whether the ceremony is being held on this slide.
+   *
+   * The rail is a picture of the auto-advance clock, so it has to freeze with
+   * it. A bar that went on filling while the slide was held would fill to the
+   * end and then sit there, saying the slide was over while it plainly was
+   * not — which is worse than no bar at all, because it is a progress
+   * indicator actively lying about progress.
+   */
+  paused?: boolean;
   onSelect: (index: number) => void;
 }) {
   return (
@@ -78,6 +89,9 @@ export function SlideRail({
                   opacity: isCurrent || isPast ? 1 : 0,
                   animationDuration:
                     isCurrent && durationMs !== null ? `${durationMs}ms` : undefined,
+                  // Frozen where it stands, rather than restarted: the slide
+                  // resumes with the time it had left, so the bar must too.
+                  animationPlayState: paused ? "paused" : undefined,
                   // A slide that never turns — the finale, or a paused one —
                   // shows a full bar rather than one frozen part-way.
                   transform:

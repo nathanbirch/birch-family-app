@@ -216,6 +216,122 @@ describe("the curtain", () => {
   });
 });
 
+describe("holding it while the room claps", () => {
+  /*
+   * The one thing the auto-advance timer cannot know is that everybody is
+   * still clapping. Hold stops the clock and nothing else — the music carries
+   * on, and letting go resumes the slide rather than restarting it.
+   */
+
+  function hold() {
+    return screen.getByRole("button", { name: /^hold$/i });
+  }
+  function goOn() {
+    return screen.getByRole("button", { name: /go on/i });
+  }
+
+  function begin() {
+    renderCeremony();
+    fireEvent.click(screen.getByRole("button", { name: /start the ceremony/i }));
+  }
+
+  it("is not offered before the ceremony has begun", () => {
+    // There is no clock to hold on the title card.
+    renderCeremony();
+    expect(screen.queryByRole("button", { name: /^hold$/i })).toBeNull();
+  });
+
+  it("stops the slide turning over", () => {
+    begin();
+    const duration = currentSlideMs();
+    fireEvent.click(hold());
+
+    act(() => {
+      vi.advanceTimersByTime(duration * 3);
+    });
+    expect(slideNumber()).toBe(2);
+  });
+
+  it("resumes with the time the slide had left, not a fresh slide", () => {
+    /*
+     * The bug the whole `remaining` ref exists to prevent. The reveals are CSS
+     * and have already played by the time anybody presses Hold, so restarting
+     * the clock is ten more seconds of the room looking at a finished slide.
+     */
+    begin();
+    const duration = currentSlideMs();
+
+    act(() => {
+      vi.advanceTimersByTime(duration - 800);
+    });
+    fireEvent.click(hold());
+    act(() => {
+      vi.advanceTimersByTime(30_000);
+    });
+    expect(slideNumber()).toBe(2);
+
+    fireEvent.click(goOn());
+    act(() => {
+      vi.advanceTimersByTime(900);
+    });
+    expect(slideNumber()).toBe(3);
+  });
+
+  it("gives the next slide its whole duration, not the last one's remainder", () => {
+    begin();
+    const first = currentSlideMs();
+
+    // Hold almost at the end of slide one, then let it turn.
+    act(() => {
+      vi.advanceTimersByTime(first - 500);
+    });
+    fireEvent.click(hold());
+    fireEvent.click(goOn());
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
+    expect(slideNumber()).toBe(3);
+
+    // The new slide must not inherit the 500ms that was left of the old one.
+    const second = currentSlideMs();
+    act(() => {
+      vi.advanceTimersByTime(second - 1000);
+    });
+    expect(slideNumber()).toBe(3);
+  });
+
+  it("lets go when somebody moves on by hand", () => {
+    // Otherwise the next child's slide sits there until somebody remembers a
+    // button they pressed two minutes ago.
+    begin();
+    fireEvent.click(hold());
+    drag(-200);
+
+    expect(screen.queryByRole("button", { name: /go on/i })).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(currentSlideMs() + 100);
+    });
+    expect(slideNumber()).toBe(4);
+  });
+
+  it("leaves the music alone", async () => {
+    /*
+     * The whole point of calling it Hold rather than Pause. Somebody stopping
+     * the slides to let a four-year-old take a bow has not asked for silence.
+     */
+    begin();
+    await settleMusic();
+    vi.clearAllMocks();
+
+    fireEvent.click(hold());
+    fireEvent.click(goOn());
+
+    expect(playback.stopFanfare).not.toHaveBeenCalled();
+    expect(music.stopCeremonyPlaylist).not.toHaveBeenCalled();
+    expect(playback.startFanfare).not.toHaveBeenCalled();
+  });
+});
+
 describe("turning over by itself", () => {
   it("holds a child's slide for its whole choreography, then moves on", () => {
     renderCeremony();

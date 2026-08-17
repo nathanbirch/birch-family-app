@@ -225,6 +225,41 @@ alive but plainly refusing.
 
 Arrow keys, Home and End work too, and every slide is reachable from the rail.
 
+### Holding it while the room claps
+
+The slides turn on a timer because an awards night should run itself — somebody
+presses Start and puts the iPad down. The one thing a timer cannot know is that
+everybody is still clapping, so there is a **Hold** button beside the speaker.
+
+It is called Hold rather than Pause because it is not a pause in the sense a
+video player means it. Nothing is interrupted: the music carries on, the
+slide's own choreography carries on, and the only thing that stops is the clock
+that would have moved everybody on. A bare ⏸ next to a slideshow reads as "stop
+the music" to about half the people who see it, and the music is exactly what
+it does not do — so the button carries the word as well as the mark.
+
+Two details are worth knowing before changing it:
+
+- **Letting go resumes the slide; it does not restart it.** The remaining time
+  is kept in a ref (`remaining` in `AwardCeremony`). Restarting is the obvious
+  implementation and is wrong in a way that only shows up in the room: the
+  reveals are CSS and have already played, so a fresh full duration is ten more
+  seconds of everybody looking at a finished slide. The effect that clears that
+  remainder on a new slide is declared *before* the timer effect on purpose —
+  cleanups run first, then bodies in declaration order, so the other way round
+  leaves every slide inheriting the last one's leftovers.
+- **The rail freezes with it.** The bar is a picture of that clock, so a bar
+  that went on filling while the slide was held would reach the end and sit
+  there, saying the slide was over while it plainly was not. `SlideRail` takes
+  a `paused` prop and stops the animation where it stands rather than
+  restarting it.
+
+Moving on by hand — a drag, the rail, an arrow key — lets go of the hold, or
+the next child's slide would sit there until somebody remembered a button they
+pressed two minutes ago. The space bar toggles it, which is what every media
+player does and what the ceremony wants when it is being driven from a laptop
+on the kitchen table.
+
 ### Not a carousel
 
 No chevrons over the corners, no row of dots, no peeking edges. The slides that
