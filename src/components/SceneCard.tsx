@@ -17,6 +17,7 @@ export function SceneCard({
   children,
   summary,
   summaryTitle,
+  footer,
 }: {
   title: string;
   icon: ReactNode;
@@ -27,6 +28,13 @@ export function SceneCard({
   children: ReactNode;
   summary: SeatingSummaryLine[];
   summaryTitle: string;
+  /**
+   * Optional caption strip along the bottom of the card, in the same shape the
+   * pet cards use. The two seating scenes have nothing to say here — the
+   * rotation panel above them already says it, for both at once — but a scene
+   * that is the only one on its own clock needs to name that clock.
+   */
+  footer?: ReactNode;
 }) {
   return (
     <section className="app-card themed-transition animate-soft-rise overflow-hidden">
@@ -60,6 +68,19 @@ export function SceneCard({
           ))}
         </ul>
       </div>
+
+      {footer ? (
+        <p
+          className="border-t px-5 py-3 text-sm sm:px-6"
+          style={{
+            borderColor: "var(--color-border)",
+            backgroundColor: "var(--color-surface-muted)",
+            color: "var(--color-text-muted)",
+          }}
+        >
+          {footer}
+        </p>
+      ) : null}
     </section>
   );
 }

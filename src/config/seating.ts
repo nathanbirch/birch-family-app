@@ -363,7 +363,12 @@ export const ADJACENCY_MODELS: readonly AdjacencyModel[] = [
 /* ------------------------------------------------------------------ */
 
 export type SceneLayout = {
-  id: "table" | "vehicle";
+  /**
+   * `"fhe"` is the Family Home Evening house — a scene that borrows this
+   * layout type and the arrival choreography below, and nothing else from this
+   * file. Its geometry lives in `config/fhe.ts`.
+   */
+  id: "table" | "vehicle" | "fhe";
   /** Local photograph used as the scene backdrop. */
   photo: string;
   /** CSS `aspect-ratio` for the scene frame. */

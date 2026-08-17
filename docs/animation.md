@@ -1,7 +1,7 @@
 # Animation
 
 > **Nothing starts until the avatars have loaded.** The whole arrival sequence
-> below is held back until every photograph in both scenes has decoded, so
+> below is held back until every photograph in the scene has decoded, so
 > people never walk to their seats as empty circles. See
 > [PWA and offline](pwa-and-offline.md#nobody-moves-until-the-photographs-have-loaded)
 > for how, and why the hiding happens before first paint rather than in React.
@@ -14,7 +14,8 @@ still.
 On load — and again whenever the rotation rolls over to a new week — everyone
 walks in through a doorway and takes their seat, one person at a time, over
 exactly **three seconds**. The table and the Expedition run off the same clock,
-so the two cards fill up in step.
+so the two cards fill up in step — and so does the Family Home Evening house
+below them, which fills from the top floor down.
 
 ### Doorways
 
@@ -41,6 +42,26 @@ VEHICLE_ENTRIES = {
   rearLeft:   { x: -18, y: 64 },   rearRight:  { x: 118, y: 64 },
 }
 ```
+
+**The house** — three, in
+[`src/config/fhe.ts`](../src/config/fhe.ts). Everyone arrives for
+[Family Home Evening](family-home-evening.md) through whichever door is nearest
+their room: the left end of the house, the right end, or the front door in the
+middle.
+
+```ts
+FHE_ENTRIES = {
+  left:      { x: -16, y: 50 },
+  right:     { x: 116, y: 50 },
+  frontDoor: { x: 50,  y: 122 },
+}
+```
+
+The house runs the same three-second clock as the two seating scenes, off the
+same constants below, but it waits on its own photographs and its own week: it
+turns over on Sunday rather than Monday, so tying its walk-in to the seating's
+readiness watch would mean one of the two changeovers arriving with nobody
+moving.
 
 Entry points sit **outside** the 0–100 scene box on purpose: the scene frame
 clips its contents, so nobody is visible until they step through the doorway.

@@ -64,8 +64,13 @@ export function AppHeader({
         app mark and the swap button have taken their share.
       */}
       <p className="text-sm sm:text-base" style={{ color: "var(--color-text-muted)" }}>
-        Two turns on two clocks: <strong style={{ color: "var(--color-text)" }}>seats</strong>{" "}
-        at the table and in the Expedition change every Monday, and{" "}
+        Three turns on three clocks:{" "}
+        <strong style={{ color: "var(--color-text)" }}>seats</strong> at the
+        table and in the Expedition change every Monday,{" "}
+        <strong style={{ color: "var(--color-text)" }}>
+          Family Home Evening
+        </strong>{" "}
+        jobs change every Sunday, and{" "}
         <strong style={{ color: "var(--color-text)" }}>Bella and Leia</strong>{" "}
         change every night.
       </p>

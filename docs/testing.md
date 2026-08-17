@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **1,310 tests across 61 files.**
+Vitest with jsdom and Testing Library. **1,346 tests across 63 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -20,10 +20,10 @@ can run under both.
 
 | | |
 |---|---|
-| Statements | 88.7% |
-| Branches | 79.8% |
-| Functions | 91.8% |
-| Lines | 90.5% |
+| Statements | 84.3% |
+| Branches | 77.1% |
+| Functions | 88.4% |
+| Lines | 86.1% |
 
 The star charts sit at **98%** of statements and 100% of functions across
 `lib/stars` and `components/stars`; the weekly report is at 94% across
@@ -414,6 +414,36 @@ The two seating views, actually rendered.
 - Only the parents arc, and only while a swap is in flight
 - The accessible description matches what is drawn
 - The backdrop is a local image
+
+### `fhe.test.ts` — 25 tests
+The Family Home Evening rotation: the maths, the anchor and the geometry.
+
+- The anchor is a Sunday, and the anchor week's seven jobs are **pinned to the
+  week the family was given** — Nathan on the Activity, Sarah on the Treat
+- The jobs hold from Sunday through Saturday and turn over on the Sunday, not
+  the Monday the seats move on
+- Everybody moves down exactly one room a week, and the family stays in the
+  same order behind each other forever
+- Everyone does every job once per seven-week cycle, nobody twice running, and
+  no week ever doubles up or leaves anybody out
+- Dates before the anchor show the anchor week rather than an invented history
+- The countdown says "today" on a Sunday, when the *next* changeover is seven
+  days away
+- The same geometry proofs as the seating scenes: nothing overlaps, everything
+  stays inside the frame with its name label, everyone enters from outside
+- A malformed anchor and a person who is not in the rotation both throw
+
+### `fhe-scene.test.tsx` — 11 tests
+The house, actually rendered.
+
+- All seven people, each exactly once, in the room whose job they hold
+- A week's turnover moves *everybody*, and each avatar is drawn in the new room
+- Doorway offsets resolve back to the three configured doors
+- Arrival delays are sequential and finish at 3000ms, on the same clock as the
+  seating scenes, filling the house from the top floor down
+- The walk-in is held until the photographs have loaded
+- The card names the week it is showing and the countdown to the next rotation
+- The accessible description covers every person and every job
 
 ### `avatar.test.tsx` — 12 tests
 Both rendering paths.

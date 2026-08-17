@@ -103,6 +103,44 @@ export function startOfNextWeekMonday(date: Date): Date {
   return addDays(startOfWeekMonday(date), 7);
 }
 
+/*
+ * -------------------------------------------------------------------------
+ * Sunday weeks
+ * -------------------------------------------------------------------------
+ * Deliberately a second set of helpers rather than a `weekStartsOn` argument
+ * on the Monday ones. Two things in this app turn over weekly and they turn
+ * over on different days — the seats and the chores on Monday, Family Home
+ * Evening on Sunday — so both meanings of "this week" are live at once, and a
+ * function whose answer depends on a boolean nobody can see at the call site
+ * is exactly how the two would eventually be mixed up.
+ */
+
+/**
+ * The Sunday of the local calendar week containing `date`.
+ * These weeks run Sunday 00:00 through Saturday 23:59 local time.
+ */
+export function startOfWeekSunday(date: Date): Date {
+  const noon = atLocalNoon(date);
+  // getDay(): 0 = Sunday, so Sunday is already the start of its own week.
+  return addDays(noon, -noon.getDay());
+}
+
+/**
+ * Whole weeks from `from` to `to`, counted between the Sundays their weeks
+ * begin on. Negative when `to` is in an earlier week. The Sunday counterpart
+ * of `differenceInCalendarWeeks`.
+ */
+export function differenceInCalendarWeeksSunday(from: Date, to: Date): number {
+  const start = startOfWeekSunday(from);
+  const end = startOfWeekSunday(to);
+  return Math.round(differenceInCalendarDays(start, end) / 7);
+}
+
+/** The Sunday that starts the *next* week after `date`, at local noon. */
+export function startOfNextWeekSunday(date: Date): Date {
+  return addDays(startOfWeekSunday(date), 7);
+}
+
 /* ------------------------------------------------------------------ */
 /* Months                                                              */
 /* ------------------------------------------------------------------ */

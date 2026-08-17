@@ -91,7 +91,16 @@
  * anyone is in with no signal — and precaching a route costs every device a
  * fetch on install whether or not it is ever opened.
  */
-const CACHE_VERSION = "v11";
+/*
+ * v12: Family Home Evening arrived on the Whose Turn page. The v4 case, not the
+ * v5-v7 one: no tab or dashboard card changed, so nothing is left pointing
+ * anywhere dead — but an installed device holding a cached `/turns` would go on
+ * painting a page with the house missing from it, and this is the cheapest way
+ * to be sure none does. The photograph is deliberately not precached: it is
+ * 855KB for one card on one page, and the runtime cache picks it up on the
+ * first visit like every other same-origin asset.
+ */
+const CACHE_VERSION = "v12";
 const CACHE_NAME = `birch-family-app-${CACHE_VERSION}`;
 const APP_SHELL = "/";
 

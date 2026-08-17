@@ -50,6 +50,12 @@ shape — which is what lets them sit side by side on a desktop and match.
 | `public/scenes/dinner-table.png` | Dinner Table |
 | `public/scenes/expedition.png` | Ford Expedition |
 
+A third scene shares this folder and the same `<Seat>` / `<Avatar>` machinery
+without being a seating scene at all: `family-home-evening.jpg`, a landscape
+cutaway of the house that is the full width of the page. It has its own
+rotation, on its own day — see
+[Family Home Evening](family-home-evening.md).
+
 They are referenced from `TABLE_LAYOUT` and `VEHICLE_LAYOUT` in
 [`src/config/seating.ts`](../src/config/seating.ts), which both read the same
 `SCENE_AVATAR_SIZE` and `SCENE_FONT_SIZE` constants.

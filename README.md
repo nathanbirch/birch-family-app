@@ -71,6 +71,11 @@ npm start          # serve the production build locally
 - **Seating rotation** (`/turns`) — the original app. Photographs of the real
   dinner table and Ford Expedition with everyone on their actual seat, rotating
   the five children through a balanced five-week schedule.
+- **Family Home Evening** (`/turns`, beneath the seats) — a cutaway of the
+  house with a room per job, everybody standing in the room whose job they have
+  this week. All seven take one, and everybody moves down one room every
+  **Sunday** morning. See
+  [Family Home Evening](docs/family-home-evening.md).
 - **Tonight's pets** (`/turns`, beneath the seats) — Bella and Leia, each
   with tonight's child pinned on them, rotating **nightly** and never landing
   on the same child at once. The one rotation that lives in the database, so it
@@ -165,6 +170,7 @@ Almost everything you would want to adjust is data, not code, and lives in
 | The five healthy lists off the wall | `health.ts` |
 | Things to do when bored, and Dad Bucks prices | `bored.ts` |
 | Seat positions, parent defaults, animation timing | `seating.ts` |
+| The seven Family Home Evening jobs, and who has which | `fhe.ts` |
 | The ten themes | `themes.ts` |
 
 See [Maintenance](docs/maintenance.md) for step-by-step recipes.

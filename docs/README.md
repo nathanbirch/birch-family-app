@@ -21,6 +21,7 @@ Start here if you are picking it up cold:
 | [Healthy Birches](health.md) | The five lists off the wall, the transcription rule, and the drawings. |
 | [Calendar](calendar.md) | Connecting the Google Calendar, and how the iCalendar reading works. |
 | [Rotation](rotation.md) | The start date, the five-week schedule, why it isn't a simple rotation, and the fairness numbers. |
+| [Family Home Evening](family-home-evening.md) | The seven jobs, the house picture, and why this one turns over on Sunday. |
 | [Star charts](stars.md) | The three charts off the fridge, the monthly chore rotation, and how a star is stored. |
 | [Weekly report](report.md) | Monday's award ceremony: how a week is counted, what a star is worth, and the fanfare. |
 | [Pets](pets.md) | Bella and Leia, the nightly rotation in the database, and why nobody ever gets both. |
@@ -75,7 +76,10 @@ sit, the five children rotating through five numbered positions on a fixed
 five-week cycle while the two parents stay put unless you swap them. Which week
 it is comes from the device's own calendar, and the family, the schedule, the
 seat coordinates and all ten themes are compiled into the app rather than
-stored anywhere. Beneath the seats, Bella and Leia rotate through the same five
+stored anywhere. Between the seats and the pets, a cutaway of the house shows
+who has which **Family Home Evening** job — all seven of them take one, and
+everybody moves down one room every Sunday, which makes it the only thing on the
+page that does not turn over on a Monday. Beneath that, Bella and Leia rotate through the same five
 children **nightly** — and that one rotation *is* in the database, so it can be
 re-anchored without a deploy. The star charts work the same way: the chores
 rotate between the children on the first of each month from an anchor stored in

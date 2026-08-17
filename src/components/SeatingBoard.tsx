@@ -6,12 +6,15 @@ import type { PetRotationConfig } from "@/config/pets";
 import { useCurrentDate } from "@/hooks/useCurrentDate";
 import { useImagesReady } from "@/hooks/useImagesReady";
 import { useParentSwap } from "@/hooks/useParentSwap";
+import { toIsoDate } from "@/lib/dates";
+import { getFheStatus } from "@/lib/fhe";
 import { getRotationStatus } from "@/lib/rotation";
 
 import { AppHeader } from "./AppHeader";
 import { DinnerTable } from "./DinnerTable";
 import { Expedition } from "./Expedition";
 import { RotationStatus } from "./RotationStatus";
+import { FamilyHomeEvening } from "./fhe/FamilyHomeEvening";
 import { PetNights } from "./pets/PetNights";
 
 /**
@@ -44,6 +47,18 @@ export function SeatingBoard({
   // fresh set of <img> elements.
   const scenes = useRef<HTMLDivElement>(null);
   const arriving = useImagesReady(scenes, { key: status.weekNumber });
+
+  /*
+    Family Home Evening turns over on Sunday rather than Monday, so it gets its
+    own status, its own container and its own readiness watch. Sharing the
+    seating's would tie a Sunday rotation's walk-in to a Monday key, and one of
+    the two changeovers would arrive without anybody moving.
+  */
+  const fhe = useMemo(() => getFheStatus(date), [date]);
+  const house = useRef<HTMLDivElement>(null);
+  const houseArriving = useImagesReady(house, {
+    key: toIsoDate(fhe.weekStart),
+  });
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
@@ -81,6 +96,15 @@ export function SeatingBoard({
           swapping={swapping}
           arriving={arriving}
         />
+      </div>
+
+      {/*
+        Between the seats and the pets, which is where it belongs on both
+        counts: it is the third of the three turns, and it is the only one of
+        them that changes on a Sunday.
+      */}
+      <div key={toIsoDate(fhe.weekStart)} ref={house}>
+        <FamilyHomeEvening status={fhe} arriving={houseArriving} />
       </div>
 
       <PetNights configs={petRotations} date={date} />
