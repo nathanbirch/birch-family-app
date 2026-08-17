@@ -132,20 +132,25 @@ one room per job and the job's name painted on its wall. Three notes on it:
 
 ### Where each avatar stands
 
-Percentages of the frame — `x` across, `y` down, to the centre of a head. Each
-one is **measured, not eyeballed**: a face over a painted word is the one
-mistake this picture cannot absorb, so every `y` is
+Percentages of the frame — `x` across, `y` down. Two things to know before
+editing one.
 
-```
-bottom of that room's painted title (descenders included)
-  + a small gap
-  + half an avatar
-```
+**`y` is the middle of the whole stack, not the middle of the face.** `<Seat>`
+centres avatar *and* name label on the point, so the top of the head sits about
+2% of the frame *above* `y`, and the label hangs the same distance below the
+circle. Reading these numbers as "where the face goes" is exactly how the first
+pass at this card put seven faces on top of seven painted words.
 
-which puts the top of the head just under the last letter. The rooms' titles are
-painted at different heights — the Treat's hangs lower than the two upstairs
-rooms beside it, "Opening Prayer" runs to two lines — so the spots are not level
-with each other, and each one carries its measurement in a comment.
+**Every spot is measured against the picture, not guessed at.** A room's title is
+a word: the head has to clear its last letter, descenders included, and the label
+must not land on the title of the room *below*. The titles are painted at
+different heights — the Treat's hangs lower than the two upstairs rooms beside
+it, "Opening Prayer" runs to two lines — so the spots are not level with each
+other, and each one carries its measurement in a comment. Where a room left a
+choice, the label is put somewhere that looks deliberate: the rug in the Opening
+Prayer room, the craft table in the Activity room. Three of them are also nudged
+sideways — Song off the tail of its own g, Treat and Lesson clear of their titles
+and the furniture under them.
 
 **The spots go with the avatar size.** Make the avatars bigger and every spot
 has to move down again, or the faces climb back over the words.

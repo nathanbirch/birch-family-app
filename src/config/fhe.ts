@@ -45,16 +45,27 @@ export type FheRole = {
   /** The job, exactly as it is painted on the wall of its room. */
   label: string;
   /**
-   * Where the person's avatar stands in the room, as percentages of the
-   * photograph — `x` across, `y` down, to the centre of a head.
+   * Where the person stands in the room, as percentages of the photograph —
+   * `x` across, `y` down.
    *
-   * Every one of these is measured, not eyeballed: the room's painted title is
-   * a *word*, and a face over a word is the one mistake this picture cannot
-   * absorb. So each `y` is the bottom of that room's title (descenders
-   * included), plus a small gap, plus half an avatar — which puts the top of
-   * the head just under the last letter. The numbers therefore go with
-   * `FHE_LAYOUT.avatarSize` below: make the avatars bigger and every spot has
-   * to move down again.
+   * ---------------------------------------------------------------------
+   * `y` IS THE MIDDLE OF THE WHOLE STACK, NOT THE MIDDLE OF THE FACE
+   * ---------------------------------------------------------------------
+   * `<Seat>` centres avatar *and* name label on the point, so the top of the
+   * head is a good `(gap + label) / 2` — around 2% of the frame — above `y`,
+   * and the label hangs the same distance below the bottom of the circle.
+   * Reading these numbers as "where the face goes" is how the first pass put
+   * seven faces on top of seven painted words.
+   *
+   * Every one of them is measured against the picture rather than guessed at,
+   * because the room's title is a *word*: the head must clear the last letter
+   * (descenders included) and the label must not land on the title of the room
+   * below. Where a room had a choice, the label is put somewhere that looks
+   * deliberate — the rug in the Opening Prayer room, the craft table in the
+   * Activity room.
+   *
+   * The numbers therefore go with `FHE_LAYOUT.avatarSize` below: make the
+   * avatars bigger and every spot has to be measured again.
    */
   spot: { x: number; y: number };
   /** The doorway this person comes in through. */
@@ -87,34 +98,39 @@ export const FHE_ROLES: readonly FheRole[] = [
   {
     id: "opening-prayer",
     label: "Opening Prayer",
-    // Title bottom 19.5% — a two-line title, so the lowest of the upstairs three.
-    spot: { x: 23.2, y: 28 },
+    // Title bottom 19.5% — a two-line title, so the lowest of the upstairs
+    // three. Dropped again so the name label lands on the rug rather than on
+    // the floorboards.
+    spot: { x: 23.2, y: 31.2 },
     entry: FHE_ENTRIES.left,
   },
   {
     id: "song",
     label: "Song",
-    // Title bottom 47.9%, and the g of "Song" descends.
-    spot: { x: 23.2, y: 56.4 },
+    // Title bottom 47.9%, and the g of "Song" descends into the head below it.
+    // Nudged right rather than down: the word ends at 23.6% across, so a small
+    // step sideways clears the tail without crowding the Activity room's title.
+    spot: { x: 24.3, y: 56.4 },
     entry: FHE_ENTRIES.left,
   },
   {
     id: "scripture",
     label: "Scripture",
     // Title bottom 20.4%.
-    spot: { x: 50.2, y: 28.9 },
+    spot: { x: 50.2, y: 31.3 },
     entry: FHE_ENTRIES.frontDoor,
   },
   {
     id: "lesson",
     label: "Lesson",
     /*
-     * Title bottom 48.4%, and the tightest room in the house: "Closing Prayer"
-     * is painted 68.6% down, and an avatar with a name under it only just
-     * fits between the two. This one gets a smaller gap under its title than
-     * the rest for that reason.
+     * The tightest room in the house. Its own title ends at 48.4% and "Closing
+     * Prayer" is painted 68.6% down in the room below, which leaves barely more
+     * than one avatar-and-label between them — so this spot has the smallest
+     * clearance above and below of the seven, and is nudged right of its title
+     * as well as under it.
      */
-    spot: { x: 74.5, y: 56.3 },
+    spot: { x: 77.2, y: 58.7 },
     entry: FHE_ENTRIES.right,
   },
   {
@@ -128,15 +144,18 @@ export const FHE_ROLES: readonly FheRole[] = [
     id: "treat",
     label: "Treat",
     // Title bottom 23.9% — lower on the wall than the other two upstairs
-    // rooms, so this avatar sits lower than they do.
-    spot: { x: 77, y: 32.4 },
+    // rooms, so this avatar sits lower than they do, and right of the word
+    // rather than under the popcorn machine.
+    spot: { x: 79.7, y: 34.8 },
     entry: FHE_ENTRIES.right,
   },
   {
     id: "closing-prayer",
     label: "Closing Prayer",
-    // Title bottom 72.6%, descender of the y included.
-    spot: { x: 76.5, y: 81.1 },
+    // Title bottom 72.6%, descender of the y included. The lowest spot in the
+    // house: its name label finishes at 95% of the frame, with the sofa behind
+    // the face rather than the words above it.
+    spot: { x: 75.2, y: 85.9 },
     entry: FHE_ENTRIES.right,
   },
 ] as const;
