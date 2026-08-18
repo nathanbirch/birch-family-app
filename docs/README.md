@@ -23,6 +23,7 @@ Start here if you are picking it up cold:
 | [Rotation](rotation.md) | The start date, the five-week schedule, why it isn't a simple rotation, and the fairness numbers. |
 | [Family Home Evening](family-home-evening.md) | The seven jobs, the house picture, and why this one turns over on Sunday. |
 | [Star charts](stars.md) | The three charts off the fridge, the monthly chore rotation, and how a star is stored. |
+| [The shopping list](shopping.md) | The one live page: server-sent events instead of a WebSocket, and how a tick stays drawn before its write lands. |
 | [Weekly report](report.md) | Monday's award ceremony: how a week is counted, what a star is worth, and the fanfare. |
 | [Pets](pets.md) | Bella and Leia, the nightly rotation in the database, and why nobody ever gets both. |
 | [Themes](themes.md) | All ten themes, the token system, persistence, and the no-flash script. |
@@ -84,8 +85,10 @@ children **nightly** — and that one rotation *is* in the database, so it can b
 re-anchored without a deploy. The star charts work the same way: the chores
 rotate between the children on the first of each month from an anchor stored in
 the database, and the stars they tick are the one thing in the app that
-genuinely accumulates. Otherwise the database holds only accounts and
-sessions.
+genuinely accumulates. The **shopping list** is the newest page and the odd one
+out: it is the only one two people are expected to edit at the same time, so it
+is also the only one that holds a connection open and updates itself on every
+phone in the house without a reload.
 
 ## What changed when the login arrived
 

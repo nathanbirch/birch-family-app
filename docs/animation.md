@@ -141,13 +141,55 @@ transform**: it contains the theme picker, whose mobile bottom sheet is
 `position: fixed`, and any transformed ancestor would become that sheet's
 containing block and pin it to the header instead of the viewport.
 
-## The one thing that loops
+## The shopping list
+
+Three short movements, and they are all in service of the same thing: this is the
+one page where the screen changes because of something *somebody else* did, and
+motion is how you notice a change you did not make.
+
+- **A row arriving** slides down and settles (`shop-row-in`, 320ms). Downward,
+  because a new item is inserted at the *top* and everything below is about to be
+  pushed down — it should look like it came from above, not like it grew out of
+  the gap. It plays for anybody's addition, including one made in another room.
+- **A row leaving** goes sideways (`shop-row-out`, 260ms). Sideways rather than
+  up, because a ticked item is not deleted, it is *filed* — it lands in the
+  accordion a moment later.
+- **The tick draws itself** (`shop-tick-draw`, 240ms), walking a stroke on with
+  `stroke-dasharray`. A checkbox appearing is a state change; a tick being drawn
+  is an action being completed, and this page is made of small completed actions.
+
+The exit animation is the one place in the app where an animation *holds up*
+state: React cannot animate a node it is about to unmount, so the board keeps the
+row on screen for exactly `shop-row-out`'s duration and only then applies the
+change. `EXIT_MS` in `ShoppingBoard.tsx` and the keyframe's duration in
+`globals.css` have to agree. Under reduced motion the wait is skipped entirely —
+a delay carrying no animation is just lag.
+
+The **Bought** accordion transitions `grid-template-rows` from `0fr` to `1fr`,
+which is the only way to animate to a height nobody has measured. Where that
+interpolation is unsupported the panel simply appears, which is what a
+`<details>` element would have done anyway.
+
+Nothing here is a colour animation, with one deliberate exception: the "already on
+the list" highlight is a *transition* on background and border, not a keyframe.
+Two animations on one element share the single `animation` property, so a flash
+class would have replaced the entrance animation while it was on — and replayed
+it when it came off.
+
+## The two things that loop
 
 The line at the top of this page — nothing loops, nothing moves once the
 arrival settles — held until the weekly report arrived. It is a page whose
 whole purpose is a sequence of reveals, so it does move, and it moves for as
 long as somebody is watching it: slides turning every eight seconds, a total
 counting itself up, and confetti at the end.
+
+The second is one dot. The shopping list's `Live` indicator breathes on a
+2.2-second cycle for as long as the stream is connected, and it is not
+decoration: it is a status light, and a status light that does not move is
+indistinguishable from a coloured dot somebody drew. It is small and slow so it
+reads as a heartbeat rather than as an alert, and under reduced motion it holds
+still — the colour and the word beside it carry the whole meaning anyway.
 
 That is not a rule being broken so much as a different kind of page. It is
 reached deliberately, once a week, and everything on it is the content rather

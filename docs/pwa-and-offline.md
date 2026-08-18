@@ -28,6 +28,7 @@ parts than this needs.
 | Navigations | Network first, falling back to the cached page. Freshest build when online; still opens on a dead signal. |
 | `/_next/static/…` | Cache first. Content-hashed, so a URL can never mean two different things. |
 | Hashed avatars | Cache first, for the same reason. |
+| `/api/…` | **Not intercepted at all** — see below. |
 | Everything else, same-origin | Network first with forced revalidation, falling back to the cache. |
 | Cross-origin | Not intercepted at all. |
 
@@ -81,6 +82,17 @@ This is what makes a repeat visit to the seating page paint faces — and Bella
 and Leia — instantly.
 Everything else non-hashed stays network-first with a cache fallback.
 
+### `/api/` is not touched at all
+
+The one path the worker returns from without responding, so the request goes
+straight to the network. It looks like a tidiness rule and is not: the shopping
+list's event stream stays open for fifty seconds, and `assetNetworkFirst` ends in
+`cache.put(response.clone())`, which reads a response body to completion. The
+worker would sit on the whole connection, buffering, and a live list would arrive
+all at once a minute late. Nothing under `/api/` is worth caching in any case —
+there is no offline answer to "what does the family need from the shop" that is
+better than saying so. See [the shopping list](shopping.md).
+
 ### Each page is cached under its own URL
 
 Worth knowing because it was wrong until recently. The worker used to store
@@ -111,7 +123,8 @@ boundary — see [Authentication](authentication.md#what-is-not-here).
 ### Shipping an update
 
 Bump `CACHE_VERSION` in `public/sw.js`. Every device drops its old cache on the
-next visit. Currently `v5`.
+next visit. Currently `v13`. Each bump is justified beside the constant itself;
+the ones worth knowing the *reason* for are below.
 
 - `v3` — the app was renamed and the icons were redrawn. The case the bump
   exists for: without it, installed devices keep serving the old icons forever.
@@ -120,6 +133,10 @@ next visit. Currently `v5`.
   for a reason worth remembering: **every cached page carries the tab bar**, so
   a rename makes every entry in the cache stale at once, not just the page that
   moved.
+- `v7`–`v12` — new pages, a renamed route and a rebuilt sound. All the same two
+  cases as above; the notes are in `sw.js`.
+- `v13` — the shopping list, which is the tab-bar case again *and* the first
+  change to what the worker refuses to handle at all: the `/api/` bypass.
 
 ### Local development caveat
 

@@ -100,7 +100,16 @@
  * 855KB for one card on one page, and the runtime cache picks it up on the
  * first visit like every other same-origin asset.
  */
-const CACHE_VERSION = "v12";
+/*
+ * v13: the shopping list arrived, with a tab and a dashboard card — the v5-v7
+ * case, so every installed device has to drop its shell or go on painting a bar
+ * and a dashboard with no way to reach the page.
+ *
+ * It also brought the first request in this app that must **not** pass through
+ * the worker at all, which is the more interesting half of this bump. See the
+ * bypass at the top of the `fetch` handler.
+ */
+const CACHE_VERSION = "v13";
 const CACHE_NAME = `birch-family-app-${CACHE_VERSION}`;
 const APP_SHELL = "/";
 
@@ -155,6 +164,25 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  /*
+   * Never touch the API.
+   *
+   * Returning without calling `respondWith` hands the request straight to the
+   * network, which is what every route under `/api/` wants — but the shopping
+   * list's event stream *needs* it, and would otherwise be broken in a way that
+   * is hard to diagnose from the page. `assetNetworkFirst` below ends in
+   * `cache.put(response.clone())`, and putting a response into the Cache API
+   * reads its body to completion: for a stream that stays open for fifty seconds
+   * that means the worker sitting on the whole connection, buffering, and
+   * delivering nothing until it ends. A live list would arrive all at once, a
+   * minute late.
+   *
+   * Nothing under `/api/` is worth caching in any case. There is no offline
+   * answer to "what does the family need from the shop" that is better than
+   * saying so.
+   */
+  if (url.pathname.startsWith("/api/")) return;
 
   if (request.mode === "navigate") {
     event.respondWith(pageNetworkFirst(request));

@@ -53,6 +53,17 @@ export const COLLECTIONS = {
    */
   starWeeks: "starWeeks",
   /**
+   * The family shopping list. One document per line on it.
+   *
+   * The first collection in the app that several people write to at the same
+   * time, and the first whose *changes* have to reach other devices rather than
+   * merely being there next time somebody looks. It is also the only one where
+   * the unit anybody edits is the document — the stars deliberately bucket a
+   * whole week into one — because that is what a shopping list is. See
+   * docs/shopping.md.
+   */
+  shoppingItems: "shoppingItems",
+  /**
    * Daily request counters for the read-only family-context API — one
    * document per counter per day, holding an integer and a TTL.
    *

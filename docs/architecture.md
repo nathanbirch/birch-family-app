@@ -4,8 +4,10 @@
 
 Next.js 16 App Router, React server components by default, Tailwind v4 for
 layout and semantic CSS custom properties for colour. MongoDB Atlas behind a
-single shared login. Server Actions for the two mutations there are (sign in,
-sign out); no REST API routes.
+single shared login. Server Actions for every mutation. Two Route Handlers, and
+both earn it: the read-only family-context API, which authenticates with a bearer
+token rather than the session cookie, and the shopping list's event stream, which
+is a response that stays open rather than one that is returned.
 
 ## Routes
 
@@ -28,6 +30,7 @@ src/app/
     ├── ceremonies/page.tsx  /ceremonies    every award ceremony, newest first
     ├── ceremonies/[week]/   /ceremonies/…  one week's award ceremony
     │   └── page.tsx
+    ├── shopping/page.tsx   /shopping  the family shopping list — the live one
     ├── calendar/page.tsx   /calendar  the family Google Calendar
     ├── note/page.tsx       /note      the pad on the fridge — a *tool*
     ├── picker/page.tsx     /picker    who goes first — a *tool*
@@ -88,6 +91,14 @@ is why the calendar page and the dashboard badge each sit behind their own
 `<Suspense>` boundary and degrade to an explanation rather than an error. See
 [Calendar](calendar.md).
 
+**Stored, and *watched*** — the shopping list. It is the first thing in the app
+that is not merely stored but *shared while two people look at it*: whoever is at
+the shop needs to see the milk somebody added at home, without reloading. That
+makes it the first page with a persistent connection of its own, and the first
+whose changes have a latency budget. See [the shopping list](shopping.md), which
+is mostly the argument for why that connection is server-sent events rather than
+a WebSocket — the answer is in the deployment, not in a preference.
+
 Keep new features on the right side of that line where you can. A chore *chart*
 (who is assigned what, on what cycle) may well be derivable config like the
 seating schedule; whether a chore was *done* is genuinely state and belongs in
@@ -115,6 +126,7 @@ Client components exist only where there is a specific interactive reason:
 | `ThemeProvider` / `ThemePicker` | `localStorage`, a popover, focus management |
 | `SwapParentsButton` | reads the swap store |
 | `ServiceWorker` | calls `navigator.serviceWorker.register` |
+| `ShoppingBoard` | the only page in the app that is *shared live*: it holds an `EventSource` open, applies its own edits before they are written, and reconciles the two |
 | `error.tsx` | React error boundaries must be client components |
 
 The seating page renders the shell on the server and hands the island an
@@ -151,6 +163,7 @@ here, strongly typed, with no logic beyond simple lookups.
 | `app.ts` | App name, rotation start date, every `localStorage` key |
 | `db.ts` | The database name and every collection name |
 | `navigation.ts` | The pages, the tools, where each sits in the tab bar, the planned-feature cards |
+| `shopping.ts` | The shopping list's ceilings, and every timing the live stream runs on |
 | `note.ts` | The Note's tools, inks, nibs, papers and the pad's fixed shape |
 | `picker.ts` | Finger Picker's timings and its ten circle colours |
 | `ceremony-music.ts` | The ceremony's playlist id, its volume, and how long YouTube gets |
@@ -178,6 +191,9 @@ Pure functions. Nothing here imports React.
 | `calendar/` | iCalendar reading, `RRULE` expansion, timezone conversion, grid layout, the feed fetch |
 | `pets/rotation.ts` | Which child sleeps with which animal tonight, and the rule that keeps them apart |
 | `pets/store.ts` | Reads the `petRotations` collection, falling back to the compiled default |
+| `shopping/list.ts` | The shopping list as a value: names, ids, sorting, optimistic patches, reconciliation |
+| `shopping/stream.ts` | The event-stream wire format, shared by the route handler and the browser |
+| `shopping/store.ts` | The `shoppingItems` collection |
 | `db.ts` | The shared MongoDB client, and readable connection errors |
 | `auth/` | Sessions, users, passwords, the DAL, the sign-in/out actions |
 
@@ -209,6 +225,11 @@ calendar/CalendarBoard  the client island; owns the view, layout and cursor
 ├── TimeGrid            the hour grid — Day (1 column) or Week (7)
 └── MonthView           six rows of seven, with event chips
 calendar/CalendarNotice not connected, or connected and failing
+
+shopping/ShoppingBoard  the live island; owns the list, the stream and the exit timing
+├── AddItemForm         the box you type into, which keeps the keyboard
+├── ShoppingRow         one line, wanted or bought — the whole row is the tick
+└── CompletedList       the Bought accordion: the last hundred, newest first
 
 note/StickyNote       pointer events into strokes, and two stacked canvases
 note/NoteToolbar      the tray: tools, nibs, inks, papers, undo, clear
@@ -253,6 +274,14 @@ There are three pieces of state, and each is held the way it actually behaves:
 
 Both stores are module-level, so the header button and the seating board share
 one source of truth with no context provider.
+
+The shopping list adds a fourth, and it is the only one that is genuinely hard:
+**a shared list plus this device's unconfirmed edits**. The server's copy arrives
+over the stream; local edits are held as patches on top of it and dropped the
+moment believing the server would look the same. `useOptimistic` does not fit —
+it reverts when its transition settles, which for a page that deliberately does
+not revalidate means every tap would blink. See
+[the shopping list](shopping.md#instant-and-still-correct).
 
 ## Where the app opens
 

@@ -168,6 +168,24 @@ function BoredIcon({ className }: IconProps) {
 }
 
 /**
+ * A trolley — the shopping list.
+ *
+ * A basket was the first attempt and it lost to the gift box at tab size: both
+ * are a quadrilateral with a line across it, and on a strip that scrolls the two
+ * were a fraction of a second apart to read. A trolley has wheels, which nothing
+ * else in this set does, so it is identifiable by its silhouette alone.
+ */
+function ShoppingIcon({ className }: IconProps) {
+  return (
+    <svg {...SHARED} className={className} aria-hidden="true">
+      <path d="M2.8 4.5h2.1l2.4 10a1.6 1.6 0 0 0 1.6 1.2h8a1.6 1.6 0 0 0 1.55-1.2l1.35-6.1H6.4" />
+      <circle cx="9.6" cy="19.4" r="1.4" />
+      <circle cx="17.2" cy="19.4" r="1.4" />
+    </svg>
+  );
+}
+
+/**
  * A pencil laid across a page — the Note.
  *
  * The pencil is drawn nib-down-left at the angle a right-hander holds one, and
@@ -211,6 +229,7 @@ function PickerIcon({ className }: IconProps) {
 
 const ICONS = {
   seats: SeatsIcon,
+  shopping: ShoppingIcon,
   note: NoteIcon,
   picker: PickerIcon,
   health: HealthIcon,

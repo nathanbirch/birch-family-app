@@ -155,6 +155,45 @@ This is the only collection that grows steadily: five documents a week, about
 knowing before you touch them — see
 [Star charts](stars.md#ticking-a-star).
 
+### `shoppingItems`
+
+The family shopping list. One document per line on it.
+
+| Field | Type | Notes |
+|---|---|---|
+| `_id` | ObjectId | **Chosen by the browser** before the write goes out — see [the shopping list](shopping.md#why-the-browser-invents-the-id). That is what makes an add idempotent: a retry collides with its own first attempt instead of adding the milk twice. |
+| `name` | string | Trimmed, whitespace collapsed, 80 characters at most. |
+| `addedBy` | string | The `displayName` of whoever added it. Copied in, not joined. |
+| `createdAt` | Date | The sort order of the wanted half, newest first. |
+| `completedAt` | Date \| null | `null` while it is still wanted. |
+| `completedBy` | string \| null | Who ticked it off. Overwritten each time, which is correct — the last person to tick it is who got it. |
+| `updatedAt` | Date | Bumped by every write. **Load-bearing:** the live stream's entire "has anything changed?" question is a count plus the maximum of this field, so a write that forgets it is invisible to every other device in the house. |
+
+**Indexes:**
+
+- `by_wanted` — `(completedAt: 1, createdAt: -1)`. The top half of the page and
+  the duplicate check every add runs. The equality term first, the sort second,
+  which is the order a compound index has to be declared in to serve both.
+- `by_bought` — `(completedAt: -1)`. The accordion: the hundred most recently
+  ticked off.
+
+The stream's poll deliberately has no index of its own; the reasoning is in
+`scripts/seed-database.ts` next to the ones that do.
+
+Two things this collection does differently from `starWeeks`, both deliberate:
+
+- **The document is the item**, not a bucket. The stars put a whole week in one
+  document because the paper chart is a week and a star is never edited alone.
+  Here the unit somebody adds, ticks and deletes *is* the item, two people are
+  editing different items at the same moment, and no bucket ever closes.
+- **Deleting really deletes.** Ticking off is kept — it is what the accordion is
+  — but the bin is the "that was a typo" button, and a tombstone would keep every
+  typo on the page forever.
+
+This and `starWeeks` are the two collections that grow. This one grows by
+whatever the family buys and is never pruned; only the newest hundred finished
+rows are ever *shown*.
+
 ---
 
 ## Seeding

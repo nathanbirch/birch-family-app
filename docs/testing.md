@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **1,346 tests across 63 files.**
+Vitest with jsdom and Testing Library. **1,428 tests across 66 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -531,12 +531,69 @@ The nav config that the tab bar and the dashboard are both generated from:
   and resumed are different questions
 - **Pages and tools together are exactly the dashboard** — the two sections are
   a rendering decision, not a second source of truth
-- **The page list stays at eight or fewer**, which is the point past which
-  Account falls below the fold on the dashboard
+- **The page list stays at nine or fewer** — it was eight until the shopping
+  list arrived, and the test says why that was a considered trade rather than a
+  slipped limit, and why ten is where the cards get grouped instead
 - Nothing is advertised as "coming soon" that already exists
 - Active-tab matching: exact for Home, sub-routes for the rest, and
   **`/turns` must not match `/turns-plan`** — the bug a naive `startsWith`
   would introduce
+
+### `shopping-list.test.ts` — 40 tests
+The shopping list as a value, which is where its whole promise lives:
+
+- Names are **trimmed, not refused** — 80 characters, whitespace collapsed
+- "Already on the list" ignores case, spacing and accents, so `jalapeno` finds
+  `Jalapeño` — and only searches what is still *wanted*, because bread bought
+  last week is genuinely wanted again
+- Ids are 24 hex characters, unique across 500 draws, and anything that is not
+  one is refused — that value reaches MongoDB as an `_id`
+- Sorting: wanted newest-first, bought most-recently-first, capped at 100 by
+  dropping the *oldest*
+- The revision token **notices a deletion**, including the case that moves the
+  newest timestamp backwards — the one a timestamp alone would miss, and the one
+  that would leave every other phone showing a deleted row
+- Optimistic patches: add, tick, untick, remove, never twice, applied in order
+- Reconciliation: a local change is kept while the server has not heard about it,
+  dropped once the server agrees — **including when somebody else made the same
+  change**, because that is the same fact — and given up on at the grace deadline
+  so a write that vanished cannot outlive it
+
+### `shopping-stream.test.ts` — 13 tests
+The event-stream wire format. Every rule here is one that fails *silently* when
+broken — a frame with a stray newline does not error, it delivers half a shopping
+list:
+
+- A frame ends in a blank line, or the browser never dispatches it
+- The payload stays on **one line**, `\n` and U+2028/U+2029 included
+- `retry:` and comment-heartbeat framing
+- The URL carries, and escapes, the revision the page already has
+- A payload the build does not understand is refused rather than half-read
+- The timings hold together: the connection retires before the platform's
+  ceiling, and gets many polls out of one connection
+
+### `shopping-board.test.tsx` — 28 tests
+The page, with the Server Actions mocked and a fake `EventSource` the test
+drives. jsdom has neither.
+
+- The whole list renders on the **first paint**, before any stream connects
+- A row is drawn **while the write is still in flight**, and put back if the
+  server refuses
+- Adding sends a tidied name and a valid id; the box clears and **keeps the
+  focus**; whitespace is not sent
+- Adding a duplicate says so **without asking the server**, and still shows one row
+- Ticking keeps the row on screen for the exit animation and *only then* writes —
+  the assertion that the deliberate delay is deliberate
+- Unticking, and the bin
+- The accordion cannot be opened when empty, and its rows are `inert` while shut
+- The stream: something added in another room appears with no reload, a deletion
+  disappears, and a payload it cannot parse costs one message
+- **A tick is not rubbed out by a push that predates it** — the race the whole
+  reconciliation exists for
+- The handover opens a fresh connection carrying the newer revision, the old one
+  closed
+- Hiding the page closes the stream; coming back opens a new one; unmounting
+  hangs up
 
 ### `stores.test.ts` — 9 tests
 The `useSyncExternalStore` contract for both preferences: a stable snapshot, a

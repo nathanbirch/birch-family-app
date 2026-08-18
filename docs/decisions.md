@@ -423,3 +423,72 @@ worth separating the two rather than keeping one date that meant both.
 **James's chore became `fixed`, not a pool of one.** A one-child pool would
 have rotated correctly and said nothing true: `fixed` is the app's existing
 word for "this moves when we decide it moves, not when the calendar does."
+
+---
+
+## The shopping list is live over server-sent events, not a WebSocket
+
+"When somebody else adds something, my screen shows it without a reload" is the
+requirement, and a WebSocket is the usual way to say that. It is not available
+here. This app is deployed as serverless functions on Vercel: the platform
+terminates the HTTP request before any handler runs, and there is nowhere to keep
+an upgraded socket — which is also why Next.js Route Handlers have no upgrade
+hook. A real WebSocket would have meant a second, always-on host, or a paid
+realtime service, for a family shopping list.
+
+Server-sent events give the same guarantee over the connection Vercel already
+serves, and two of the differences are in this feature's favour rather than
+against it: the stream is an ordinary authenticated GET, so it is guarded by the
+same session check as every page rather than by a second mechanism, and the
+browser's own reconnection logic is built in. The direction it gives up —
+browser-to-server — is one this page never needed, because every change it makes
+upstream is a mutation that wants a Server Action anyway.
+
+The cost is a ceiling on how long one connection may live. The stream retires
+itself ten seconds early, says goodbye, and the page opens the next one carrying
+the revision it already has — so the unavoidable interruption becomes a seam
+nobody can see. See [the shopping list](shopping.md#how-live-works).
+
+---
+
+## The stream polls the database, and the alternatives are worse
+
+Inside that connection, the server asks MongoDB "has anything changed?" every
+second and a half. This looks like the lazy option and is the correct one.
+
+An **in-process event emitter** that the Server Actions publish to is the design
+everybody reaches for first, and it only reaches browsers connected to the same
+instance. Vercel runs several and neither side chooses which; the phone in the
+kitchen and the phone at the shop would routinely be listening to different
+instances and hear nothing from each other. That is not a slower version of
+working — it is a feature that passes every local test and fails in the house.
+
+A **MongoDB change stream** does work across instances, at the price of an open
+cursor per connection and a dependency on the cluster's oplog. It is the right
+answer at a scale this app will never reach.
+
+What is polled is a count and one maximum — no documents cross the wire — and the
+full list is read only when that token moves. The poll is also on the *server* side
+of the connection, so the phone still gets a push and still spends no battery
+asking.
+
+---
+
+## The shopping list's Server Actions do not call `revalidatePath`
+
+Every other mutation in the app ends with one. These deliberately do not, and it
+is the first thing to know before editing them.
+
+An open browser has already been told about the change by the stream, and the
+device that made it drew the change before the write even left. Revalidating
+would spend a full server render re-deriving a list both parties already hold —
+on every tap, on a page somebody is holding in a supermarket aisle. Nothing goes
+stale as a result, because the page is uncached: a fresh navigation queries
+MongoDB again on its own.
+
+The consequence for the client is that `useOptimistic` cannot be used, which is
+worth stating plainly rather than discovering. It reverts as soon as its
+transition settles, and with no revalidation it would revert to a server list
+that is still up to one poll behind — so every tick would blink. The page keeps
+explicit patches instead, and drops each one the moment believing the server would
+look the same. See [the shopping list](shopping.md#instant-and-still-correct).

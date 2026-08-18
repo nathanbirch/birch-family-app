@@ -102,6 +102,7 @@ export type NavIconName =
   | "bored"
   | "stars"
   | "report"
+  | "shopping"
   | "note"
   | "picker";
 
@@ -136,6 +137,13 @@ export type NavIconName =
  *   least reachable end — which on a strip is the far side of a scroll rather
  *   than a corner.
  *
+ * About four tabs are visible before the strip needs pushing, so the first four
+ * places are the only ones really worth arguing about. They are the three pages
+ * somebody opens without having decided to — Stars, Shopping, Calendar — and
+ * then Turns, which is glanced at once, at dinner, by somebody already looking
+ * for it. Turns and Calendar traded places when the shopping list arrived, for
+ * that reason and no other.
+ *
  * ---------------------------------------------------------------------------
  * THE TOOLS ARE IN IT TOO
  * ---------------------------------------------------------------------------
@@ -157,7 +165,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     title: "Whose Turn",
     description:
       "Whose turn for which seat this week, and for Bella and Leia tonight.",
-    bar: 2,
+    bar: 4,
     icon: "seats",
   },
   {
@@ -169,12 +177,32 @@ export const NAV_ITEMS: readonly NavItem[] = [
     bar: 1,
     icon: "stars",
   },
+  /*
+   * Second in the strip, behind Stars only, and third on the dashboard.
+   *
+   * That is a claim about how often it is opened rather than about how important
+   * it is. Everything else in this list is read on a schedule — a week, a night,
+   * a Sunday — and answers a question that has one answer. The shopping list is
+   * opened whenever somebody notices the bread has run out and again whenever
+   * somebody is standing in a shop, which is several times a day and never at a
+   * predictable moment. It is also the only page where being one tap further away
+   * has a cost you can measure in forgotten shopping.
+   */
+  {
+    href: "/shopping",
+    label: "Shopping",
+    title: "Shopping List",
+    description:
+      "What we need. Anyone can add to it, and it updates on every phone at once.",
+    bar: 2,
+    icon: "shopping",
+  },
   {
     href: "/mantras",
     label: "Mantras",
     title: "Family Mantras",
     description: "The things we say to each other, and where they came from.",
-    bar: 7,
+    bar: 8,
     icon: "mantras",
   },
   {
@@ -199,7 +227,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     title: "Healthy Birches",
     description:
       "The five lists off the wall: body, mind, feelings, spirit and home.",
-    bar: 6,
+    bar: 7,
     icon: "health",
   },
   {
@@ -207,7 +235,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Bored",
     title: "Bored?",
     description: "Inside, outside, or earn some Dad Bucks.",
-    bar: 4,
+    bar: 5,
     icon: "bored",
   },
   {
@@ -215,7 +243,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Ceremony",
     title: "Ceremonies",
     description: "Last week's award ceremony: every star, and what it was worth.",
-    bar: 5,
+    bar: 6,
     icon: "report",
   },
   {
@@ -223,7 +251,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Note",
     title: "The Note",
     description: "A pad on the fridge. Write on it with the pencil; it stays until it is cleared.",
-    bar: 8,
+    bar: 9,
     icon: "note",
     group: "tool",
   },
@@ -232,7 +260,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Picker",
     title: "Finger Picker",
     description: "Everyone puts a finger on the screen. After five, it picks one.",
-    bar: 9,
+    bar: 10,
     icon: "picker",
     group: "tool",
   },
@@ -241,7 +269,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "Account",
     title: "Account",
     description: "Theme, sign out, and what this app is.",
-    bar: 10,
+    bar: 11,
     icon: "account",
   },
 ] as const;

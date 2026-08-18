@@ -1,8 +1,9 @@
 # Birch Family App
 
 A private, installable web app for the Birch family. It sits behind a login and
-currently holds the weekly **seating rotation**, the **family mantras** and the
-**Healthy Birches** lists — with chore charts, rewards and stars planned.
+currently holds the weekly **seating rotation**, the **star charts**, the shared
+**shopping list**, the **family mantras** and the **Healthy Birches** lists —
+with rewards still planned.
 
 ---
 
@@ -98,10 +99,17 @@ npm start          # serve the production build locally
   Almost wordless on purpose: the child most likely to be bored is the one
   least able to read their way out of it. The Money list prices jobs in **Dad
   Bucks** (`Đ`). See [The Bored Page](docs/bored.md).
+- **Shopping list** (`/shopping`) — what the family needs, on every phone at
+  once. Anybody can add to it; the whole row is the tick; ticked things drop into
+  a "Bought" accordion holding the last hundred, newest first. The one **live**
+  page in the app: a change made in the kitchen appears at the supermarket about a
+  second later with nobody reloading anything, over server-sent events rather than
+  a WebSocket — which is a deployment constraint, not a preference. See
+  [the shopping list](docs/shopping.md).
 - **Account** (`/account`) — who's signed in, the theme picker, sign out.
 - **Bottom tab bar** — Home pinned on the left, then everything else on a strip
-  that scrolls sideways: Stars · Turns · Calendar · Bored · Ceremony · Healthy ·
-  Mantras · Note · Picker · Account. Home never scrolls away and is always drawn
+  that scrolls sideways: Stars · Shopping · Calendar · Turns · Bored · Ceremony ·
+  Healthy · Mantras · Note · Picker · Account. Home never scrolls away and is always drawn
   more strongly than the rest; the current page is a filled pill, and the strip
   slides itself so that pill is on screen.
 - Ten themes including a dark one. Installable as a PWA.
@@ -133,6 +141,7 @@ Everything lives in **[`docs/`](docs/README.md)**:
 | [Deployment](docs/deployment.md) | Vercel setup, env vars, domains, the GitHub Pages history. |
 | [Mantras](docs/mantras.md) | The family mantras, the quoting rule, and the mantra of the day. |
 | [Star charts](docs/stars.md) | The three charts, the weekly chore swap, and how a star is stored. |
+| [The shopping list](docs/shopping.md) | The one live page: why it is server-sent events, and how a tick stays drawn before its write lands. |
 | [Healthy Birches](docs/health.md) | The five lists off the wall, the transcription rule, and the drawings. |
 | [Database](docs/database.md) | MongoDB, collections, seeding, the Atlas allowlist trap. |
 | [Authentication](docs/authentication.md) | How login works, changing the password, adding people. |
@@ -168,6 +177,7 @@ Almost everything you would want to adjust is data, not code, and lives in
 | Who has which pet tonight | the `petRotations` collection — see [Pets](docs/pets.md#re-anchoring) |
 | The family mantras and their quotes | `mantras.ts` |
 | The five healthy lists off the wall | `health.ts` |
+| How long a shopping list item may be, and every live-stream timing | `shopping.ts` |
 | Things to do when bored, and Dad Bucks prices | `bored.ts` |
 | Seat positions, parent defaults, animation timing | `seating.ts` |
 | The seven Family Home Evening jobs, and who has which | `fhe.ts` |

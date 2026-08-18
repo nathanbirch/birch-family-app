@@ -111,6 +111,35 @@ async function main() {
     console.log(`  ✓ ${COLLECTIONS.starWeeks}.by_week`);
 
     /*
+     * The shopping list.
+     *
+     * Two indexes, and between them they cover every query the feature makes:
+     *
+     *   `by_wanted` — the top half of the page, and the duplicate check every
+     *   add runs. `completedAt` first because it is the equality term (`null`),
+     *   `createdAt` after it because that is the sort — which is the order a
+     *   compound index has to be declared in for MongoDB to use it for both.
+     *
+     *   `by_bought` — the accordion: the hundred most recently ticked off.
+     *
+     * The live stream's "has anything changed?" poll is deliberately not given
+     * one. It is a count and a maximum over the whole (tiny) collection, and an
+     * index on `updatedAt` would let MongoDB answer the maximum from the index
+     * while still scanning for the count — a second index to maintain on every
+     * write, in exchange for half of one cheap query. If this list ever grows to
+     * a size where that is wrong, the fix is an index on `updatedAt` here.
+     */
+    const shoppingItems = db.collection(COLLECTIONS.shoppingItems);
+    await shoppingItems.createIndex(
+      { completedAt: 1, createdAt: -1 },
+      { name: "by_wanted" },
+    );
+    console.log(`  ✓ ${COLLECTIONS.shoppingItems}.by_wanted`);
+
+    await shoppingItems.createIndex({ completedAt: -1 }, { name: "by_bought" });
+    console.log(`  ✓ ${COLLECTIONS.shoppingItems}.by_bought`);
+
+    /*
      * The ChatGPT API's daily counters.
      *
      * Documents are addressed by `_id` — `credential:v-current:2026-08-05` —
