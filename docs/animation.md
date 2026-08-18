@@ -176,6 +176,23 @@ Two animations on one element share the single `animation` property, so a flash
 class would have replaced the entrance animation while it was on — and replayed
 it when it came off.
 
+## A new bored idea
+
+One movement, 360ms: the tile pops in, overshooting slightly and settling
+(`bored-tile-in`). A pop rather than a slide, because a slide implies the tile came
+from somewhere and this one did not — it was invented a moment ago by the person
+watching. It is the same shape the star charts use for a tapped star, for the same
+reason: the tap should feel like it *made* something.
+
+Only tiles added on **this** device animate. Everything present when the page loaded
+is old news, and a grid that animated all twelve in would look like it was being
+written as you watched.
+
+Under reduced motion it is switched off explicitly rather than left to the blanket
+duration override, for the same reason as `shop-row-out`: the animation is
+`both`-filled and starts at `opacity: 0`, so a 0.001ms run would leave the tile
+invisible instead of instant.
+
 ## The two things that loop
 
 The line at the top of this page — nothing loops, nothing moves once the

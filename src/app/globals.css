@@ -628,6 +628,74 @@ body,
 }
 
 /* ---------------------------------------------------------------- */
+/* The Bored Page                                                    */
+/* ---------------------------------------------------------------- */
+
+/*
+ * An emoji standing in for a drawing.
+ *
+ * The square a tile's picture sits in becomes a query container, and the emoji is
+ * sized in `cqw` against it — so a family-added picture is exactly as large as a
+ * hand-drawn one at every screen width. A fixed `text-5xl` was right on a phone
+ * and looked shrunken on an iPad beside drawings that had scaled with the tile.
+ *
+ * 58% of the square, which is what puts an emoji's *inked* area at about the 80%
+ * the SVGs occupy: a glyph carries its own padding inside its em box, and matching
+ * the numbers rather than the pictures made every emoji look small.
+ */
+.bored-tile-frame {
+  container-type: inline-size;
+}
+
+.bored-emoji {
+  font-size: 58cqw;
+  line-height: 1;
+}
+
+/*
+ * A tile that has just been added.
+ *
+ * A small pop rather than a slide. A slide implies the tile came from somewhere,
+ * and this one did not — it was invented a moment ago, by the person watching.
+ * Overshoot and settle is the same shape the star charts use for a tapped star,
+ * for the same reason: the tap should feel like it *made* something.
+ */
+@keyframes bored-tile-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.bored-tile-in {
+  animation: bored-tile-in 360ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/*
+ * The picker's own scrollbar is hidden, for the same reason the nav strip's is:
+ * it is a grid of tap targets on a touchscreen, where nothing draws one, and on a
+ * desktop it would be a permanent grey line down the side of a panel that already
+ * looks scrollable because it is visibly cut off mid-row.
+ */
+.bored-emoji-grid {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior: contain;
+}
+
+.bored-emoji-grid::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- */
 /* The Finger Picker                                                 */
 /* ---------------------------------------------------------------- */
 
@@ -760,6 +828,16 @@ body,
   .shop-row-out,
   .shop-tick-draw,
   .shop-live-pulse {
+    animation: none;
+  }
+
+  /*
+   * A new bored tile is simply there. Spelled out rather than left to the
+   * blanket override below, for the same reason as `shop-row-out`: this one is
+   * `both`-filled and starts at `opacity: 0`, and a 0.001ms run of it would leave
+   * the tile invisible instead of instant.
+   */
+  .bored-tile-in {
     animation: none;
   }
 

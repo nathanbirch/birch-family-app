@@ -53,6 +53,16 @@ export const COLLECTIONS = {
    */
   starWeeks: "starWeeks",
   /**
+   * The Bored Page's ideas — all of them, built-in and family-added alike.
+   *
+   * This collection is *seeded* from `src/config/bored.ts` rather than replacing
+   * it: the arrays there are still where a built-in idea and its drawing are
+   * declared, and they are what the page falls back to when the cluster cannot
+   * be reached. What moved into the database is the ability to add one without a
+   * deploy, which is the same argument `petRotations` won. See docs/bored.md.
+   */
+  boredIdeas: "boredIdeas",
+  /**
    * The family shopping list. One document per line on it.
    *
    * The first collection in the app that several people write to at the same

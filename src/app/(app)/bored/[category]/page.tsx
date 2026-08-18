@@ -3,9 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BORED_PALETTE } from "@/components/bored/BoredArt";
-import { IdeaCard } from "@/components/bored/IdeaCard";
+import { BoredGrid } from "@/components/bored/BoredGrid";
 import { findBoredCategory } from "@/config/bored";
 import { requireUser } from "@/lib/auth/dal";
+import { readBoredItems } from "@/lib/bored/store";
 
 type PageProps = {
   /** Async in this version of Next — it must be awaited before it is read. */
@@ -49,6 +50,17 @@ export async function generateMetadata({
  *
  * An unknown id 404s rather than falling back to Inside. A mistyped URL should
  * say so rather than quietly showing the wrong thing.
+ *
+ * ---------------------------------------------------------------------------
+ * THE IDEAS NOW COME OUT OF THE DATABASE
+ * ---------------------------------------------------------------------------
+ * They were compiled in until the family could add their own. The read is
+ * forgiving in the way the pets' is — an unreachable cluster falls back to the
+ * list in `config/bored.ts` rather than showing an error — because this is the
+ * page a child opens when they are *already* fed up. See `lib/bored/store.ts`.
+ *
+ * The grid itself is a client island from here on, and only because a tile has to
+ * appear the instant somebody adds one. Everything above it is still server-only.
  */
 export default async function BoredCategoryPage({ params }: PageProps) {
   await requireUser();
@@ -58,6 +70,7 @@ export default async function BoredCategoryPage({ params }: PageProps) {
   if (!category) notFound();
 
   const palette = BORED_PALETTE[category.id];
+  const items = await readBoredItems(category.id);
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-4 pt-6 sm:px-6 sm:pt-10">
@@ -85,13 +98,7 @@ export default async function BoredCategoryPage({ params }: PageProps) {
         {category.title}
       </h1>
 
-      <ul className="animate-soft-rise grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-        {category.ideas.map((idea) => (
-          <li key={idea.id}>
-            <IdeaCard idea={idea} palette={palette} />
-          </li>
-        ))}
-      </ul>
+      <BoredGrid categoryId={category.id} items={items} palette={palette} />
     </main>
   );
 }

@@ -26,6 +26,7 @@ import {
   findBoredCategory,
   formatDadBucks,
 } from "@/config/bored";
+import { toBoredItem } from "@/lib/bored/ideas";
 import { NAV_ITEMS } from "@/config/navigation";
 
 describe("every idea has a picture", () => {
@@ -190,23 +191,25 @@ describe("a tile", () => {
 
   it("shows the price on a money idea", () => {
     render(
-      <IdeaCard idea={money.ideas[0]} palette={BORED_PALETTE.money} />,
+      <IdeaCard idea={toBoredItem(money.ideas[0])} palette={BORED_PALETTE.money} />,
     );
     expect(screen.getByText(formatDadBucks(money.ideas[0].price!))).toBeTruthy();
   });
 
   it("shows no price on an idea that is not about money", () => {
     const { container } = render(
-      <IdeaCard idea={inside.ideas[0]} palette={BORED_PALETTE.inside} />,
+      <IdeaCard idea={toBoredItem(inside.ideas[0])} palette={BORED_PALETTE.inside} />,
     );
     expect(container.textContent).not.toContain(DAD_BUCK);
   });
 
   it("is not a link or a button — there is nowhere to go", () => {
     // Tapping "Trampoline" cannot open a trampoline. Making these interactive
-    // would promise a child something would happen.
+    // would promise a child something would happen. Still true of every built-in
+    // tile; a family-added one carries exactly one control, and only that one —
+    // see the custom-idea tests below.
     const { container } = render(
-      <IdeaCard idea={inside.ideas[0]} palette={BORED_PALETTE.inside} />,
+      <IdeaCard idea={toBoredItem(inside.ideas[0])} palette={BORED_PALETTE.inside} />,
     );
     expect(container.querySelector("a")).toBeNull();
     expect(container.querySelector("button")).toBeNull();
@@ -214,7 +217,7 @@ describe("a tile", () => {
 
   it("labels the tile with its idea, and hides the drawing from a screen reader", () => {
     const { container } = render(
-      <IdeaCard idea={inside.ideas[0]} palette={BORED_PALETTE.inside} />,
+      <IdeaCard idea={toBoredItem(inside.ideas[0])} palette={BORED_PALETTE.inside} />,
     );
     expect(within(container).getByText(inside.ideas[0].label)).toBeTruthy();
     // The drawing repeats the label; announcing both would say everything twice.

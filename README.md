@@ -98,7 +98,11 @@ npm start          # serve the production build locally
   pictures — Inside, Outside, Money — then a grid of pictures behind each.
   Almost wordless on purpose: the child most likely to be bored is the one
   least able to read their way out of it. The Money list prices jobs in **Dad
-  Bucks** (`Đ`). See [The Bored Page](docs/bored.md).
+  Bucks** (`Đ`). Each grid has an **Add** button, so anybody can put their own
+  idea on it — a word up to twenty characters and a picture chosen from a grid of
+  emoji, with a price on Money. Those live in the database, seeded from the
+  built-in list and falling back to it if the cluster is unreachable. See
+  [The Bored Page](docs/bored.md).
 - **Shopping list** (`/shopping`) — what the family needs, on every phone at
   once. Anybody can add to it; the whole row is the tick; ticked things drop into
   a "Bought" accordion holding the last hundred, newest first. The one **live**

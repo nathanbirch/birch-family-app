@@ -31,7 +31,7 @@ Start here if you are picking it up cold:
 | [PWA and offline](pwa-and-offline.md) | Installing on each platform, the service worker, icons. |
 | [Accessibility](accessibility.md) | What's been done and what it guarantees. |
 | [Testing](testing.md) | What each test file covers, how to run them, current coverage. |
-| [The Bored Page](bored.md) | Three pictures for a bored child, and what a Dad Buck is worth. |
+| [The Bored Page](bored.md) | Three pictures for a bored child, what a Dad Buck is worth, and how the family adds their own idea with a word and an emoji. |
 | [The Note](note.md) | The pad on the fridge: the Apple Pencil, why it is not in the database, and how a stroke is stored. |
 | [Finger Picker](picker.md) | Who goes first: the five-second draw, and why it is provably fair. |
 | [Maintenance](maintenance.md) | Recipes for common changes, plus troubleshooting. |

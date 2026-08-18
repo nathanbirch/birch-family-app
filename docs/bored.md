@@ -7,8 +7,12 @@ of pictures.
 /bored              Inside · Outside · Money
 /bored/inside       12 things to do indoors
 /bored/outside      12 things to do outdoors
-/bored/money        16 jobs, priced in Dad Bucks
+/bored/money        15 jobs, priced in Dad Bucks
 ```
+
+Each of the three grids has an **Add** button, so the family can put their own
+ideas on it — a word and a picture, no deploy. See
+[Adding one in the app](#adding-one-in-the-app).
 
 ---
 
@@ -42,6 +46,13 @@ The test to apply when adding an idea is: **cover the caption, look at it on a
 phone, and see whether you can still tell what it is.** If you cannot, the
 drawing needs redrawing — not the label lengthening.
 
+Those three rules are about the **built-in** ideas, and they stay enforced by the
+suite. A family-added idea is held to the one part of them a program can check: a
+twenty-character ceiling, enforced by the box as well as by the Server Action. The
+rest is left to whoever is typing, on purpose — a validator that refused "Play with
+the dog" for being four words would be the app arguing with a nine-year-old about
+their own idea, and it would lose.
+
 Four drawings failed that test the first time they were rendered and were
 redrawn: the Inside sofa read as a car, the playing cards were invisible white
 on a pale wash, the fort read as a swing, and "go for a walk" was a dashed path
@@ -54,17 +65,39 @@ that rendered as a scatter of unrelated dots. The notes on each are in
 
 | File | What it holds |
 |---|---|
-| [`src/config/bored.ts`](../src/config/bored.ts) | The three categories, every idea, every price. **This is the file to edit.** |
-| [`src/components/bored/BoredArt.tsx`](../src/components/bored/BoredArt.tsx) | All 43 drawings and the three category colours. |
+| [`src/config/bored.ts`](../src/config/bored.ts) | The three categories, the 39 built-in ideas, every price, and the emoji the picker offers. **This is the file to edit for a built-in.** |
+| [`src/components/bored/BoredArt.tsx`](../src/components/bored/BoredArt.tsx) | All the drawings and the three category colours. |
 | [`src/components/bored/BoredCategoryCard.tsx`](../src/components/bored/BoredCategoryCard.tsx) | The three cards on the front. |
-| [`src/components/bored/IdeaCard.tsx`](../src/components/bored/IdeaCard.tsx) | One tile in the grid. |
-| [`src/app/(app)/bored/page.tsx`](<../src/app/(app)/bored/page.tsx>) | The three-card index. |
-| [`src/app/(app)/bored/[category]/page.tsx`](<../src/app/(app)/bored/[category]/page.tsx>) | The grid. |
-| [`tests/bored.test.tsx`](../tests/bored.test.tsx) | 61 tests, mostly "does every idea have a picture". |
+| [`src/components/bored/BoredGrid.tsx`](../src/components/bored/BoredGrid.tsx) | The grid, the Add button, and the optimistic tile. A client island. |
+| [`src/components/bored/AddIdeaForm.tsx`](../src/components/bored/AddIdeaForm.tsx) | Pick a picture, type a word, and on Money pick a price. |
+| [`src/components/bored/IdeaCard.tsx`](../src/components/bored/IdeaCard.tsx) | One tile: a drawing or an emoji, a price, and a cross if it is ours. |
+| [`src/lib/bored/ideas.ts`](../src/lib/bored/ideas.ts) | An idea as a value: ids, labels, prices, ordering. Pure. |
+| [`src/lib/bored/store.ts`](../src/lib/bored/store.ts) | The `boredIdeas` collection, and the fallback to the compiled list. |
+| [`src/lib/bored/actions.ts`](../src/lib/bored/actions.ts) | Add and remove. |
+| [`src/app/(app)/bored/page.tsx`](<../src/app/(app)/bored/page.tsx>) | The three-card index. Still no database, no clock, nothing dynamic. |
+| [`src/app/(app)/bored/[category]/page.tsx`](<../src/app/(app)/bored/[category]/page.tsx>) | Reads the ideas, hands them to the grid. |
+| [`tests/bored.test.tsx`](../tests/bored.test.tsx) | Every idea has a picture, and the word rules. |
+| [`tests/bored-ideas.test.ts`](../tests/bored-ideas.test.ts) | Ids, labels, prices and where a new idea lands. |
+| [`tests/bored-add.test.tsx`](../tests/bored-add.test.tsx) | Adding and removing one, with the actions mocked. |
 
-Nothing is in the database. These are ideas, not state — nothing is ticked,
-earned, spent or remembered — so the page works offline the moment it has been
-opened once, exactly like the mantras and the health lists.
+**The ideas are in the database now**, and this page's documentation used to say
+at length that they were not. That claim was true for as long as they were
+compiled in: they were ideas rather than state, nothing was ticked or remembered,
+so there was nothing to store. Letting the family add one ended it — a thing
+somebody types on a phone has to outlive the phone, appear on every other one, and
+survive a deploy, which is the same argument [the pet
+rotation](pets.md) won.
+
+What that does **not** mean is that `config/bored.ts` stopped mattering. It is
+still where a built-in idea and its drawing are declared, it is what the
+`boredIdeas` collection is seeded from, and it is what the page falls back to when
+the cluster cannot be reached — which matters more here than anywhere else in the
+app, because this is the page a child opens when they are *already* fed up. An
+error message is the worst possible answer.
+
+So the page still works before the seed has ever run, still works with the
+database down, and — because the fallback is decided on the *built-in* rows alone
+— still shows the family's own ideas in either case.
 
 ---
 
@@ -133,24 +166,134 @@ Note that vacuuming downstairs sits level with mowing the lawn at Đ10, which is
 the top of the list. That is a deliberate rate, not a typo: it is a whole floor
 of a house, and the price says so.
 
-**To change a price**, edit the number in `config/bored.ts` and redeploy. When
-Rewards is built and the app starts *tracking* a balance, the prices should
-move to the database for the same reason the pet rotation did — so they can be
-re-anchored without a deploy. Until then a config file is honest about what
-this is: a price list on the fridge, not a ledger.
+### To change a price — read this bit
+
+Editing the number in `config/bored.ts` and redeploying is **no longer enough**,
+and this is the one trap the move to the database introduced.
+
+The seed writes built-in ideas with `$setOnInsert`, so re-running it never
+overwrites a row that already exists. That is deliberate and right — a seed that
+rewrote labels and prices would undo anything ever edited in Atlas, including the
+family's own ideas — but it means a changed price in the config is a change to the
+*default* for a database that has already been seeded, which is to say a change to
+nothing at all.
+
+Two honest ways to actually re-price a job:
+
+```js
+// 1. Change the one row. Atlas → birch_family_app → boredIdeas.
+db.boredIdeas.updateOne(
+  { categoryId: "money", ideaId: "lawn" },
+  { $set: { price: 12, updatedAt: new Date() } },
+)
+```
+
+```js
+// 2. Or delete the built-in rows and let the seed rewrite them from the config.
+//    `custom: false` is what keeps the family's own ideas out of it.
+db.boredIdeas.deleteMany({ categoryId: "money", custom: false })
+// then: npm run db:seed
+```
+
+Change the config as well either way, or the next fresh cluster gets the old
+price.
 
 ---
 
-## Adding an idea
+## Adding one in the app
+
+Every category page has an **Add** button. It opens a panel with a grid of
+pictures, a twenty-character box, and — on Money only — a row of prices.
+
+```
+Money                                  [ + Add ]
+
+🧩 🪀 🎨 ✏️ 📚 🎲 🃏     ← pick one (scrolls)
+🧹 🧽 🧺 🧼 🚿 🛏️ 🗑️
+
+[ 🪣 ]  What is it?
+
+Đ1  Đ2  Đ3  Đ4  Đ5  Đ6  Đ7  Đ8  Đ9  Đ10
+
+[        Add        ]  Cancel
+```
+
+**The category is not a field.** An idea added on `/bored/outside` is an outside
+idea because that is the page somebody was standing on. There is nothing to
+choose, nothing to get wrong, and nothing to explain — which on this page is worth
+more than it would be anywhere else.
+
+**A picture is chosen from a grid rather than typed.** The obvious build is one
+more text box and let people type an emoji into it, and it is wrong twice over
+here: on a phone it means opening the emoji keyboard, which the four-year-old this
+page is for cannot navigate; and a free-text field would accept anything at all —
+a letter, a paragraph, a joined sequence that renders as a box on one device and a
+family of four on another. A fixed grid means every option is one tap, every
+option is known to render, and the Server Action can check the choice against the
+list instead of trying to decide whether an arbitrary string is "an emoji", which
+is a genuinely hard question and not one worth answering here.
+
+**Money asks what it pays**, with ten buttons rather than a number field. A job
+with no price would be a tile with no pill in a grid that is ordered *by* price and
+read by price — so it has to have one. Ten taps rather than a spinner because a
+spinner needs a keyboard, a concept of digits, and a decision about what to do with
+`Đ0` or `Đ7.50`.
+
+**A new tile appears before the write finishes.** The child who has just typed
+"Trampoline park" is watching the space where it should be, and a round trip is a
+long time to watch an empty square. If the write fails the tile goes away again and
+the page says why, in one short sentence — the only sentence on the page that is
+not a caption.
+
+**A cheap new job sorts into its place**, not onto the end. Price ascending is the
+only thing standing in for headings and a filter on the Money grid, so it is
+enforced now rather than maintained by hand. Inside and Outside keep their curated
+order with the family's own ideas grouped at the end.
+
+### Taking one off
+
+A family-added tile carries a small cross in its corner; a built-in tile carries
+nothing. That is deliberate in both directions: an idea a four-year-old typed has
+to be removable by somebody who is not holding a MongoDB client, and the built-in
+list is the page's content — five children can reach these tiles, so removing one
+of those is still an edit to `config/bored.ts` and a reseed.
+
+The rule is enforced twice, in two places that cannot disagree: the Server Action
+refuses any id that is not one the app issued for a custom idea (`own-` plus ten
+characters, a namespace no built-in is in), and the delete itself filters on
+`custom: true`, so there is no instant at which it could take a built-in off.
+
+### The ceilings
+
+| | | Why |
+|---|---|---|
+| Label | 20 characters | The length of the longest built-in label, so anything that fits the box is known to fit a tile. Longer is **trimmed, not refused**. |
+| Ideas per category | 40 | Not storage — a child with a thumb on the Add button, and a grid that has to stay glanceable. |
+| Price | Đ1–Đ10 | Nothing is free, and nothing a child invents is worth more than mowing the lawn. |
+
+---
+
+## Adding a built-in idea
+
+Still the way to add one with a *drawing* rather than an emoji.
 
 1. Add an entry to the right array in `src/config/bored.ts`. One or two words.
 2. Add a drawing under the matching id in `BoredArt.tsx`.
 3. `npm test` — the suite fails if either half is missing, in both directions:
    an idea without a drawing, and a drawing whose idea has been retired.
+4. **`npm run db:seed`** — new, and easy to forget. The config is what the
+   collection is seeded from, so an idea added to the array is not on the page
+   until the seed has written it. It is idempotent and leaves everything else
+   alone.
+
+Retiring one is the same in reverse, plus a note: nothing deletes a retired idea's
+*row*. Take it out by hand if it is still on a grid — `db.boredIdeas.deleteOne({
+categoryId: "inside", ideaId: "…" })`. Unlike a retired chore pool it is harmless
+until then, so the seed does not sweep it.
 
 The drawings are flat shapes on a 96×96 grid with no gradients, and they
 deliberately **ignore the theme tokens**. Same reason as `HealthArt`, and it
-matters more here because there are forty-three of them: these are landmarks.
+matters more here because there are dozens of them: these are landmarks.
 The red-and-black ladybird *is* "find bugs", and a child who has learned that
 should find it in the same colours tomorrow whichever of the ten themes is on.
 The card around each drawing themes normally, so they never look pasted on.

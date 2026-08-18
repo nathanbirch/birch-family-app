@@ -155,6 +155,43 @@ This is the only collection that grows steadily: five documents a week, about
 knowing before you touch them — see
 [Star charts](stars.md#ticking-a-star).
 
+### `boredIdeas`
+
+Every idea on [the Bored Page](bored.md) — the built-in ones and the family's own
+alike. One document per idea.
+
+| Field | Type | Notes |
+|---|---|---|
+| `_id` | ObjectId | |
+| `categoryId` | string | `"inside"` / `"outside"` / `"money"`. A document whose category is not one of those is ignored. |
+| `ideaId` | string | The stable id, and **the key into the drawings** in `BoredArt.tsx`. A built-in's is the id from `src/config/bored.ts`; the family's own are `own-` plus ten characters, which is a namespace no built-in is in. |
+| `label` | string | Trimmed, whitespace collapsed. 20 characters at most for one added in the app. |
+| `price` | number \| null | Money only, Đ1–Đ10. `null` on the other two categories. |
+| `emoji` | string \| null | `null` for a built-in, which has a drawing instead. Otherwise one of `BORED_EMOJI` — a value that is not on that list is dropped on read, so a hand-edited row cannot put arbitrary text where the page promises a picture. |
+| `custom` | boolean | Added from inside the app. **Only these can be removed from inside it**, and the delete filters on this field rather than checking it first. |
+| `addedBy` | string | Display name of whoever added it. Empty for the seeded built-ins. |
+| `createdAt` / `updatedAt` | Date | |
+
+**Indexes:** `idea_unique` — unique on `(categoryId, ideaId)`. It is also the index
+every read uses, since a category's whole grid is a prefix scan of it. Being unique
+is what makes the seed idempotent, and what turns a replayed add — a retry after a
+dropped connection — into a duplicate-key error the action treats as success rather
+than a second copy of the same idea.
+
+**Reads fall back to the compiled list**, per category, and on the *built-in* rows
+rather than on the row count. That distinction is load-bearing: deciding it on the
+count meant adding one idea to a category the seed had never run against left
+exactly one tile on the page. The consequence to know is the pets' one — deleting
+the built-in rows by hand does not empty a category, it resets it on the next read.
+Family-added rows are unaffected either way.
+
+**Re-pricing a job is not a config edit any more.** The seed uses `$setOnInsert`,
+so it never overwrites a row that exists. See
+[the Bored Page](bored.md#to-change-a-price--read-this-bit) for the two honest ways
+to change a price.
+
+---
+
 ### `shoppingItems`
 
 The family shopping list. One document per line on it.
@@ -190,9 +227,10 @@ Two things this collection does differently from `starWeeks`, both deliberate:
   — but the bin is the "that was a typo" button, and a tombstone would keep every
   typo on the page forever.
 
-This and `starWeeks` are the two collections that grow. This one grows by
+This and `starWeeks` are the two collections that grow steadily. This one grows by
 whatever the family buys and is never pruned; only the newest hundred finished
-rows are ever *shown*.
+rows are ever *shown*. (`boredIdeas` grows too, but by a handful of rows ever
+rather than on a clock.)
 
 ---
 

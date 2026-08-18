@@ -20,17 +20,28 @@
  * of a trampoline, not a paragraph about the value of unstructured play.
  *
  * ---------------------------------------------------------------------------
- * NOTHING HERE IS IN THE DATABASE
+ * THIS FILE IS NOW THE *DEFAULTS*, NOT THE LIST
  * ---------------------------------------------------------------------------
- * These are ideas, not state. Nothing is ticked, earned, spent or remembered,
- * so there is nothing to store and the page works offline the moment it has
- * been opened once — exactly like the mantras and the health lists.
+ * It used to say, at length, that nothing here was in the database: these were
+ * ideas rather than state, nothing was ticked or remembered, so there was
+ * nothing to store.
+ *
+ * That stopped being true the moment the family could add an idea from inside
+ * the app. An idea somebody types on a phone has to outlive the phone, be
+ * visible on every other one, and survive a deploy — which is the same argument
+ * the pet rotation won, and it is answered the same way: the `boredIdeas`
+ * collection is the list, and the arrays below are what it is **seeded** from
+ * and what the page falls back to when the database cannot be reached.
+ *
+ * So the thirty-nine ideas below are still the right place to add or retire a
+ * *built-in* one, and still where the drawings' ids are declared. What they no
+ * longer are is the whole list. See docs/bored.md and `lib/bored/store.ts`.
  *
  * The Dad Bucks prices are the one thing here a parent will actually want to
- * change. They are plain numbers in this file: edit and redeploy. When Rewards
- * is built and the app starts *tracking* a balance, the prices should move to
- * the database for the same reason the pet rotation did — so they can change
- * without a deploy. Until then, a config file is honest about what this is.
+ * change. They are still plain numbers in this file — edit, redeploy, and the
+ * seed leaves the existing rows alone, so **changing a price here does not
+ * change it in the database**. That is the one trap this move introduced, and
+ * `docs/bored.md` says how to re-price a job properly.
  */
 
 /* ------------------------------------------------------------------ */
@@ -192,3 +203,95 @@ export function findBoredCategory(id: string): BoredCategory | null {
 export const ALL_BORED_IDEAS: readonly BoredIdea[] = BORED_CATEGORIES.flatMap(
   (category) => category.ideas,
 );
+
+/* ------------------------------------------------------------------ */
+/* Adding one from inside the app                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The longest a family-added label may be.
+ *
+ * Twenty characters, which is not an arbitrary round number: it is the length of
+ * the longest built-in label ("Take out a trash can", "Empty the dishwasher"),
+ * so anything that fits the box is known to fit a tile without wrapping to a
+ * third line. The box enforces it with `maxLength` as well, so nobody types a
+ * sentence and then loses half of it.
+ */
+export const IDEA_LABEL_MAX_LENGTH = 20;
+
+/**
+ * A family-added money job's price, in Dad Bucks.
+ *
+ * A job with no price is not a job on this list — the whole Money grid is
+ * ordered by price and read by price. So the Money form asks for one, and these
+ * are the bounds it accepts: nothing is free, and nothing a child invents is
+ * worth more than mowing the lawn.
+ */
+export const IDEA_PRICE_MIN = 1;
+export const IDEA_PRICE_MAX = 10;
+/** What the Money form starts on. Middle of the list, so it is rarely wrong. */
+export const IDEA_PRICE_DEFAULT = 5;
+
+/**
+ * The pictures a family-added idea can choose from.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY A GRID OF EMOJI AND NOT A TEXT FIELD
+ * ---------------------------------------------------------------------------
+ * The obvious build is one more input and let people type an emoji into it. On
+ * a phone that means opening the emoji keyboard, and on this page that is the
+ * wrong answer twice over: the child this feature is for cannot navigate an
+ * emoji keyboard, and a free-text field would accept anything at all — a letter,
+ * a paragraph, a zero-width joiner sequence that renders as a box on one device
+ * and a family of four on another.
+ *
+ * A fixed grid is a *picker*: every option is one tap, every option is known to
+ * render, and the Server Action can check the choice against this list rather
+ * than trying to decide whether an arbitrary string is "an emoji" — which is a
+ * genuinely hard question and not one worth answering here.
+ *
+ * They are deliberately single-codepoint, with no skin tones and no joined
+ * sequences, for the same reason: one character, one glyph, everywhere.
+ *
+ * Loosely grouped, because a child hunting for a trampoline should find the
+ * bouncy things near each other. Order is the only navigation this grid has.
+ */
+export const BORED_EMOJI: readonly string[] = [
+  // Play and making
+  "🧩", "🪀", "🎨", "✏️", "📚", "🎲", "🃏", "🧸", "🪁", "🎪",
+  // Music and noise
+  "🎵", "🎹", "🎸", "🥁", "🎤", "🎧",
+  // Sport and out of doors
+  "⚽", "🏀", "🏈", "⚾", "🎾", "🛹", "🛼", "🚲", "🛴", "🏊",
+  "🥾", "⛰️", "🏕️", "🌳", "🍂", "❄️", "☀️", "🌈", "💧", "🔥",
+  // Animals
+  "🐶", "🐱", "🐴", "🐦", "🐛", "🦋", "🐟", "🦖",
+  // Food and baking
+  "🍪", "🧁", "🥕", "🍎", "🍞", "🥤", "🍿", "🍳",
+  // House and jobs
+  "🧹", "🧽", "🧺", "🧼", "🚿", "🛏️", "🗑️", "🪟", "🚗", "🌱",
+  "🔨", "🪣", "👕", "🍽️",
+  // Odds and ends
+  "⭐", "❤️", "🎁", "💰", "📷", "🔭", "🗺️", "⏰",
+] as const;
+
+/** Is this one of the pictures the picker actually offers? */
+export function isBoredEmoji(value: string): boolean {
+  return BORED_EMOJI.includes(value);
+}
+
+/** Is this a price a job on this page may pay? */
+export function isUsablePrice(amount: number): boolean {
+  return (
+    Number.isInteger(amount) &&
+    amount >= IDEA_PRICE_MIN &&
+    amount <= IDEA_PRICE_MAX
+  );
+}
+
+/** What the picker starts on for each category, so nothing is ever unchosen. */
+export const DEFAULT_EMOJI: Record<BoredCategoryId, string> = {
+  inside: "🧩",
+  outside: "🌳",
+  money: "💰",
+};

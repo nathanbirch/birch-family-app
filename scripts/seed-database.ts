@@ -13,9 +13,11 @@
 import { MongoClient, ObjectId } from "mongodb";
 import bcrypt from "bcryptjs";
 
+import { BORED_CATEGORIES } from "../src/config/bored";
 import { CHORE_POOLS } from "../src/config/chore-rotation";
 import { COLLECTIONS, DB_NAME } from "../src/config/db";
 import { DEFAULT_PET_ROTATIONS } from "../src/config/pets";
+import { compiledItems } from "../src/lib/bored/ideas";
 import { findSharedNightProblem } from "../src/lib/pets/rotation";
 import { findChorePoolProblem } from "../src/lib/stars/rotation";
 
@@ -109,6 +111,26 @@ async function main() {
 
     await starWeeks.createIndex({ weekStart: 1 }, { name: "by_week" });
     console.log(`  ✓ ${COLLECTIONS.starWeeks}.by_week`);
+
+    /*
+     * The Bored Page's ideas.
+     *
+     * `idea_unique` is on `(categoryId, ideaId)` rather than on `ideaId` alone,
+     * which is also the index every read uses — a category's whole grid is a
+     * prefix scan of it. The pair rather than the id because ids are only ever
+     * *used* within a category (they key the drawings per category's list), and a
+     * global unique index would be a promise this app does not need to keep.
+     *
+     * It is what makes the seed below idempotent, and what turns a replayed add —
+     * a retry after a dropped connection — into a duplicate-key error the action
+     * treats as success rather than into a second copy of the same idea.
+     */
+    const boredIdeas = db.collection(COLLECTIONS.boredIdeas);
+    await boredIdeas.createIndex(
+      { categoryId: 1, ideaId: 1 },
+      { unique: true, name: "idea_unique" },
+    );
+    console.log(`  ✓ ${COLLECTIONS.boredIdeas}.idea_unique  (unique)`);
 
     /*
      * The shopping list.
@@ -277,6 +299,66 @@ async function main() {
       console.log(
         `  ✓ Removed the retired chore pool "${String(orphan.poolId)}", ` +
           `which is no longer in src/config/chore-rotation.ts.`,
+      );
+    }
+
+    /* --- The Bored Page's built-in ideas --------------------------------- */
+
+    /*
+     * The forty-three ideas compiled into `src/config/bored.ts`, written only if
+     * they are missing — the pets' and chore pools' rule, and it matters in one
+     * specific way here worth stating out loud:
+     *
+     *   **Changing a price in the config does not change it in the database.**
+     *
+     * `$setOnInsert` is what makes re-running this safe after the family has
+     * added their own ideas, and it is also what makes a re-price a no-op. That
+     * is the right trade — a seed that overwrote labels and prices would undo
+     * anything ever edited in Atlas — but it is a trap if you expected otherwise.
+     * `docs/bored.md` says how to re-price a job properly.
+     *
+     * Family-added ideas are never touched: they carry `custom: true` and there
+     * is nothing in the config to match them against. And nothing is *deleted*
+     * for having left the config — unlike the chore pools, a retired idea's row
+     * is harmless, because an id with no drawing simply falls back to its emoji
+     * and a built-in has none to fall back to. Take a retired one out by hand if
+     * it is still on a grid.
+     */
+    console.log();
+    let seededIdeas = 0;
+    const compiled = compiledItems();
+    for (const category of BORED_CATEGORIES) {
+      for (const item of compiled[category.id]) {
+        const outcome = await boredIdeas.updateOne(
+          { categoryId: category.id, ideaId: item.id },
+          {
+            $setOnInsert: {
+              categoryId: category.id,
+              ideaId: item.id,
+              label: item.label,
+              price: item.price,
+              emoji: null,
+              custom: false,
+              addedBy: "",
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          },
+          { upsert: true },
+        );
+        if (outcome.upsertedCount > 0) seededIdeas += 1;
+      }
+    }
+
+    const customIdeas = await boredIdeas.countDocuments({ custom: true });
+    console.log(
+      seededIdeas > 0
+        ? `  ✓ Seeded ${seededIdeas} built-in bored idea(s).`
+        : `  • All built-in bored ideas already exist — left untouched.`,
+    );
+    if (customIdeas > 0) {
+      console.log(
+        `  • Left ${customIdeas} idea(s) the family added in the app alone.`,
       );
     }
 

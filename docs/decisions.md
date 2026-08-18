@@ -492,3 +492,75 @@ transition settles, and with no revalidation it would revert to a server list
 that is still up to one poll behind — so every tick would blink. The page keeps
 explicit patches instead, and drops each one the moment believing the server would
 look the same. See [the shopping list](shopping.md#instant-and-still-correct).
+
+---
+
+## The Bored Page's ideas moved into the database, and the config stayed
+
+For most of this page's life `config/bored.ts` was the list, and the file said at
+length why: these were ideas rather than state, nothing was ticked or remembered,
+so there was nothing to store. That reasoning was correct and it expired the moment
+the family could add an idea from inside the app. A thing somebody types on a phone
+has to outlive the phone, appear on every other one, and survive a deploy — the same
+argument the pet rotation won.
+
+What was *not* done is the obvious other half: deleting the config. It is still
+where a built-in idea and its drawing are declared, it is what the collection is
+seeded from, and it is what the page falls back to when the cluster is unreachable.
+That last one matters more here than anywhere else in the app — this is the page a
+child opens when they are already fed up, and an error message is the worst possible
+answer. So the page renders before the seed has ever run, renders with the database
+down, and in both cases still shows the family's own ideas.
+
+The subtlety worth knowing is *which* condition triggers the fallback: no **built-in
+rows** for that category, not no rows at all. Deciding it on the row count was the
+first implementation and it was wrong in a way that only appears in one order of
+events — add one idea to a category the seed never ran against, and the category
+stops being empty, so the twelve compiled ideas stop being offered and the page has
+exactly one tile on it.
+
+The price it introduced, and there is one: **changing a price in the config no
+longer changes it in the app.** The seed uses `$setOnInsert` so that re-running it
+cannot undo anything edited in Atlas, which also means it cannot apply a re-price.
+[docs/bored.md](bored.md#to-change-a-price--read-this-bit) has the two honest ways
+to do that instead.
+
+---
+
+## A picture is picked from a grid, not typed
+
+The natural build for "choose an emoji" is a text field. It is the wrong answer on
+this page twice over.
+
+On a phone it means opening the emoji keyboard, which the four-year-old this page
+exists for cannot navigate — and this is the one page in the app whose whole premise
+is that it works for somebody who cannot read. And a free-text field accepts
+anything at all: a letter, a paragraph, a zero-width-joiner sequence that renders as
+one glyph on the device it was typed on and as a row of boxes on the iPad in the
+kitchen.
+
+A fixed grid answers all of it. Every option is one tap, every option is known to
+render, and — the part that matters most for a `"use server"` endpoint anybody can
+POST to — validation becomes membership of a list rather than an attempt to decide
+whether an arbitrary string is "an emoji", which is a genuinely hard question
+involving grapheme clusters and variation selectors and has a different answer on
+every platform. Anything not on the list is refused, which is what stops the
+endpoint being a way to put arbitrary text where the page promises a picture.
+
+---
+
+## Money asks for a price, which is more than was asked for
+
+The brief was a label and an emoji. A money job with neither a price nor a pill,
+sitting in a grid that is *ordered* by price and read by price, would have been a
+tile that looked broken next to fifteen that were not — and it would have quietly
+broken the one property that lets that grid work without headings or a filter.
+
+So the Money form has a third control the other two do not. It is ten buttons rather
+than a number field, for the same reason the picture is a grid: a spinner needs a
+keyboard, a concept of digits, and a decision about what to do with `Đ0` and
+`Đ7.50`. Ten taps cannot express any of those.
+
+Sorting is now enforced rather than maintained by hand, which it had to be: the old
+guarantee was a property of the order the array happened to be written in, and an
+appended Đ2 job would have ended it.

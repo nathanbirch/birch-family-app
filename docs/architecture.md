@@ -163,6 +163,7 @@ here, strongly typed, with no logic beyond simple lookups.
 | `app.ts` | App name, rotation start date, every `localStorage` key |
 | `db.ts` | The database name and every collection name |
 | `navigation.ts` | The pages, the tools, where each sits in the tab bar, the planned-feature cards |
+| `bored.ts` | Inside, outside and money: the built-in ideas, the Dad Bucks prices, and the pictures a family-added idea may choose from |
 | `shopping.ts` | The shopping list's ceilings, and every timing the live stream runs on |
 | `note.ts` | The Note's tools, inks, nibs, papers and the pad's fixed shape |
 | `picker.ts` | Finger Picker's timings and its ten circle colours |
@@ -225,6 +226,10 @@ calendar/CalendarBoard  the client island; owns the view, layout and cursor
 ├── TimeGrid            the hour grid — Day (1 column) or Week (7)
 └── MonthView           six rows of seven, with event chips
 calendar/CalendarNotice not connected, or connected and failing
+
+bored/BoredGrid       the grid, the Add button and the optimistic tile
+├── AddIdeaForm       pick a picture, type a word, and on Money pick a price
+└── IdeaCard          one tile: a drawing or an emoji, a price, a cross if it is ours
 
 shopping/ShoppingBoard  the live island; owns the list, the stream and the exit timing
 ├── AddItemForm         the box you type into, which keeps the keyboard

@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **1,428 tests across 66 files.**
+Vitest with jsdom and Testing Library. **1,482 tests across 68 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -539,6 +539,40 @@ The nav config that the tab bar and the dashboard are both generated from:
   **`/turns` must not match `/turns-plan`** — the bug a naive `startsWith`
   would introduce
 
+### `bored-ideas.test.ts` — 25 tests
+The rules that decide what a family-added idea may be, and where it lands:
+
+- Ids are `own-` prefixed, unique across 500 draws, and **cannot collide with a
+  built-in's** — the id is the key into the drawings, so a collision would swap a
+  child's chosen emoji for a picture of a trampoline
+- Labels are trimmed to 20 rather than refused, and 20 is asserted to be at least
+  the longest built-in label, so anything that fits the box fits a tile
+- Prices: whole Đ1–Đ10 on Money, `null` everywhere else, so a price smuggled onto
+  an Inside idea is dropped by the category rather than by the caller
+- The picker's pictures are unique, single-glyph, and **membership is the whole
+  validation strategy** — "is this an emoji?" is not a question worth answering, so
+  anything off the list is refused
+- Ordering: Money by price (a cheap job added last must not be stranded at the
+  end), Inside and Outside curated with the family's own at the bottom, stable, and
+  losing nothing
+
+### `bored-add.test.tsx` — 28 tests
+Adding and removing one, with the Server Actions mocked:
+
+- The tile is drawn **before the write finishes**, and taken back off with a reason
+  when the server refuses
+- The category comes from the page, so there is nothing to choose
+- The picture defaults to one, so nothing can be filed without one; tapping another
+  sends that one; `aria-pressed` says which is chosen
+- Money asks what it pays and the other two do not; it starts on a price; a Đ1 job
+  lands at the top of the grid rather than the bottom
+- A built-in tile has **no cross**; a family-added one has exactly one, named after
+  its idea
+- A family-added tile shows its emoji and no drawing; a built-in shows its drawing
+- **The optimistic tile reverts when the transition settles with no fresh data** —
+  which is the test that will fail if `revalidatePath` is ever removed from the
+  action for looking redundant
+
 ### `shopping-list.test.ts` — 40 tests
 The shopping list as a value, which is where its whole promise lives:
 
@@ -772,7 +806,7 @@ worth knowing about from here, because they are unusual:
   matters — a sanitiser that quietly mangles "Feed Bella" is a bug nobody finds
   for months.
 
-### `bored.test.tsx` — 61 tests
+### `bored.test.tsx` — 60 tests
 The Bored Page, where the interesting risk is not a crash but **a picture that
 never arrives**. `BoredArt` returns null for an unknown id rather than throwing
 — the right runtime behaviour, since a gap on a page beats a blank page on the
@@ -786,6 +820,11 @@ one design rule — every label four words or fewer, every category title one
 word — which is what cut "Do a load of laundry" down to "Do a load". Plus the
 Dad Bucks contract: cheapest first, no gap wider than two, and the five prices
 the family had already set.
+
+The two files below it cover what changed when the family could add their own; the
+rules pinned here are still about the **built-in** ideas, which is the right split —
+a test that held a nine-year-old's own idea to a four-word ceiling would be the app
+arguing with them about it.
 
 ### `note-strokes.test.ts` — 42 tests
 The Note's model, which is the half of that page nobody can check by looking at
