@@ -236,43 +236,84 @@ export const IDEA_PRICE_DEFAULT = 5;
  * The pictures a family-added idea can choose from.
  *
  * ---------------------------------------------------------------------------
- * WHY A GRID OF EMOJI AND NOT A TEXT FIELD
+ * WHY A FIXED LIST AND NOT A TEXT FIELD
  * ---------------------------------------------------------------------------
- * The obvious build is one more input and let people type an emoji into it. On
- * a phone that means opening the emoji keyboard, and on this page that is the
- * wrong answer twice over: the child this feature is for cannot navigate an
- * emoji keyboard, and a free-text field would accept anything at all — a letter,
- * a paragraph, a zero-width joiner sequence that renders as a box on one device
- * and a family of four on another.
+ * The obvious build is one more input and let people type an emoji into it. On a
+ * phone that means opening the emoji keyboard, and on this page that is the wrong
+ * answer twice over: the child this feature is for cannot navigate an emoji
+ * keyboard, and a free-text field would accept anything at all — a letter, a
+ * paragraph, a zero-width joiner sequence that renders as a box on one device and
+ * a family of four on another.
  *
- * A fixed grid is a *picker*: every option is one tap, every option is known to
+ * A fixed list is a *picker*: every option is one tap, every option is known to
  * render, and the Server Action can check the choice against this list rather
  * than trying to decide whether an arbitrary string is "an emoji" — which is a
  * genuinely hard question and not one worth answering here.
  *
- * They are deliberately single-codepoint, with no skin tones and no joined
- * sequences, for the same reason: one character, one glyph, everywhere.
+ * Every entry is one code point, or one code point plus a variation selector.
+ * No skin tones and no joined sequences, for the same reason: one character, one
+ * glyph, everywhere. A test asserts it, which is what stops somebody pasting in a
+ * 👨‍👩‍👧‍👦 that renders as four boxes on the iPad in the kitchen.
  *
- * Loosely grouped, because a child hunting for a trampoline should find the
- * bouncy things near each other. Order is the only navigation this grid has.
+ * ---------------------------------------------------------------------------
+ * THE ORDER IS THE ONLY NAVIGATION IT HAS
+ * ---------------------------------------------------------------------------
+ * There is no search box and no category tabs, which at nearly three hundred
+ * pictures is a decision rather than an omission: a search box needs a word, and
+ * the whole point of a picture is that the child using it has not got one.
+ *
+ * So it is grouped, and the groups are in the order somebody scans them. Faces
+ * first, because that is what a child looks for first and what they will use for
+ * half of what they add; then animals, then the world outside, then food, then the
+ * things you do and the things you do them with. A trampoline is near the other
+ * bouncy things. Keep an addition inside its group rather than appending it to the
+ * end, or the order stops being navigation.
  */
 export const BORED_EMOJI: readonly string[] = [
-  // Play and making
-  "🧩", "🪀", "🎨", "✏️", "📚", "🎲", "🃏", "🧸", "🪁", "🎪",
-  // Music and noise
-  "🎵", "🎹", "🎸", "🥁", "🎤", "🎧",
-  // Sport and out of doors
-  "⚽", "🏀", "🏈", "⚾", "🎾", "🛹", "🛼", "🚲", "🛴", "🏊",
-  "🥾", "⛰️", "🏕️", "🌳", "🍂", "❄️", "☀️", "🌈", "💧", "🔥",
+  // Faces, and how the day is going
+  "😀", "😃", "😄", "😁", "🤣", "😂", "🙂", "😉", "😊", "😇",
+  "🥰", "😍", "🤩", "😘", "😋", "😜", "🤪", "🧐", "🤓", "😎",
+  "🥳", "😏", "😌", "😔", "🙁", "😣", "😫", "🥺", "😭", "😤",
+  "😡", "🤯", "😳", "🥵", "🥶", "😱", "🤗", "🤔",
+  // People, hands and the odd body part
+  "👶", "🧒", "👦", "👧", "🧑", "🧓", "👋", "👌", "👍", "👏",
+  "🙌", "🤝", "💪", "👀", "👣", "🧠", "💤", "🧘", "🏃", "🚶",
   // Animals
-  "🐶", "🐱", "🐴", "🐦", "🐛", "🦋", "🐟", "🦖",
-  // Food and baking
-  "🍪", "🧁", "🥕", "🍎", "🍞", "🥤", "🍿", "🍳",
+  "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯",
+  "🦁", "🐮", "🐷", "🐸", "🐵", "🙈", "🐔", "🐧", "🐦", "🐤",
+  "🦆", "🦅", "🦉", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞",
+  "🕷️", "🐢", "🐍", "🦎", "🐙", "🦀", "🐠", "🐟",
+  // Growing things, weather, sky
+  "🌳", "🌲", "🌵", "🌴", "🪴", "🌱", "🌿", "🍀", "🍂", "🍄",
+  "🌸", "🌻", "🌷", "💐", "☀️", "⛅", "☁️", "🌧️", "⛈️", "❄️",
+  "⛄", "💨", "🌪️", "🌈", "☔", "⚡", "🔥", "💧", "🌊", "🌙",
+  // Food and drink
+  "🍎", "🍐", "🍊", "🍌", "🍉", "🍇", "🍓", "🍒", "🍍", "🥝",
+  "🍅", "🥑", "🥕", "🌽", "🥒", "🥦", "🥔", "🍞", "🥨", "🥞",
+  "🧀", "🥚", "🍳", "🍗", "🌭", "🍔", "🍟", "🍕", "🥪", "🌮",
+  "🥗", "🍝", "🍜", "🍲", "🍣", "🥟", "🍦", "🍩", "🍪", "🎂",
+  // Making, playing, reading
+  "🧩", "🪀", "🧸", "🪁", "🎲", "🃏", "🎯", "🎳", "🎮", "🕹️",
+  "🎪", "🎨", "🖌️", "🖍️", "✏️", "📝", "📚", "📖", "✂️", "📏",
+  "🧵", "🧶",
+  // Music and noise
+  "🎵", "🎶", "🎹", "🎸", "🎻", "🥁", "🎺", "🎷", "🪗", "🎤",
+  "🎧", "📻",
+  // Sport and out of doors
+  "⚽", "🏀", "🏈", "⚾", "🎾", "🏐", "🎱", "🏓", "🏸", "🥊",
+  "⛳", "🏹", "🎣", "🛹", "🛼", "🛴", "🚲", "🏆", "🥇", "👟",
+  "🥾", "🎒", "🔭", "🧭",
   // House and jobs
-  "🧹", "🧽", "🧺", "🧼", "🚿", "🛏️", "🗑️", "🪟", "🚗", "🌱",
-  "🔨", "🪣", "👕", "🍽️",
+  "🧹", "🧽", "🧼", "🚿", "🛁", "🪠", "🪣", "🛏️", "🛋️", "🪑",
+  "🚪", "🪟", "🗑️", "🧻", "🔨", "🪛", "🔧", "🧰", "🔑", "📦",
+  "🛒", "🧺", "👕", "🧦",
+  // Getting about
+  "🚗", "🚙", "🚌", "🚚", "🚜", "🛵", "🚂", "🚁", "✈️", "🚀",
+  "⛵", "🏠", "🎡", "🎠",
   // Odds and ends
-  "⭐", "❤️", "🎁", "💰", "📷", "🔭", "🗺️", "⏰",
+  "❤️", "💛", "💚", "💙", "💜", "💖", "🎁", "🎈", "🎉", "🎀",
+  "💰", "💵", "💎", "📷", "🎥", "📺", "📱", "💻", "⏰", "⏳",
+  "🔍", "💡", "🎫", "🎓",
 ] as const;
 
 /** Is this one of the pictures the picker actually offers? */

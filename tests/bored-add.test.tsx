@@ -194,6 +194,23 @@ describe("adding one", () => {
     expect(addBoredIdea.mock.calls[0][0].emoji).toBe(chosen);
   });
 
+  it("offers every picture, on a rail that scrolls sideways", () => {
+    /*
+     * Nearly three hundred of them, four rows deep. The class carries the layout
+     * — see `.bored-emoji-rail` in globals.css — and it is asserted here because
+     * losing it turns the picker back into a tall vertical scroller that pushes
+     * the text box off a phone screen.
+     */
+    renderGrid("inside");
+    openForm();
+
+    const rail = document.querySelector(".bored-emoji-rail");
+    expect(rail).not.toBeNull();
+    expect(
+      screen.getAllByRole("button", { name: /^Picture / }),
+    ).toHaveLength(BORED_EMOJI.length);
+  });
+
   it("marks the chosen picture as chosen, for a screen reader too", () => {
     const chosen = BORED_EMOJI[5];
     renderGrid("inside");

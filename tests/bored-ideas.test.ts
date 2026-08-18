@@ -58,7 +58,7 @@ describe("ids for the family's own ideas", () => {
      * The id is the key into the drawings. An id that collided with a built-in's
      * would silently swap a child's chosen emoji for a picture of a trampoline —
      * so the namespace has to be one no built-in is in, and this is the assertion
-     * that keeps it that way when somebody adds the forty-fourth idea.
+     * that keeps it that way when somebody adds the fortieth idea.
      */
     for (const idea of ALL_BORED_IDEAS) {
       expect(idea.id.startsWith("own-"), idea.id).toBe(false);
@@ -136,9 +136,26 @@ describe("the pictures the picker offers", () => {
     expect(new Set(BORED_EMOJI).size).toBe(BORED_EMOJI.length);
   });
 
-  it("is enough to choose from and few enough to scan", () => {
-    expect(BORED_EMOJI.length).toBeGreaterThanOrEqual(40);
-    expect(BORED_EMOJI.length).toBeLessThanOrEqual(120);
+  it("is enough to choose from and few enough to scroll past", () => {
+    /*
+     * The ceiling used to be 120 and the list used to be 72. It is nearly three
+     * hundred now, and the number that actually matters changed with it: the rail
+     * is four rows deep and scrolls sideways, so this is really a statement about
+     * how many *columns* a thumb has to push through. A hundred columns is about
+     * the point where a picker needs a search box, and a search box needs a word —
+     * which is the one thing the child using this has not got.
+     */
+    expect(BORED_EMOJI.length).toBeGreaterThanOrEqual(200);
+    expect(Math.ceil(BORED_EMOJI.length / 4)).toBeLessThanOrEqual(100);
+  });
+
+  it("leads with faces, which is what a child looks for first", () => {
+    // The order is the only navigation this rail has — there is no search and
+    // there are no tabs. See the note above `BORED_EMOJI`.
+    expect(BORED_EMOJI.slice(0, 12).every((emoji) => /\p{Emoji_Presentation}/u.test(emoji))).toBe(
+      true,
+    );
+    expect(BORED_EMOJI[0]).toBe("😀");
   });
 
   it("recognises its own and nothing else", () => {

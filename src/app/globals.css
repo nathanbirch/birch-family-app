@@ -680,18 +680,53 @@ body,
 }
 
 /*
- * The picker's own scrollbar is hidden, for the same reason the nav strip's is:
- * it is a grid of tap targets on a touchscreen, where nothing draws one, and on a
- * desktop it would be a permanent grey line down the side of a panel that already
- * looks scrollable because it is visibly cut off mid-row.
+ * The picture picker: four rows deep, scrolling sideways.
+ *
+ * `grid-auto-flow: column` against a fixed number of rows is what turns a list
+ * into a rail — items fill downwards and then start a new column, so nearly three
+ * hundred pictures become seventy-odd columns of four rather than a tall panel.
+ *
+ * Two things this buys, and they are the reason it is not a vertical grid:
+ *
+ *   The panel's height is fixed by the row count, so the text box and the Add
+ *   button below it never move — a vertical scroller deep enough to hold this many
+ *   pushed them off a phone screen entirely.
+ *
+ *   A sideways scroll cannot be mistaken for the page's. A tall scrolling panel
+ *   inside a scrolling page means a thumb aimed at the pictures moves whichever
+ *   one the browser guesses, and it guesses wrong about half the time.
+ *
+ * `grid-auto-columns` rather than letting the items size the tracks: a column has
+ * to be exactly as wide as the buttons in it, or an emoji that happens to render
+ * wider than its neighbours ratchets its whole column open.
+ *
+ * The scrollbar is hidden for the same reason the nav strip's is — a row of tap
+ * targets on a touchscreen where nothing draws one, and on a desktop a permanent
+ * grey line under a rail that already looks scrollable because it is visibly cut
+ * off mid-column.
  */
-.bored-emoji-grid {
+.bored-emoji-rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(4, auto);
+  grid-auto-columns: 2.5rem;
+  gap: 0.25rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Keeps a swipe that reaches the end of the rail from scrolling the page. */
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  overscroll-behavior: contain;
 }
 
-.bored-emoji-grid::-webkit-scrollbar {
+@media (min-width: 640px) {
+  .bored-emoji-rail {
+    grid-auto-columns: 2.75rem;
+  }
+}
+
+.bored-emoji-rail::-webkit-scrollbar {
   display: none;
 }
 

@@ -208,10 +208,12 @@ pictures, a twenty-character box, and — on Money only — a row of prices.
 ```
 Money                                  [ + Add ]
 
-🧩 🪀 🎨 ✏️ 📚 🎲 🃏     ← pick one (scrolls)
-🧹 🧽 🧺 🧼 🚿 🛏️ 🗑️
+😀 🥰 🤓 🐶 🐰 🌳 🍎 🍕 …  ─┐  286 pictures, four rows deep,
+😃 😍 😎 🐱 🦊 🌲 🍐 🥪 …   │  scrolling sideways →
+😄 🤩 🥳 🐭 🐻 🌵 🍊 🌮 …   │
+😁 😘 😏 🐹 🐼 🌴 🍌 🥗 …  ─┘
 
-[ 🪣 ]  What is it?
+[ 💰 ]  What is it?
 
 Đ1  Đ2  Đ3  Đ4  Đ5  Đ6  Đ7  Đ8  Đ9  Đ10
 
@@ -223,15 +225,34 @@ idea because that is the page somebody was standing on. There is nothing to
 choose, nothing to get wrong, and nothing to explain — which on this page is worth
 more than it would be anywhere else.
 
-**A picture is chosen from a grid rather than typed.** The obvious build is one
-more text box and let people type an emoji into it, and it is wrong twice over
+**A picture is chosen from a fixed list rather than typed.** The obvious build is
+one more text box and let people type an emoji into it, and it is wrong twice over
 here: on a phone it means opening the emoji keyboard, which the four-year-old this
 page is for cannot navigate; and a free-text field would accept anything at all —
 a letter, a paragraph, a joined sequence that renders as a box on one device and a
-family of four on another. A fixed grid means every option is one tap, every
+family of four on another. A fixed list means every option is one tap, every
 option is known to render, and the Server Action can check the choice against the
 list instead of trying to decide whether an arbitrary string is "an emoji", which
 is a genuinely hard question and not one worth answering here.
+
+**The picker is a rail, and it scrolls sideways.** Four rows deep, filling
+downwards and then starting a new column, so 286 pictures are about seventy
+columns rather than a tall panel. It was a vertical grid while there were seventy
+pictures and that stopped working at four times as many: a scroller deep enough to
+hold them pushed the text box off a phone screen, and a vertical scroll inside a
+vertically scrolling page means a thumb aimed at the pictures moves whichever one
+the browser guesses. Sideways has neither problem — the panel's height is fixed by
+the row count, and a horizontal scroll cannot be mistaken for the page's. It is
+the same trade the bottom tab bar's strip makes.
+
+**The order is the only navigation it has**, and that is a decision rather than an
+omission: a search box needs a word, and the whole point of a picture is that the
+child using it has not got one. So the list is grouped in the order somebody scans
+it — faces first, because that is what a child looks for first and what half of
+what they add will use; then animals, the world outside, food, and the things you
+do and do them with. The panel opens scrolled to whichever picture is currently
+chosen, so the ring is never off screen. Keep an addition inside its group rather
+than appending it to the end, or the order stops being navigation.
 
 **Money asks what it pays**, with ten buttons rather than a number field. A job
 with no price would be a tile with no pill in a grid that is ordered *by* price and
@@ -268,6 +289,7 @@ characters, a namespace no built-in is in), and the delete itself filters on
 | | | Why |
 |---|---|---|
 | Label | 20 characters | The length of the longest built-in label, so anything that fits the box is known to fit a tile. Longer is **trimmed, not refused**. |
+| Pictures offered | 286 | Grouped, faces first. A test caps the rail at a hundred columns — past that a picker needs a search box, and a search box needs a word. |
 | Ideas per category | 40 | Not storage — a child with a thumb on the Add button, and a grid that has to stay glanceable. |
 | Price | Đ1–Đ10 | Nothing is free, and nothing a child invents is worth more than mowing the lawn. |
 

@@ -25,10 +25,10 @@ import type { BoredPalette } from "./BoredArt";
  * ---------------------------------------------------------------------------
  * This page's one rule is "as few words as possible", and a form is the natural
  * enemy of that rule — labels, hints, help text, validation prose. So there are
- * no visible field labels at all: the emoji grid is self-evidently a grid of
- * pictures to choose from, the text box says `What is it?` in its placeholder,
- * and the money row is a row of prices with one of them ringed. Every label a
- * screen reader needs is present and `sr-only`.
+ * no visible field labels at all: the rail is self-evidently a rail of pictures
+ * to choose from, the text box says `What is it?` in its placeholder, and the
+ * money row is a row of prices with one of them ringed. Every label a screen
+ * reader needs is present and `sr-only`.
  *
  * The chosen picture is shown large next to the box, at the size it will be on
  * the tile, so what is being built is visible before it is built.
@@ -57,6 +57,8 @@ export function AddIdeaForm({
   const [emoji, setEmoji] = useState(DEFAULT_EMOJI[categoryId]);
   const [price, setPrice] = useState(IDEA_PRICE_DEFAULT);
   const field = useRef<HTMLInputElement>(null);
+  const rail = useRef<HTMLDivElement>(null);
+  const chosenButton = useRef<HTMLButtonElement>(null);
 
   const wantsPrice = categoryId === "money";
   const ready = isUsableLabel(label) && (!wantsPrice || isUsablePrice(price));
@@ -64,10 +66,32 @@ export function AddIdeaForm({
   /*
    * The box takes the focus when the panel opens, so somebody who tapped Add can
    * start typing. The keyboard coming up is the right cost here: the panel is
-   * opened deliberately, and the emoji grid is still reachable above it.
+   * opened deliberately, and the rail of pictures is still reachable above it.
    */
   useEffect(() => {
     field.current?.focus();
+  }, []);
+
+  /*
+   * Scroll the starting picture into view, once, when the panel opens.
+   *
+   * Faces come first in the list and each category starts on something thematic —
+   * a jigsaw, a tree, a bag of money — so the ring marking the current choice is
+   * usually a long way along the rail. Without this it is simply off screen, and
+   * the panel opens looking as though nothing is chosen.
+   *
+   * `scrollLeft` rather than `scrollIntoView`, deliberately: the latter is
+   * allowed to scroll every ancestor as well, which on a page that has just
+   * expanded a panel means the whole page jumping.
+   */
+  useEffect(() => {
+    const container = rail.current;
+    const button = chosenButton.current;
+    if (!container || !button) return;
+    container.scrollLeft =
+      button.offsetLeft - container.clientWidth / 2 + button.clientWidth / 2;
+    // Once, on open. Deliberately not keyed on `emoji`: re-running on every tap
+    // would drag the rail out from under a thumb that is still choosing.
   }, []);
 
   function submit(event: React.FormEvent) {
@@ -86,12 +110,21 @@ export function AddIdeaForm({
       <fieldset>
         <legend className="sr-only">Pick a picture</legend>
         {/*
-          Scrolls rather than paginating, and is capped in height so the text box
-          below it is never pushed off a phone screen. Seventy-odd pictures is
-          more than fits and fewer than needs searching.
+          A rail: four rows deep, and it scrolls **sideways**.
+          -----------------------------------------------------------------
+          It was a vertical grid while there were seventy pictures, and that
+          stopped working at nearly three hundred — a tall scrolling panel pushed
+          the text box off a phone screen, and the panel's scroll fought the
+          page's, so a thumb aiming at the pictures moved the page instead.
+
+          Sideways has neither problem. The height is fixed by the row count, so
+          the box and the Add button never move; and a horizontal scroll cannot be
+          confused with the page's vertical one, which is the same reason the
+          bottom tab bar's strip scrolls the way it does.
         */}
         <div
-          className="bored-emoji-grid grid max-h-44 grid-cols-7 gap-1 overflow-y-auto rounded-2xl p-1.5 sm:grid-cols-10"
+          ref={rail}
+          className="bored-emoji-rail rounded-2xl p-1.5"
           style={{ backgroundColor: palette.soft }}
         >
           {BORED_EMOJI.map((option) => {
@@ -100,10 +133,11 @@ export function AddIdeaForm({
               <button
                 key={option}
                 type="button"
+                ref={chosen ? chosenButton : undefined}
                 onClick={() => setEmoji(option)}
                 aria-pressed={chosen}
                 aria-label={`Picture ${option}`}
-                className="flex aspect-square items-center justify-center rounded-xl text-xl transition-transform duration-150 active:scale-90 sm:text-2xl"
+                className="flex aspect-square items-center justify-center rounded-xl text-2xl transition-transform duration-150 active:scale-90"
                 style={
                   chosen
                     ? {
