@@ -120,6 +120,33 @@ export function normalisePrice(
   return raw;
 }
 
+/**
+ * The idea already on this grid that `label` would duplicate, if any.
+ *
+ * Case- and space-insensitive, so "puzzle" finds "Puzzle". It searches the
+ * built-ins as well as the family's own, because "already here" is a statement
+ * about the page rather than about who put it there.
+ *
+ * It lives in this module rather than in the store so that **the browser can ask
+ * the same question the Server Action asks**, before drawing anything. That is not
+ * a nicety: adding something already on the page is the most likely way an add
+ * fails, and a tile that appears and then vanishes a moment later is a worse
+ * answer than one that never appears. The action still checks — two phones cannot
+ * see each other's screens — but the common case never needs the round trip.
+ */
+export function findLabelClash(
+  items: readonly BoredItem[],
+  label: string,
+): BoredItem | null {
+  const wanted = comparableLabel(label);
+  if (!wanted) return null;
+  return items.find((item) => comparableLabel(item.label) === wanted) ?? null;
+}
+
+function comparableLabel(label: string): string {
+  return normaliseLabel(label).toLocaleLowerCase();
+}
+
 /* -------------------------------------------------------------------------- */
 /* Ordering                                                                   */
 /* -------------------------------------------------------------------------- */

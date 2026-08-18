@@ -240,20 +240,115 @@ describe("adding one", () => {
     expect(field.maxLength).toBe(IDEA_LABEL_MAX_LENGTH);
   });
 
+  it("never draws a tile for something already on the page", async () => {
+    /*
+     * The bug this test exists for, reported from the real app: type "Puzzle" onto
+     * a grid that has had a Puzzle on it since the day it shipped, and the tile
+     * appeared, then vanished, with a red message under it. Every step of that was
+     * working as written — and it reads as a broken app, because the most likely
+     * way to fail an add was also the one that flashed a tile at you first.
+     *
+     * The whole list is already on the client, so the answer is known before
+     * anything is drawn, and the server is not asked at all.
+     */
+    renderGrid("inside");
+    openForm();
+    type("Puzzle");
+    await act(async () => submit());
+    await settle();
+
+    expect(addBoredIdea).not.toHaveBeenCalled();
+    expect(screen.getByText("“Puzzle” is already here.")).toBeTruthy();
+    expect(tiles()).toHaveLength(compiled.inside.length);
+  });
+
+  it("matches a duplicate regardless of case or spacing", () => {
+    renderGrid("inside");
+    openForm();
+    type("  puzzle ");
+    fireEvent.submit(screen.getByLabelText(/what is it\?/i).closest("form")!);
+    expect(screen.getByText("“Puzzle” is already here.")).toBeTruthy();
+  });
+
+  it("points at the tile that is already there", () => {
+    // "Puzzle is already here" leaves somebody scanning twelve tiles for it. The
+    // one it clashed with is highlighted, which is the half the message misses.
+    renderGrid("inside");
+    openForm();
+    type("Puzzle");
+    fireEvent.submit(screen.getByLabelText(/what is it\?/i).closest("form")!);
+
+    const tile = screen.getByText("Puzzle").closest("li")!;
+    expect(tile.getAttribute("data-idea-id")).toBe("puzzle");
+    // The highlight is inline colour rather than a class, so that it cannot fight
+    // the entrance animation for the `animation` property.
+    expect(tile.querySelector<HTMLElement>(".app-card")!.style.backgroundColor).not.toBe("");
+  });
+
+  it("keeps the panel open and the typing when an add is refused", async () => {
+    /*
+     * The other half of the reported bug. The panel used to close the instant Add
+     * was tapped, so recovering from the likeliest failure meant reopening it and
+     * typing the whole thing again.
+     */
+    renderGrid("inside");
+    openForm();
+    type("Puzzle");
+    await act(async () => submit());
+    await settle();
+
+    const field = screen.getByLabelText(/what is it\?/i) as HTMLInputElement;
+    expect(field.value).toBe("Puzzle");
+  });
+
   it("takes the tile back off and says why when the server refuses", async () => {
+    /*
+     * A refusal the client could not have predicted — the other phone in the house
+     * added "Marbles" a second ago, so this device's copy of the list does not have
+     * it. That is what the server-side check is for, and this is the path where a
+     * tile really does appear and then go.
+     */
     addBoredIdea.mockResolvedValue({
       ok: false,
-      message: "“Lego” is already here.",
+      message: "“Marbles” is already here.",
     });
 
     renderGrid("inside");
     openForm();
-    type("Lego");
+    type("Marbles");
     await act(async () => submit());
     await settle();
 
-    expect(screen.getByText("“Lego” is already here.")).toBeTruthy();
+    expect(addBoredIdea).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("“Marbles” is already here.")).toBeTruthy();
     expect(tiles()).toHaveLength(compiled.inside.length);
+  });
+
+  it("goes dead while the write is in flight, so two taps are not two ideas", async () => {
+    /*
+     * Both taps would have passed the duplicate check — neither had committed when
+     * the other was checked — so this button is the only thing between an impatient
+     * thumb and two identical tiles.
+     */
+    let release: (value: { ok: true }) => void = () => {};
+    addBoredIdea.mockReturnValue(
+      new Promise<{ ok: true }>((resolve) => {
+        release = resolve;
+      }),
+    );
+
+    renderGrid("inside");
+    openForm();
+    type("Marbles");
+    await act(async () => submit());
+
+    expect(screen.getByRole("button", { name: /adding/i })).toBeTruthy();
+    await act(async () => submit());
+    expect(addBoredIdea).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      release({ ok: true });
+    });
   });
 
   it("closes the form once the idea is away", async () => {

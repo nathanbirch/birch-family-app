@@ -45,11 +45,21 @@ import type { BoredPalette } from "./BoredArt";
 export function AddIdeaForm({
   categoryId,
   palette,
+  pending,
   onAdd,
   onCancel,
 }: {
   categoryId: BoredCategoryId;
   palette: BoredPalette;
+  /**
+   * A write is in flight.
+   *
+   * The submit button goes dead while it is, which is the only thing standing
+   * between an impatient double-tap and two ideas with the same name: both taps
+   * would have passed the duplicate check, because neither had committed yet when
+   * the other was checked.
+   */
+  pending?: boolean;
   onAdd: (idea: { label: string; emoji: string; price: number | null }) => void;
   onCancel: () => void;
 }) {
@@ -61,7 +71,8 @@ export function AddIdeaForm({
   const chosenButton = useRef<HTMLButtonElement>(null);
 
   const wantsPrice = categoryId === "money";
-  const ready = isUsableLabel(label) && (!wantsPrice || isUsablePrice(price));
+  const ready =
+    !pending && isUsableLabel(label) && (!wantsPrice || isUsablePrice(price));
 
   /*
    * The box takes the focus when the panel opens, so somebody who tapped Add can
@@ -234,7 +245,7 @@ export function AddIdeaForm({
           className="flex-1 rounded-2xl px-5 py-3 text-base font-extrabold transition-all duration-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40"
           style={{ backgroundColor: palette.ink, color: "#ffffff" }}
         >
-          Add
+          {pending ? "Adding…" : "Add"}
         </button>
         <button
           type="button"

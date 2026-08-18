@@ -1,10 +1,11 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 
 import { DEFAULT_EMOJI, type BoredCategoryId } from "@/config/bored";
 import { addBoredIdea, removeBoredIdea } from "@/lib/bored/actions";
 import {
+  findLabelClash,
   newIdeaId,
   normaliseLabel,
   sortCategoryItems,
@@ -60,7 +61,9 @@ export function BoredGrid({
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
+  /** The tile a rejected add clashed with. Highlighted so "which one?" is answered. */
+  const [flashId, setFlashId] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
 
   /*
    * Ids added or removed on *this* device during this render pass. Only these
@@ -68,6 +71,28 @@ export function BoredGrid({
    * twelve in would look like it was being written as you watched.
    */
   const [fresh, setFresh] = useState<ReadonlySet<string>>(new Set());
+
+  const grid = useRef<HTMLUListElement>(null);
+
+  /*
+   * The highlight brings itself to the eye and then gets out of the way.
+   *
+   * Scrolled to because the Money grid is fifteen tiles and the one being pointed
+   * at may be below the fold — `block: "nearest"` does nothing at all when it is
+   * already on screen, which is the common case. Optional-called because jsdom has
+   * no layout and therefore no `scrollIntoView`, and a picker test should not fail
+   * on a scroll it cannot perform.
+   */
+  useEffect(() => {
+    if (!flashId) return;
+
+    grid.current
+      ?.querySelector(`[data-idea-id="${flashId}"]`)
+      ?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+
+    const timer = setTimeout(() => setFlashId(null), FLASH_MS);
+    return () => clearTimeout(timer);
+  }, [flashId]);
 
   const [shown, applyOptimistic] = useOptimistic(
     items,
@@ -81,7 +106,32 @@ export function BoredGrid({
 
   function add(input: { label: string; emoji: string; price: number | null }) {
     setError(null);
-    setOpen(false);
+    setFlashId(null);
+
+    const label = normaliseLabel(input.label);
+
+    /*
+     * Asked here, before anything is drawn.
+     *
+     * This is the bug this function used to have, and it is worth spelling out
+     * because the code looked right: the add went straight out optimistically, the
+     * tile appeared, the Server Action refused it for being a duplicate, and the
+     * tile vanished again with a red message under it. Adding something already on
+     * the page is the *most likely* way an add fails — typing "Puzzle" onto a grid
+     * that has had a Puzzle on it since the day it shipped — so it was also the
+     * most likely thing to see, and appearing-then-vanishing reads as a bug even
+     * when the message is correct.
+     *
+     * The whole list is already in `items`, so the browser can answer it without
+     * asking anybody. The action still checks, because two phones cannot see each
+     * other's screens; this is about the common case never needing the round trip.
+     */
+    const clash = findLabelClash(shown, label);
+    if (clash) {
+      setError(`“${clash.label}” is already here.`);
+      setFlashId(clash.id);
+      return;
+    }
 
     /*
      * The id is invented here rather than on the server, for the same reason the
@@ -93,7 +143,7 @@ export function BoredGrid({
      */
     const item: BoredItem = {
       id: newIdeaId(),
-      label: normaliseLabel(input.label),
+      label,
       price: input.price,
       emoji: input.emoji,
       custom: true,
@@ -109,7 +159,18 @@ export function BoredGrid({
         emoji: item.emoji ?? DEFAULT_EMOJI[categoryId],
         price: item.price,
       });
-      if (!result.ok) setError(result.message);
+
+      /*
+       * The panel closes on success only.
+       *
+       * It used to close the instant Add was tapped, which meant a refusal left
+       * somebody looking at a red message with their typing gone — so recovering
+       * from the most likely failure meant reopening the panel and typing the whole
+       * thing again. Staying open costs the length of one write and keeps the words
+       * where they can be edited.
+       */
+      if (result.ok) setOpen(false);
+      else setError(result.message);
     });
   }
 
@@ -173,6 +234,7 @@ export function BoredGrid({
         <AddIdeaForm
           categoryId={categoryId}
           palette={palette}
+          pending={pending}
           onAdd={add}
           onCancel={() => setOpen(false)}
         />
@@ -197,13 +259,17 @@ export function BoredGrid({
         ) : null}
       </div>
 
-      <ul className="animate-soft-rise grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+      <ul
+        ref={grid}
+        className="animate-soft-rise grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4"
+      >
         {shown.map((item) => (
-          <li key={item.id}>
+          <li key={item.id} data-idea-id={item.id}>
             <IdeaCard
               idea={item}
               palette={palette}
               entering={fresh.has(item.id)}
+              flash={flashId === item.id}
               onRemove={item.custom ? () => remove(item) : undefined}
             />
           </li>
@@ -212,6 +278,14 @@ export function BoredGrid({
     </>
   );
 }
+
+/**
+ * How long a clashing tile stays highlighted.
+ *
+ * Long enough to find it after reading the message, short enough that it is not
+ * still lit up when somebody comes back to the page a minute later.
+ */
+const FLASH_MS = 1_800;
 
 type Patch =
   | { kind: "add"; item: BoredItem }

@@ -42,12 +42,22 @@ export function IdeaCard({
   idea,
   palette,
   entering,
+  flash,
   onRemove,
 }: {
   idea: BoredItem;
   palette: BoredPalette;
   /** Just added, on this device or another. Plays the arrival animation. */
   entering?: boolean;
+  /**
+   * Somebody just tried to add this again. Draw attention to it.
+   *
+   * A *transition* on colour rather than a keyframe animation, deliberately: two
+   * animations on one element share the single `animation` property, so a flash
+   * class would replace the entrance animation while it was on and replay it when
+   * it came off. Same reasoning as the shopping list's rows.
+   */
+  flash?: boolean;
   /**
    * Offered only for a family-added idea, and only where there is something to
    * handle it — the tile is rendered on the server in tests and in the index's
@@ -63,6 +73,14 @@ export function IdeaCard({
       className={`app-card themed-transition relative flex h-full flex-col items-center gap-2 p-3 text-center sm:p-4 ${
         entering ? "bored-tile-in" : ""
       }`}
+      style={
+        flash
+          ? {
+              backgroundColor: `color-mix(in srgb, ${palette.ink} 14%, var(--color-surface))`,
+              borderColor: palette.ink,
+            }
+          : undefined
+      }
     >
       <span
         className="bored-tile-frame relative flex aspect-square w-full items-center justify-center rounded-2xl"

@@ -16,6 +16,7 @@ import { getCollection } from "@/lib/db";
 import {
   compiledItems,
   emptyByCategory,
+  findLabelClash,
   isCustomIdeaId,
   sortCategoryItems,
   type BoredItem,
@@ -212,14 +213,18 @@ export async function deleteBoredIdea(
   return outcome.deletedCount > 0;
 }
 
-/** Is this label already on that category's grid? Case- and space-insensitive. */
+/**
+ * Is this label already on that category's grid?
+ *
+ * The comparison itself is `findLabelClash` in the pure module, which is what lets
+ * the browser ask the same question before it draws anything — one definition of
+ * "already here", not two that can drift apart.
+ */
 export async function findBoredLabelClash(
   categoryId: BoredCategoryId,
   label: string,
 ): Promise<BoredItem | null> {
-  const items = await readBoredItems(categoryId);
-  const wanted = comparable(label);
-  return items.find((item) => comparable(item.label) === wanted) ?? null;
+  return findLabelClash(await readBoredItems(categoryId), label);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -263,10 +268,6 @@ function toItem(document: BoredIdeaDocument): BoredItem | null {
     emoji,
     custom,
   };
-}
-
-function comparable(label: string): string {
-  return label.replace(/\s+/g, " ").trim().toLocaleLowerCase();
 }
 
 function isDuplicateKey(error: unknown): boolean {

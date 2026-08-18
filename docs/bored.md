@@ -266,6 +266,24 @@ long time to watch an empty square. If the write fails the tile goes away again 
 the page says why, in one short sentence — the only sentence on the page that is
 not a caption.
 
+**Something already on the page is answered before anything is drawn**, and the
+tile it clashes with is highlighted. That case is worth its own paragraph because
+getting it wrong looked like a broken app: the first version sent every add
+straight out optimistically, so typing "Puzzle" onto a grid that has had a Puzzle
+on it since the day it shipped drew the tile, then took it away, then showed a red
+message. Every step of that was working as written, and adding a duplicate is the
+*most likely* way an add fails — so it was also the most likely thing anybody would
+see. The whole list is already on the device, so the browser now answers it without
+asking anybody, the panel stays open with the typing intact, and the tile that is
+already there lights up for a moment so nobody has to scan the grid for it. The
+Server Action still checks, because two phones cannot see each other's screens.
+
+The match ignores case and spacing, so `puzzle` finds `Puzzle` — but it is a whole-
+label match, so "Jigsaw puzzle" and "Puzzles" are both allowed. And the **Add**
+button goes dead while a write is in flight, which is the only thing between an
+impatient double-tap and two ideas with the same name: both taps would pass the
+duplicate check, since neither has committed when the other is checked.
+
 **A cheap new job sorts into its place**, not onto the end. Price ascending is the
 only thing standing in for headings and a filter on the Money grid, so it is
 enforced now rather than maintained by hand. Inside and Outside keep their curated
