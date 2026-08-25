@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
+
 import { getPerson } from "@/config/family";
 import { formatMoney } from "@/config/rewards";
 import type { ChartId } from "@/config/stars";
+import { convertWeekToCoins } from "@/lib/coins/actions";
+import { startFanfare } from "@/lib/stars/fanfare";
 import {
   praiseFor,
   wholeRowsLabel,
@@ -10,6 +14,7 @@ import {
 } from "@/lib/stars/report";
 
 import { Avatar } from "../Avatar";
+import { Confetti } from "../stars/Confetti";
 
 import { CountUp } from "./CountUp";
 import { StarGlyph } from "./StarGlyph";
@@ -19,6 +24,16 @@ import {
   chartDelayMs,
   totalDelayMs,
 } from "./timing";
+
+/**
+ * How loud the fanfare plays when a conversion lands.
+ *
+ * Same instrument `AwardCeremony` already reaches for when the ceremony's own
+ * music is the fanfare rather than the family playlist — a moment worth a
+ * flourish, not a second soundtrack competing with whatever is already under
+ * the slide.
+ */
+const CONVERT_FANFARE_VOLUME = 0.5;
 
 /**
  * One child's moment.
@@ -76,6 +91,9 @@ export function ChildSlide({
   report,
   weekCount,
   runKey,
+  weekStart,
+  initialConversion,
+  soundOn,
 }: {
   report: ChildReport;
   /**
@@ -85,9 +103,59 @@ export function ChildSlide({
   weekCount: number;
   /** Changes every time this slide arrives on stage; `null` while it is off. */
   runKey: number | null;
+  /**
+   * The week's own Monday, so the slide can offer "convert to coins" against
+   * it — or `null` for a span. A span is several weeks added together, and
+   * "convert this ceremony's week" stops meaning one thing the moment there
+   * is more than one week to mean it about, so the choice is not offered at
+   * all rather than guessed at.
+   */
+  weekStart: string | null;
+  /** Coins already converted for this child and week, or `null`. */
+  initialConversion: number | null;
+  /** Whether the ceremony's own sound is on — gates the conversion fanfare. */
+  soundOn: boolean;
 }) {
   const person = getPerson(report.childId);
   const totalDelay = totalDelayMs(report.charts.length);
+
+  /*
+   * `converted` starts from the server's own answer — a rewatch must show
+   * "already converted" without a round trip — and only ever moves from
+   * `null` to a number, never back. `cashChosen` is not persisted anywhere:
+   * "take cash" records nothing new, matching the payout that already
+   * happens in person, so leaving the slide and coming back offers the
+   * choice again rather than remembering a decision this app never wrote
+   * down.
+   */
+  const [converted, setConverted] = useState(initialConversion);
+  const [cashChosen, setCashChosen] = useState(false);
+  const [converting, setConverting] = useState(false);
+  const [convertError, setConvertError] = useState<string | null>(null);
+  const [celebrate, setCelebrate] = useState(0);
+
+  async function convert() {
+    if (!weekStart || converting) return;
+    setConverting(true);
+    setConvertError(null);
+
+    const result = await convertWeekToCoins({
+      childId: report.childId,
+      weekStart,
+    });
+
+    setConverting(false);
+    if (!result.ok) {
+      setConvertError(result.message);
+      return;
+    }
+
+    setConverted(result.amount);
+    if (!result.alreadyConverted) {
+      setCelebrate((value) => value + 1);
+      if (soundOn) startFanfare(CONVERT_FANFARE_VOLUME);
+    }
+  }
 
   return (
     <div
@@ -224,7 +292,73 @@ export function ChildSlide({
             </span>
           ) : null}
         </p>
+
+        {/*
+          The first mutation this ceremony has ever made. Only offered for a
+          real week (`weekStart`), only until it has been converted, and only
+          while "take cash" has not been chosen *this visit* — see the note on
+          `cashChosen` above.
+        */}
+        {weekStart && converted === null && !cashChosen ? (
+          <div
+            className="reveal-rise flex w-full flex-col items-center gap-2"
+            style={
+              { "--reveal-delay": `${totalDelay + 820}ms` } as React.CSSProperties
+            }
+          >
+            <p className="text-xs font-bold uppercase tracking-wide opacity-80">
+              Turn this week into coins?
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={convert}
+                disabled={converting}
+                className="rounded-full px-4 py-2 text-sm font-extrabold transition-transform active:scale-95 disabled:opacity-60"
+                style={{ backgroundColor: "var(--color-star)", color: "#4a3200" }}
+              >
+                {converting ? "Converting…" : `Convert to ${report.earned} coins`}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCashChosen(true)}
+                disabled={converting}
+                className="rounded-full px-4 py-2 text-sm font-extrabold transition-transform active:scale-95 disabled:opacity-60"
+                style={{ backgroundColor: "rgba(255, 255, 255, 0.2)" }}
+              >
+                Take cash
+              </button>
+            </div>
+            {convertError ? (
+              <p className="text-xs font-semibold" style={{ color: "#ffd1d1" }}>
+                {convertError}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {weekStart && converted !== null ? (
+          <p
+            className="reveal-punch rounded-full px-4 py-1.5 text-sm font-extrabold"
+            style={
+              {
+                "--reveal-delay": `${totalDelay + 820}ms`,
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+              } as React.CSSProperties
+            }
+          >
+            Converted → +{converted} coin{converted === 1 ? "" : "s"}
+          </p>
+        ) : null}
       </div>
+
+      {celebrate > 0 ? (
+        <Confetti
+          key={celebrate}
+          scope="section"
+          colors={[report.color, "var(--color-star)", "#ffffff"]}
+        />
+      ) : null}
     </div>
   );
 }

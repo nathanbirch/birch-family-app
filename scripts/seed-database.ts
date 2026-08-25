@@ -182,6 +182,53 @@ async function main() {
       `  ✓ ${COLLECTIONS.familyApiUsage}.usage_ttl     (TTL, auto-deletes counters)`,
     );
 
+    /*
+     * The shop: coins, the catalogue, redemptions, and the pooled goal.
+     *
+     * `conversion_unique` is a *partial* index — see the note at the top of
+     * `lib/coins/store.ts` for why it only applies to
+     * `type: "ceremony_conversion"` rows: nothing about a redemption or an
+     * adjustment is unique per child and week.
+     */
+    const coinTransactions = db.collection(COLLECTIONS.coinTransactions);
+    await coinTransactions.createIndex(
+      { childId: 1, weekStart: 1 },
+      {
+        unique: true,
+        name: "conversion_unique",
+        partialFilterExpression: { type: "ceremony_conversion" },
+      },
+    );
+    console.log(`  ✓ ${COLLECTIONS.coinTransactions}.conversion_unique (unique, partial)`);
+    await coinTransactions.createIndex({ childId: 1 }, { name: "by_child" });
+    console.log(`  ✓ ${COLLECTIONS.coinTransactions}.by_child`);
+
+    const rewardItems = db.collection(COLLECTIONS.rewardItems);
+    await rewardItems.createIndex(
+      { tier: 1, position: 1 },
+      { name: "tier_position" },
+    );
+    console.log(`  ✓ ${COLLECTIONS.rewardItems}.tier_position`);
+
+    const rewardRedemptions = db.collection(COLLECTIONS.rewardRedemptions);
+    await rewardRedemptions.createIndex(
+      { childId: 1, rewardId: 1 },
+      { name: "by_child_reward" },
+    );
+    console.log(`  ✓ ${COLLECTIONS.rewardRedemptions}.by_child_reward`);
+    await rewardRedemptions.createIndex({ status: 1 }, { name: "by_status" });
+    console.log(`  ✓ ${COLLECTIONS.rewardRedemptions}.by_status`);
+
+    const rewardPools = db.collection(COLLECTIONS.rewardPools);
+    await rewardPools.createIndex(
+      { rewardId: 1, status: 1 },
+      { name: "reward_status" },
+    );
+    console.log(`  ✓ ${COLLECTIONS.rewardPools}.reward_status`);
+    console.log(
+      `  • Run \`npm run db:seed-rewards\` to load the catalogue itself.`,
+    );
+
     /* --- Seed user ----------------------------------------------------- */
 
     const email = SEED_USER.email.trim().toLowerCase();

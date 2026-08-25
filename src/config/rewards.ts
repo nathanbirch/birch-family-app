@@ -27,6 +27,21 @@
 /** What one star is worth, in cents. */
 export const CENTS_PER_STAR = 5;
 
+/**
+ * What one star is worth, in coins, when converted at a ceremony.
+ *
+ * One-for-one, on purpose: a child who watched their own slide already knows
+ * their star total, and a coin balance that matched it exactly is one fewer
+ * thing to explain than a rate. This is the only place that rate is written
+ * down — `lib/coins/actions.ts` reads it rather than hard-coding `1`.
+ */
+export const COINS_PER_STAR = 1;
+
+/** A pile of stars, converted to coins. */
+export function coinsForStars(stars: number): number {
+  return Math.max(0, Math.round(stars)) * COINS_PER_STAR;
+}
+
 /** What a pile of stars is worth, in cents. */
 export function centsForStars(stars: number): number {
   return Math.max(0, Math.round(stars)) * CENTS_PER_STAR;

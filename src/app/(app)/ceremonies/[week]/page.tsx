@@ -8,6 +8,7 @@ import {
   type SpanCeremony,
 } from "@/config/ceremonies";
 import { requireUser } from "@/lib/auth/dal";
+import { getConversionForWeek } from "@/lib/coins/store";
 import { formatDateRange, parseLocalDate } from "@/lib/dates";
 import { familyNow } from "@/lib/family-api/time";
 import { getMarksForWeeks, getWeekMarks } from "@/lib/stars/marks";
@@ -99,12 +100,33 @@ export default async function ReportWeekPage({ params }: PageProps) {
   const report = buildWeekReport(pools, monday, marks);
   const dateLabel = ceremonyDateLabel(report.ceremonyDate);
 
+  /*
+   * Whether each child has already converted *this* week, so a rewatch shows
+   * "Converted → +N coins" rather than offering the choice again. Only
+   * meaningful for a single week — see the note on `AwardCeremony`'s
+   * `conversions` prop for why a span never asks.
+   */
+  const conversions = Object.fromEntries(
+    await Promise.all(
+      report.children.map(async (child) => {
+        const existing = await getConversionForWeek(child.childId, week);
+        return [child.childId, existing?.amount ?? null] as const;
+      }),
+    ).then((entries) =>
+      entries.filter(([, amount]) => amount !== null),
+    ),
+  ) as Record<string, number>;
+
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-4 pt-6 sm:px-6 sm:pt-10">
       <BackLink />
 
       <div className="animate-soft-rise">
-        <AwardCeremony report={report} dateLabel={dateLabel} />
+        <AwardCeremony
+          report={report}
+          dateLabel={dateLabel}
+          conversions={conversions}
+        />
       </div>
     </main>
   );

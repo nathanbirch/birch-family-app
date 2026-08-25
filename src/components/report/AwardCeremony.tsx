@@ -99,6 +99,7 @@ export function AwardCeremony({
   report,
   dateLabel,
   title,
+  conversions,
 }: {
   report: WeekReport;
   /** e.g. "Aug 3 – Aug 7", already formatted by the page. */
@@ -110,6 +111,13 @@ export function AwardCeremony({
    * which is always "The Birch Family Star Awards".
    */
   title?: string;
+  /**
+   * Coins already converted for this ceremony's week, by child id — only
+   * meaningful when `report.weekCount === 1`, and omitted entirely for a
+   * span, which never offers the conversion. See the note on `ChildSlide`'s
+   * `weekStart` prop for why a span cannot mean this.
+   */
+  conversions?: Readonly<Record<string, number>>;
 }) {
   const slides = useMemo<Slide[]>(
     () => [
@@ -522,6 +530,12 @@ export function AwardCeremony({
                     report={report.children[slide.childIndex]}
                     weekCount={report.weekCount}
                     runKey={isCurrent ? run : null}
+                    weekStart={report.weekCount === 1 ? report.weekStart : null}
+                    initialConversion={
+                      conversions?.[report.children[slide.childIndex].childId] ??
+                      null
+                    }
+                    soundOn={soundOn}
                   />
                 ) : (
                   <FinaleSlide report={report} runKey={isCurrent ? run : null} />

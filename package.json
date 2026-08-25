@@ -9,6 +9,7 @@
     "db:check": "node --env-file=.env scripts/check-database.mjs",
     "db:seed": "tsx --env-file=.env scripts/seed-database.ts",
     "db:seed-history": "tsx --env-file=.env scripts/seed-star-history.ts",
+    "db:seed-rewards": "tsx --env-file=.env scripts/seed-rewards.ts",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

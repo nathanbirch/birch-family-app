@@ -104,7 +104,8 @@ export type NavIconName =
   | "report"
   | "shopping"
   | "note"
-  | "picker";
+  | "picker"
+  | "rewards";
 
 /**
  * The live pages.
@@ -246,6 +247,28 @@ export const NAV_ITEMS: readonly NavItem[] = [
     bar: 6,
     icon: "report",
   },
+  /*
+   * Just past Ceremonies, and deliberately so: a ceremony is where a week's
+   * stars turn into coins, and the shop is where those coins go next — the
+   * two want to sit beside each other in the strip rather than at opposite
+   * ends of it. `6.5` rather than `7` is a real placement, not a typo: the
+   * numbers are sort keys with gaps left on purpose (see the note above
+   * `NavItem`), and slotting in between costs nothing else in this list a
+   * renumber.
+   *
+   * It earns a tab rather than staying dashboard-only because, once a child
+   * has a coin balance, this is a page they check the way they check Stars —
+   * "did my balance go up" — not one they read on a schedule the way Healthy
+   * or Mantras are.
+   */
+  {
+    href: "/shop",
+    label: "Shop",
+    title: "The Shop",
+    description: "Coins from stars, and what they can become.",
+    bar: 6.5,
+    icon: "rewards",
+  },
   {
     href: "/note",
     label: "Note",
@@ -317,11 +340,13 @@ export type PlannedFeature = {
 };
 
 /*
- * `report` used to live here. It moved to `NavIconName` when the weekly report
- * stopped being a promise on the dashboard and became a page — the drawing did
- * not change, only what it points at.
+ * `report` used to live here, and `rewards` after it — both moved to
+ * `NavIconName` when the feature they were a promise of shipped as a real
+ * page. Nothing is planned right now, so this is `never`: a type with no
+ * members costs nothing and is exactly honest about there being no roadmap
+ * card on the dashboard at the moment. Add a name back the day there is one.
  */
-export type PlannedIconName = "rewards";
+export type PlannedIconName = never;
 
 /**
  * Icons that belong to no page at all.
@@ -334,13 +359,7 @@ export type PlannedIconName = "rewards";
  */
 export type DecorativeIconName = "chores";
 
-export const PLANNED_FEATURES: readonly PlannedFeature[] = [
-  {
-    title: "Rewards",
-    description: "What all those stars add up to, and what has been paid out.",
-    icon: "rewards",
-  },
-] as const;
+export const PLANNED_FEATURES: readonly PlannedFeature[] = [] as const;
 
 /**
  * The pinned button on the far left of the bar.

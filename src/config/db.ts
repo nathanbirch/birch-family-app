@@ -88,6 +88,51 @@ export const COLLECTIONS = {
    * there is nothing to prune by hand.
    */
   familyApiUsage: "familyApiUsage",
+  /**
+   * The reward catalogue — one document per thing coins can buy. `tier`
+   * ("quick" | "special" | "epic" | "ultimate") and `position` are what
+   * `/shop` sorts and groups by. Soft-deleted (`active: false`) rather than
+   * removed, because a redemption from six months ago still has to be able to
+   * say what it was for even after a parent retires the reward — see
+   * `rewardRedemptions` below, which snapshots the name and cost at the
+   * moment of purchase for exactly that reason.
+   *
+   * Lives in the database rather than in `config/rewards.ts` on purpose: this
+   * is the one catalogue in the app a parent edits from a phone rather than
+   * from a pull request, which is the whole point of `/shop/admin`.
+   */
+  rewardItems: "rewardItems",
+  /**
+   * The coin ledger — append-only, one document per credit or debit. A
+   * child's balance is never stored; it is the sum of their rows here,
+   * computed the same forgiving way `starWeeks` totals are, and never
+   * trusted from the client. See `lib/coins/store.ts`.
+   *
+   * `type: "ceremony_conversion"` rows carry `weekStart`, unique per child, so
+   * rewatching a ceremony can never mint the same week's coins twice — the
+   * same duplicate-key guard `starWeeks` uses for the same reason.
+   */
+  coinTransactions: "coinTransactions",
+  /**
+   * One document per attempt to spend coins on something in `rewardItems`.
+   *
+   * This is the collection that answers "when did this happen, who did it,
+   * for what, and how many times has it happened" — the redemption history a
+   * ledger of debits alone cannot reconstruct once a catalogue item's price
+   * or name changes. That is why it snapshots `rewardNameSnapshot`,
+   * `rewardCostSnapshot` and `rewardTierSnapshot` rather than joining back to
+   * `rewardItems` for them. See `lib/rewards/store.ts#getRedemptionCounts`
+   * for the one place redemption counts are computed, reused by both the
+   * redemption-limit check and the admin screen's usage stats.
+   */
+  rewardRedemptions: "rewardRedemptions",
+  /**
+   * The Ultimate tier's pooled family goal — contributions from every child
+   * toward one big reward. One `active` document at a time; redeeming it
+   * flips it to `"redeemed"` and a fresh `active` one is created immediately
+   * so contributing can carry straight on. See `lib/rewards/store.ts`.
+   */
+  rewardPools: "rewardPools",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
