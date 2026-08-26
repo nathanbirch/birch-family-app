@@ -68,12 +68,6 @@ export function RewardCard({
               {reward.description}
             </p>
           ) : null}
-          {reward.redemptionLimit ? (
-            <p className="mt-0.5 text-xs" style={{ color: "var(--color-text-muted)" }}>
-              {reward.redemptionLimit.count}× every {reward.redemptionLimit.periodDays}{" "}
-              day{reward.redemptionLimit.periodDays === 1 ? "" : "s"}
-            </p>
-          ) : null}
         </div>
 
         <span

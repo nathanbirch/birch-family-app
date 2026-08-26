@@ -33,45 +33,52 @@ type SeedItem = {
  * time an item is created — `position` afterwards belongs to
  * `/shop/admin`'s reorder buttons, not to this file.
  */
+/*
+ * Every limit below is `null` ("no limit") on purpose — the family decided
+ * the numbers ("1x every 7 days") read like fine print to a kid, and having
+ * no visible limit is simpler than a hidden one. `/shop/admin`'s "Limit how
+ * often" checkbox still works if a parent wants to turn one back on for a
+ * specific item later — this file just no longer seeds any by default.
+ */
 const ITEMS: readonly SeedItem[] = [
   // --- Quick (10-30) ------------------------------------------------------
-  q("No-Veggie Pass", "Skip vegetables at one meal.", 10, weekly(1)),
-  q("Double Dessert", "Two desserts tonight.", 15, weekly(1)),
-  q("Reverse Bedtime Story", "You read a story to a parent instead.", 15, weekly(1)),
-  q("Bedtime Immunity", "Bedtime pushed back 30 minutes.", 15, weekly(2)),
-  q("Remote Control", "You pick what's on this evening.", 15, weekly(1)),
-  q("Pajama Day", "Pajamas all Saturday.", 20, monthly(1)),
+  q("No-Veggie Pass", "Skip vegetables at one meal.", 10, null),
+  q("Double Dessert", "Two desserts tonight.", 15, null),
+  q("Reverse Bedtime Story", "You read a story to a parent instead.", 15, null),
+  q("Bedtime Immunity", "Bedtime pushed back 30 minutes.", 15, null),
+  q("Remote Control", "You pick what's on this evening.", 15, null),
+  q("Pajama Day", "Pajamas all Saturday.", 20, null),
   q("Mystery Reward", "A surprise, picked by a parent.", 20, null),
-  q("Front Seat VIP", "Front seat, next car ride.", 20, weekly(1)),
-  q("Chore Shield", "Skip one chore.", 25, weekly(1)),
-  q("Late-Night Snack Run", "A snack after bedtime.", 30, weekly(1)),
+  q("Front Seat VIP", "Front seat, next car ride.", 20, null),
+  q("Chore Shield", "Skip one chore.", 25, null),
+  q("Late-Night Snack Run", "A snack after bedtime.", 30, null),
 
   // --- Special (50-100) ---------------------------------------------------
-  s("Royal Treatment", '"Your Majesty" for an hour.', 50, weekly(1), false),
-  s("Family Dance Party", "You DJ the whole thing.", 50, weekly(1), false),
-  s("Dinner Takeover", "Pick dinner, dessert and the music.", 60, weekly(1), false),
-  s("Errand Buddy — Dad", "One-on-one errands with Dad.", 70, everyDays(14), true),
-  s("Errand Buddy — Mom", "One-on-one errands with Mom.", 70, everyDays(14), true),
+  s("Royal Treatment", '"Your Majesty" for an hour.', 50, null, false),
+  s("Family Dance Party", "You DJ the whole thing.", 50, null, false),
+  s("Dinner Takeover", "Pick dinner, dessert and the music.", 60, null, false),
+  s("Errand Buddy — Dad", "One-on-one errands with Dad.", 70, null, true),
+  s("Errand Buddy — Mom", "One-on-one errands with Mom.", 70, null, true),
   s(
     "Kitchen Takeover",
     "Bake something with a parent.",
     70,
-    everyDays(14),
+    null,
     true,
   ),
   s(
     "Living Room Sleepover",
     "All five kids camp out in the living room.",
     80,
-    monthly(1),
+    null,
     false,
   ),
-  s("Family Yes Hour", "One hour where the answer is yes.", 90, everyDays(14), false),
+  s("Family Yes Hour", "One hour where the answer is yes.", 90, null, false),
   s(
     "Dad Does Your Chore",
     "Dad covers your chore for a full week (bedroom cleanup excluded).",
     100,
-    monthly(1),
+    null,
     false,
   ),
 
@@ -94,15 +101,6 @@ const ITEMS: readonly SeedItem[] = [
   },
 ];
 
-function weekly(count: number) {
-  return { count, periodDays: 7 };
-}
-function monthly(count: number) {
-  return { count, periodDays: 30 };
-}
-function everyDays(periodDays: number) {
-  return { count: 1, periodDays };
-}
 function q(
   name: string,
   description: string,
