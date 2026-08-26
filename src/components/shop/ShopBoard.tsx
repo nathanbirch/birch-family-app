@@ -203,7 +203,7 @@ export function ShopBoard({
                   opacity: isSelected ? 1 : 0.45,
                 }}
               >
-                <Avatar member={child} showName={false} />
+                <Avatar member={child} showName={false} arriving />
               </span>
               <span
                 className="block truncate text-xs font-bold"
