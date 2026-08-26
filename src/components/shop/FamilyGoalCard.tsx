@@ -3,6 +3,9 @@
 import { useState } from "react";
 
 import { getPerson, type ChildId } from "@/config/family";
+import { TIER_META } from "@/lib/rewards/view";
+
+import { CoinAmount } from "./CoinAmount";
 
 /**
  * The Ultimate tier's pooled goal — everybody's coins toward one big reward.
@@ -43,13 +46,26 @@ export function FamilyGoalCard({
   const parsed = Number.parseInt(amount, 10);
   const validAmount = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   const capped = validAmount !== null && validAmount <= balance && !funded;
+  const tier = TIER_META.ultimate;
 
   return (
-    <div className="app-card themed-transition flex flex-col gap-4 p-4">
+    <div
+      className="app-card themed-transition flex flex-col gap-4 p-4"
+      style={{
+        borderLeft: `0.28rem solid ${tier.color}`,
+        backgroundColor: `color-mix(in srgb, ${tier.color} 6%, var(--color-surface))`,
+      }}
+    >
       <div>
-        <p className="font-bold">{name}</p>
+        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: tier.colorInk }}>
+          {tier.label}
+        </p>
+        <p className="text-sm font-semibold" style={{ color: "var(--color-text-muted)" }}>
+          {tier.tagline}
+        </p>
+        <p className="mt-2 font-bold">{name}</p>
         <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-          {total} of {target} coins
+          <CoinAmount amount={total} /> of <CoinAmount amount={target} />
         </p>
       </div>
 
@@ -61,7 +77,7 @@ export function FamilyGoalCard({
           className="h-full rounded-full transition-[width] duration-500"
           style={{
             width: `${Math.round(share * 100)}%`,
-            backgroundColor: "var(--color-star)",
+            backgroundColor: tier.color,
           }}
         />
       </div>
@@ -77,7 +93,7 @@ export function FamilyGoalCard({
               >
                 {person.name.charAt(0)}
               </span>
-              <span className="text-xs font-bold tabular-nums">{sum}</span>
+              <CoinAmount amount={sum} className="text-xs font-bold" glyphClassName="h-3.5 w-3.5" />
             </li>
           );
         })}
@@ -89,7 +105,7 @@ export function FamilyGoalCard({
       </ul>
 
       {funded ? (
-        <p className="text-sm font-semibold" style={{ color: "var(--color-star-ink)" }}>
+        <p className="text-sm font-semibold" style={{ color: tier.colorInk }}>
           Funded! Waiting on a parent to schedule it.
         </p>
       ) : (

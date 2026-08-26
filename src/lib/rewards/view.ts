@@ -111,9 +111,50 @@ export function checkAffordability(
   return { canBuy: true };
 }
 
+export type TierMeta = {
+  label: string;
+  /** Short, kid-facing line under the tier's label — the shop is meant to
+   * read as a shelf of distinct games, not a price list. */
+  tagline: string;
+  /** Theme-invariant identity colour, declared in `globals.css` the same
+   * way `--color-star` is — a tier looks the same whatever theme is active. */
+  color: string;
+  /** Readable shade for text/labels placed on that colour, same
+   * `color-mix`-with-text-colour trick as `--color-star-ink`. */
+  colorInk: string;
+};
+
+/** One source of truth for tier identity, shared by `/shop` and `/shop/admin`. */
+export const TIER_META: Record<RewardTier, TierMeta> = {
+  quick: {
+    label: "Quick",
+    tagline: "Little things, earned and spent often.",
+    color: "var(--color-tier-quick)",
+    colorInk: "var(--color-tier-quick-ink)",
+  },
+  special: {
+    label: "Special",
+    tagline: "Worth saving up a few days for.",
+    color: "var(--color-tier-special)",
+    colorInk: "var(--color-tier-special-ink)",
+  },
+  epic: {
+    label: "Epic",
+    tagline: "The big stuff — save up for something amazing.",
+    color: "var(--color-tier-epic)",
+    colorInk: "var(--color-tier-epic-ink)",
+  },
+  ultimate: {
+    label: "Ultimate",
+    tagline: "One massive family goal. Everybody chips in.",
+    color: "var(--color-tier-ultimate)",
+    colorInk: "var(--color-tier-ultimate-ink)",
+  },
+};
+
 export const TIER_LABEL: Record<RewardTier, string> = {
-  quick: "Quick",
-  special: "Special",
-  epic: "Epic",
-  ultimate: "Ultimate",
+  quick: TIER_META.quick.label,
+  special: TIER_META.special.label,
+  epic: TIER_META.epic.label,
+  ultimate: TIER_META.ultimate.label,
 };

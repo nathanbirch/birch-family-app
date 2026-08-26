@@ -10,10 +10,12 @@ import { getChildren, getPerson, type ChildId } from "@/config/family";
 import { useClientMinute } from "@/hooks/useClientMinute";
 import { useShopStream } from "@/hooks/useShopStream";
 import { contributeToPool, redeemReward } from "@/lib/rewards/actions";
-import { checkAffordability, TIER_LABEL, type RedemptionView, type RewardItemView, type RewardTier } from "@/lib/rewards/view";
+import { checkAffordability, TIER_META, type RedemptionView, type RewardItemView, type RewardTier } from "@/lib/rewards/view";
 import type { ShopState } from "@/lib/shop/state";
 import { playCheer } from "@/lib/stars/cheer";
 
+import { CoinAmount } from "./CoinAmount";
+import { CoinGlyph } from "./CoinGlyph";
 import { FamilyGoalCard } from "./FamilyGoalCard";
 import { RewardCard } from "./RewardCard";
 
@@ -212,15 +214,15 @@ export function ShopBoard({
                 {child.name}
               </span>
               <span
-                className="rounded-full px-1.5 py-0.5 text-[0.65rem] font-bold tabular-nums"
+                className="rounded-full px-1.5 py-0.5 text-[0.65rem] font-bold"
                 style={{
                   backgroundColor: isSelected
-                    ? "color-mix(in srgb, var(--color-star) 24%, transparent)"
+                    ? "color-mix(in srgb, var(--color-coin) 26%, transparent)"
                     : "transparent",
-                  color: isSelected ? "var(--color-star-ink)" : "var(--color-text-muted)",
+                  color: isSelected ? "var(--color-coin-ink)" : "var(--color-text-muted)",
                 }}
               >
-                {state.balances[child.id as ChildId] ?? 0} 🪙
+                <CoinAmount amount={state.balances[child.id as ChildId] ?? 0} glyphClassName="h-3 w-3" />
               </span>
             </button>
           );
@@ -234,8 +236,9 @@ export function ShopBoard({
         {celebrate > 0 ? (
           <Confetti key={celebrate} scope="section" colors={[person.avatarColor, "#f5b301", "#ffffff"]} />
         ) : null}
-        <span className="text-4xl font-extrabold tabular-nums">
+        <span className="flex items-center gap-2 text-4xl font-extrabold tabular-nums">
           <CountUp target={balance} durationMs={700} />
+          <CoinGlyph className="h-8 w-8" />
         </span>
         <span className="text-lg font-bold opacity-90">coins</span>
       </div>
@@ -264,15 +267,30 @@ export function ShopBoard({
           {TIERS.map((tier) => {
             const tierItems = grouped.get(tier) ?? [];
             if (tierItems.length === 0) return null;
+            const meta = TIER_META[tier];
             return (
               <section key={tier}>
-                <h2
-                  className="mb-2 px-1 text-xs font-bold uppercase tracking-wider"
-                  style={{ color: "var(--color-text-muted)" }}
+                <div className="mb-2 flex items-baseline justify-between gap-2 px-1">
+                  <h2
+                    className="text-xs font-extrabold uppercase tracking-wider"
+                    style={{ color: meta.colorInk }}
+                  >
+                    {meta.label}
+                  </h2>
+                  <p
+                    className="truncate text-xs font-semibold"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
+                    {meta.tagline}
+                  </p>
+                </div>
+                <ul
+                  className="flex flex-col gap-3 rounded-3xl p-2"
+                  style={{
+                    backgroundColor: `color-mix(in srgb, ${meta.color} 8%, transparent)`,
+                    border: `1px solid color-mix(in srgb, ${meta.color} 24%, var(--color-border))`,
+                  }}
                 >
-                  {TIER_LABEL[tier]}
-                </h2>
-                <ul className="flex flex-col gap-3">
                   {tierItems.map((item) => (
                     <RewardCard
                       key={item.id}

@@ -14,12 +14,13 @@ import {
   updateRewardItem,
 } from "@/lib/rewards/admin-actions";
 import {
-  TIER_LABEL,
+  TIER_META,
   type AdminRewardItemView,
   type RedemptionView,
   type RewardTier,
 } from "@/lib/rewards/view";
 
+import { CoinAmount } from "../CoinAmount";
 import { RewardEditorForm, type RewardFormValues } from "./RewardEditorForm";
 
 const TIERS: readonly RewardTier[] = ["quick", "special", "epic", "ultimate"];
@@ -164,15 +165,30 @@ export function AdminBoard({
         <h2 className="mb-3 text-lg font-bold">Catalogue</h2>
         {TIERS.map((tier) => {
           const list = byTier.get(tier) ?? [];
+          const meta = TIER_META[tier];
           return (
-            <div key={tier} className="app-card themed-transition mb-4 flex flex-col gap-3 p-4">
+            <div
+              key={tier}
+              className="app-card themed-transition mb-4 flex flex-col gap-3 p-4"
+              style={{
+                borderLeft: `0.28rem solid ${meta.color}`,
+                backgroundColor: `color-mix(in srgb, ${meta.color} 5%, var(--color-surface))`,
+              }}
+            >
               <div className="flex items-center justify-between">
-                <h3 className="font-bold">{TIER_LABEL[tier]}</h3>
+                <div className="min-w-0">
+                  <h3 className="font-bold" style={{ color: meta.colorInk }}>
+                    {meta.label}
+                  </h3>
+                  <p className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
+                    {meta.tagline}
+                  </p>
+                </div>
                 {tier !== "ultimate" || list.length === 0 ? (
                   <button
                     type="button"
                     onClick={() => setAddingTier(tier)}
-                    className="rounded-full px-3 py-1 text-xs font-extrabold"
+                    className="shrink-0 rounded-full px-3 py-1 text-xs font-extrabold"
                     style={{ backgroundColor: "var(--color-primary)", color: "var(--color-on-primary)" }}
                   >
                     + Add
@@ -195,8 +211,11 @@ export function AdminBoard({
                       <div className="flex items-center justify-between gap-2 rounded-2xl px-3 py-2" style={{ backgroundColor: "var(--color-surface-muted)" }}>
                         <div className="min-w-0">
                           <p className="truncate text-sm font-bold">{item.name}</p>
-                          <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                            {item.cost} coins
+                          <p
+                            className="flex items-center gap-1 text-xs"
+                            style={{ color: "var(--color-text-muted)" }}
+                          >
+                            <CoinAmount amount={item.cost} glyphClassName="h-3 w-3" />
                             {item.requiresApproval ? " · approval" : ""}
                             {item.redemptionLimit
                               ? ` · ${item.redemptionLimit.count}/${item.redemptionLimit.periodDays}d`
@@ -355,8 +374,11 @@ function PendingSection({
                   <p className="truncate text-sm font-bold">
                     {person.name} — {row.nameSnapshot}
                   </p>
-                  <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                    {row.costSnapshot} coins
+                  <p
+                    className="flex items-center gap-1 text-xs"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
+                    <CoinAmount amount={row.costSnapshot} glyphClassName="h-3 w-3" />
                     {row.note ? ` · ${row.note}` : ""}
                   </p>
                 </div>
@@ -428,6 +450,12 @@ function AdjustSection({
   return (
     <section className="app-card themed-transition mb-6 flex flex-col gap-3 p-4">
       <h2 className="text-lg font-bold">Adjust a balance</h2>
+      <p
+        className="flex items-center gap-1 text-sm"
+        style={{ color: "var(--color-text-muted)" }}
+      >
+        {getPerson(childId).name} currently has <CoinAmount amount={balances[childId] ?? 0} />
+      </p>
       <form onSubmit={submit} className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <select

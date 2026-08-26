@@ -1,7 +1,9 @@
 "use client";
 
-import { TIER_LABEL, type RewardItemView } from "@/lib/rewards/view";
+import { TIER_META, type RewardItemView } from "@/lib/rewards/view";
 import type { Affordability } from "@/lib/rewards/view";
+
+import { CoinAmount } from "./CoinAmount";
 
 /**
  * One thing coins can buy.
@@ -24,9 +26,16 @@ export function RewardCard({
   busy: boolean;
 }) {
   const disabled = !affordability.canBuy || busy;
+  const tier = TIER_META[reward.tier];
 
   return (
-    <li className="app-card themed-transition flex flex-col gap-2 p-4">
+    <li
+      className="app-card themed-transition flex flex-col gap-2 p-4"
+      style={{
+        borderLeft: `0.28rem solid ${tier.color}`,
+        backgroundColor: `color-mix(in srgb, ${tier.color} 5%, var(--color-surface))`,
+      }}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="flex flex-wrap items-center gap-1.5 font-bold leading-tight">
@@ -68,19 +77,19 @@ export function RewardCard({
         </div>
 
         <span
-          className="shrink-0 rounded-full px-2.5 py-1 text-sm font-extrabold tabular-nums"
+          className="shrink-0 rounded-full px-2.5 py-1 text-sm font-extrabold"
           style={{
-            backgroundColor: "color-mix(in srgb, var(--color-star) 24%, transparent)",
-            color: "var(--color-star-ink)",
+            backgroundColor: "color-mix(in srgb, var(--color-coin) 26%, transparent)",
+            color: "var(--color-coin-ink)",
           }}
         >
-          {reward.cost}
+          <CoinAmount amount={reward.cost} />
         </span>
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold" style={{ color: "var(--color-text-muted)" }}>
-          {TIER_LABEL[reward.tier]}
+        <span className="text-xs font-bold" style={{ color: tier.colorInk }}>
+          {tier.label}
         </span>
         <button
           type="button"

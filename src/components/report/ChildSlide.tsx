@@ -14,6 +14,7 @@ import {
 } from "@/lib/stars/report";
 
 import { Avatar } from "../Avatar";
+import { CoinAmount } from "../shop/CoinAmount";
 import { Confetti } from "../stars/Confetti";
 
 import { CountUp } from "./CountUp";
@@ -317,7 +318,13 @@ export function ChildSlide({
                 className="rounded-full px-4 py-2 text-sm font-extrabold transition-transform active:scale-95 disabled:opacity-60"
                 style={{ backgroundColor: "var(--color-star)", color: "#4a3200" }}
               >
-                {converting ? "Converting…" : `Convert to ${report.earned} coins`}
+                {converting ? (
+                  "Converting…"
+                ) : (
+                  <span className="inline-flex items-center gap-1">
+                    Convert to <CoinAmount amount={report.earned} />
+                  </span>
+                )}
               </button>
               <button
                 type="button"
@@ -347,7 +354,10 @@ export function ChildSlide({
               } as React.CSSProperties
             }
           >
-            Converted → +{converted} coin{converted === 1 ? "" : "s"}
+            Converted →{" "}
+            <span className="inline-flex items-center gap-1">
+              +<CoinAmount amount={converted} />
+            </span>
           </p>
         ) : null}
       </div>

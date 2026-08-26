@@ -43,6 +43,33 @@
   --color-star: #f5b301;
   --color-star-ink: color-mix(in srgb, var(--color-star) 58%, var(--color-text));
 
+  /*
+   * A coin is gold on every theme too, for the same reason a star is —
+   * stars *become* coins at the ceremony, so the coin's identity has to
+   * survive the trip through every theme unchanged. `--color-coin-dark` is
+   * the shading/rim colour on the glyph itself and doubles as the readable
+   * text shade, mixed with the theme's text colour the same way
+   * `--color-star-ink` is.
+   */
+  --color-coin: #ffd23f;
+  --color-coin-dark: #b8790a;
+  --color-coin-ink: color-mix(in srgb, var(--color-coin-dark) 72%, var(--color-text));
+
+  /*
+   * Reward-tier identities — also theme-invariant. The shop is meant to read
+   * as a shelf of distinct games (Quick/Special/Epic/Ultimate), not four
+   * price tiers recoloured by whichever theme happens to be active, so each
+   * tier keeps its own colour no matter the theme.
+   */
+  --color-tier-quick: #22a55e;
+  --color-tier-quick-ink: color-mix(in srgb, var(--color-tier-quick) 60%, var(--color-text));
+  --color-tier-special: #2f6fed;
+  --color-tier-special-ink: color-mix(in srgb, var(--color-tier-special) 60%, var(--color-text));
+  --color-tier-epic: #9438d6;
+  --color-tier-epic-ink: color-mix(in srgb, var(--color-tier-epic) 60%, var(--color-text));
+  --color-tier-ultimate: #d19a1d;
+  --color-tier-ultimate-ink: color-mix(in srgb, var(--color-tier-ultimate) 60%, var(--color-text));
+
   --radius-card: 1.5rem;
   --font-family-app: ui-rounded, "SF Pro Rounded", "Segoe UI Variable Display",
     "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
