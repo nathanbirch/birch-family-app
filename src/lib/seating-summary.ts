@@ -8,6 +8,9 @@
 
 import { getPerson } from "@/config/family";
 import {
+  SLEEPOVER_CHILD_SEATS,
+  SLEEPOVER_PARENTS,
+  SLEEPOVER_PARENT_SEATS,
   TABLE_CHILD_SEATS,
   TABLE_PARENT_SEATS,
   VEHICLE_CHILD_SEATS,
@@ -60,6 +63,30 @@ export function getVehicleSummary(
     lines.push({
       id: `vehicle-child-${seat.position}`,
       text: `${getPerson(childId).name} is in Child Seat ${seat.position}, in the ${seat.label}.`,
+    });
+  });
+
+  return lines;
+}
+
+export function getSleepoverSummary(
+  assignments: WeeklyAssignments,
+): SeatingSummaryLine[] {
+  const lines: SeatingSummaryLine[] = [];
+
+  SLEEPOVER_PARENT_SEATS.forEach((seat) => {
+    const personId = SLEEPOVER_PARENTS[seat.key];
+    lines.push({
+      id: `sleepover-${seat.key}`,
+      text: `${getPerson(personId).name} is ${seat.label}.`,
+    });
+  });
+
+  SLEEPOVER_CHILD_SEATS.forEach((seat) => {
+    const childId = assignments.children[seat.position - 1].childId;
+    lines.push({
+      id: `sleepover-child-${seat.position}`,
+      text: `${getPerson(childId).name} is sleeping on the ${seat.label}.`,
     });
   });
 

@@ -14,6 +14,7 @@ import { AppHeader } from "./AppHeader";
 import { DinnerTable } from "./DinnerTable";
 import { Expedition } from "./Expedition";
 import { RotationStatus } from "./RotationStatus";
+import { Sleepover } from "./Sleepover";
 import { FamilyHomeEvening } from "./fhe/FamilyHomeEvening";
 import { PetNights } from "./pets/PetNights";
 
@@ -58,6 +59,17 @@ export function SeatingBoard({
   const house = useRef<HTMLDivElement>(null);
   const houseArriving = useImagesReady(house, {
     key: toIsoDate(fhe.weekStart),
+  });
+
+  /*
+    Sleepover night runs the same Monday clock as the table and the car — it
+    reuses `status.assignments` directly — so it gets its own container and
+    readiness watch keyed the same way `scenes` is, rather than sharing FHE's
+    Sunday-based one.
+  */
+  const sleepover = useRef<HTMLDivElement>(null);
+  const sleepoverArriving = useImagesReady(sleepover, {
+    key: status.weekNumber,
   });
 
   return (
@@ -105,6 +117,13 @@ export function SeatingBoard({
       */}
       <div key={toIsoDate(fhe.weekStart)} ref={house}>
         <FamilyHomeEvening status={fhe} arriving={houseArriving} />
+      </div>
+
+      <div key={status.weekNumber} ref={sleepover}>
+        <Sleepover
+          assignments={status.assignments}
+          arriving={sleepoverArriving}
+        />
       </div>
 
       <PetNights configs={petRotations} date={date} />

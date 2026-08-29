@@ -322,6 +322,115 @@ export const VEHICLE_CHILD_OPPOSITES = [
 ] as const;
 
 /* ------------------------------------------------------------------ */
+/* Sleepover                                                           */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Family sleepover night: the five kids camp out on the floor in sleeping
+ * bags, and Nathan and Sarah are pictured on the bed above them so it is easy
+ * to see where everyone is relative to the two of them.
+ *
+ * This reuses the *exact same* five-week schedule as the table and the
+ * Expedition (`getWeeklyAssignments` in `lib/rotation.ts`), so all three turn
+ * over on the same Monday and a given week's row of `CHILD_ROTATION_SCHEDULE`
+ * drives all three at once. Unlike the table/vehicle pair, there is no
+ * fairness reason to invert the position numbering here — the floor spots
+ * aren't meaningfully closer to or further from a sibling — so position 1-5
+ * runs left-to-right, back-to-front, in reading order.
+ *
+ * Nathan and Sarah never rotate here (there is only one bed), so they are
+ * modelled as a fixed `ParentPair` rather than going through
+ * `getParentAssignments` / the swap toggle the table and car use.
+ *
+ * Measured against `public/scenes/sleepover.jpg` as it is actually rendered:
+ * the doorway is top left, the navy pillow sits at roughly x 44 / y 21 and the
+ * pink pillow at x 61 / y 21, two camping mats stand vertically at the left
+ * foot of the bed, one more stands vertically to its right, and two more lie
+ * horizontally along the bottom of the room.
+ */
+export const SLEEPOVER_PHOTO_WIDTH = 1321;
+export const SLEEPOVER_PHOTO_HEIGHT = 1191;
+
+/** Off-frame, near the doorway in the top-left corner of the room. */
+export const SLEEPOVER_ENTRIES = {
+  door: { id: "sleepover-door", x: -16, y: 8 },
+} as const satisfies Record<string, EntryPoint>;
+
+export const SLEEPOVER_PARENT_SEATS: readonly ParentSeat[] = [
+  {
+    key: "parent1",
+    x: 44,
+    y: 28,
+    label: "on the bed, on the navy pillow",
+    entry: SLEEPOVER_ENTRIES.door,
+  },
+  {
+    key: "parent2",
+    x: 61,
+    y: 28,
+    label: "on the bed, on the pink pillow",
+    entry: SLEEPOVER_ENTRIES.door,
+  },
+] as const;
+
+/** Nathan and Sarah never trade places here — there's only one bed. */
+export const SLEEPOVER_PARENTS: ParentPair = {
+  parent1: "nathan",
+  parent2: "sarah",
+};
+
+export const SLEEPOVER_CHILD_SEATS: readonly ChildSeat[] = [
+  {
+    position: 1,
+    x: 13,
+    y: 50,
+    label: "floor mat, left of the bed",
+    entry: SLEEPOVER_ENTRIES.door,
+  },
+  {
+    position: 2,
+    x: 25,
+    y: 50,
+    label: "floor mat, beside the bed",
+    entry: SLEEPOVER_ENTRIES.door,
+  },
+  {
+    position: 3,
+    x: 82,
+    y: 50,
+    label: "floor mat, right of the bed",
+    entry: SLEEPOVER_ENTRIES.door,
+  },
+  {
+    position: 4,
+    x: 36,
+    y: 76,
+    label: "floor mat, foot of the room, left",
+    entry: SLEEPOVER_ENTRIES.door,
+  },
+  {
+    position: 5,
+    x: 67,
+    y: 76,
+    label: "floor mat, foot of the room, right",
+    entry: SLEEPOVER_ENTRIES.door,
+  },
+] as const;
+
+/**
+ * Almost square, and full width — the same treatment as the Family Home
+ * Evening house.
+ */
+export const SLEEPOVER_LAYOUT: SceneLayout & { id: "sleepover" } = {
+  id: "sleepover",
+  photo: "/scenes/sleepover.jpg",
+  aspect: `${SLEEPOVER_PHOTO_WIDTH} / ${SLEEPOVER_PHOTO_HEIGHT}`,
+  aspectRatio: SLEEPOVER_PHOTO_WIDTH / SLEEPOVER_PHOTO_HEIGHT,
+  avatarSize: 11,
+  fontSize: 2.5,
+};
+
+/* ------------------------------------------------------------------ */
 /* Adjacency model                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -368,7 +477,7 @@ export type SceneLayout = {
    * layout type and the arrival choreography below, and nothing else from this
    * file. Its geometry lives in `config/fhe.ts`.
    */
-  id: "table" | "vehicle" | "fhe";
+  id: "table" | "vehicle" | "fhe" | "sleepover";
   /** Local photograph used as the scene backdrop. */
   photo: string;
   /** CSS `aspect-ratio` for the scene frame. */
