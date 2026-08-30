@@ -39,6 +39,17 @@ const music = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/stars/playlist", () => music);
 
+/*
+ * `convertWeekToCoins` is a Server Action — a POST endpoint, not a plain
+ * function — so it cannot run in jsdom and is mocked, the same way the
+ * shopping board's actions are in `tests/shopping-board.test.tsx`. None of
+ * the tests below pass `allowDecision`, so `ChildSlide` never calls this; it
+ * only needs to exist so importing the component tree does not reach into
+ * `@/lib/coins/store`'s real `import "server-only"`.
+ */
+const convertWeekToCoins = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/coins/actions", () => ({ convertWeekToCoins }));
+
 const MONDAY = parseLocalDate("2026-08-03")!;
 /* A Monday-to-Friday week: it predates `SATURDAY_FROM_WEEK`. */
 const DAYS = starDayCount("2026-08-03");
