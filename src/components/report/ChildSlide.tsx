@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { getPerson } from "@/config/family";
 import { formatMoney } from "@/config/rewards";
 import type { ChartId } from "@/config/stars";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { convertWeekToCoins } from "@/lib/coins/actions";
 import {
   praiseFor,
@@ -16,6 +17,12 @@ import { Avatar } from "../Avatar";
 import { CoinAmount } from "../shop/CoinAmount";
 import { Confetti } from "../stars/Confetti";
 
+import {
+  CoinFlight,
+  COIN_FLIGHT_MS,
+  MAX_VISIBLE_COINS,
+  type FlightPoint,
+} from "./CoinFlight";
 import { CountUp } from "./CountUp";
 import { StarGlyph } from "./StarGlyph";
 import {
@@ -115,6 +122,7 @@ export function ChildSlide({
 }) {
   const person = getPerson(report.childId);
   const totalDelay = totalDelayMs(report.charts.length);
+  const reducedMotion = useReducedMotion();
 
   /*
    * `converted` starts from the server's own answer — a rewatch must show
@@ -131,6 +139,23 @@ export function ChildSlide({
   const [convertError, setConvertError] = useState<string | null>(null);
   const [celebrate, setCelebrate] = useState(0);
 
+  /** Where the flock of coins is flying, or `null` when none is in the air. */
+  const [flight, setFlight] = useState<{
+    from: FlightPoint;
+    to: FlightPoint;
+    count: number;
+  } | null>(null);
+  /*
+   * What the money pill shows right now. Starts at zero on a rewatch — the
+   * flight already happened, possibly days ago, and there is nothing left to
+   * count down — and only ever animates down from `report.cents` during a
+   * flight the child is watching this instant.
+   */
+  const [displayCents, setDisplayCents] = useState(() =>
+    initialConversion !== null ? 0 : report.cents,
+  );
+  const moneyRef = useRef<HTMLParagraphElement>(null);
+
   async function convert() {
     if (!weekStart || converting) return;
     setConverting(true);
@@ -141,16 +166,78 @@ export function ChildSlide({
       weekStart,
     });
 
-    setConverting(false);
     if (!result.ok) {
+      setConverting(false);
       setConvertError(result.message);
       return;
     }
 
-    setConverted(result.amount);
-    if (!result.alreadyConverted) {
-      setCelebrate((value) => value + 1);
+    // A race with another device, or a rewatch that slipped through: the
+    // coins already left, possibly a while ago, so there is nothing to fly.
+    const points = result.alreadyConverted || reducedMotion ? null : flightPoints();
+    if (!points) {
+      land(result.amount, !result.alreadyConverted);
+      return;
     }
+
+    fly(points, result.amount);
+  }
+
+  /** Settles the slide on its final, permanent answer. */
+  function land(amount: number, celebrateIt: boolean) {
+    setConverting(false);
+    setDisplayCents(0);
+    setConverted(amount);
+    if (celebrateIt) setCelebrate((value) => value + 1);
+  }
+
+  /**
+   * The coins leave, one by one, and the cash pill dwindles at the same
+   * cadence — see `CoinFlight` for why each coin is its own timed element.
+   * `land()` only runs once the flock has actually finished, so the
+   * "Converted" text never arrives before the animation that explains it.
+   */
+  function fly(points: { from: FlightPoint; to: FlightPoint }, amount: number) {
+    const startCents = report.cents;
+    const startedAt = performance.now();
+
+    setFlight({
+      ...points,
+      count: Math.max(1, Math.min(report.earned, MAX_VISIBLE_COINS)),
+    });
+
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / COIN_FLIGHT_MS);
+      setDisplayCents(Math.round(startCents * (1 - progress)));
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+
+    window.setTimeout(() => {
+      setFlight(null);
+      land(amount, true);
+    }, COIN_FLIGHT_MS);
+  }
+
+  /** The two screen points a flight needs, or `null` if either cannot be found. */
+  function flightPoints(): { from: FlightPoint; to: FlightPoint } | null {
+    const moneyRect = moneyRef.current?.getBoundingClientRect();
+    const shopTab = document.querySelector<HTMLElement>(
+      'nav[aria-label="Main"] a[href="/shop"]',
+    );
+    const shopRect = shopTab?.getBoundingClientRect();
+    if (!moneyRect || !shopRect) return null;
+
+    return {
+      from: {
+        x: moneyRect.left + moneyRect.width / 2,
+        y: moneyRect.top + moneyRect.height / 2,
+      },
+      to: {
+        x: shopRect.left + shopRect.width / 2,
+        y: shopRect.top + shopRect.height / 2,
+      },
+    };
   }
 
   return (
@@ -258,6 +345,7 @@ export function ChildSlide({
           the children work out for themselves on the way to the slide.
         */}
         <p
+          ref={moneyRef}
           className="reveal-rise relative overflow-hidden rounded-full px-5 py-1.5 text-2xl font-extrabold tabular-nums sm:text-3xl"
           style={
             {
@@ -267,7 +355,7 @@ export function ChildSlide({
             } as React.CSSProperties
           }
         >
-          {formatMoney(report.cents)}
+          {formatMoney(displayCents)}
           <span
             aria-hidden="true"
             className="coin-shine pointer-events-none absolute inset-y-0 left-0 w-8"
@@ -363,6 +451,10 @@ export function ChildSlide({
           scope="section"
           colors={[report.color, "var(--color-star)", "#ffffff"]}
         />
+      ) : null}
+
+      {flight ? (
+        <CoinFlight from={flight.from} to={flight.to} count={flight.count} />
       ) : null}
     </div>
   );

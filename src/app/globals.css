@@ -522,6 +522,44 @@ body,
   animation: coin-shine 2600ms ease-in-out infinite;
 }
 
+/*
+ * One coin's own arc, in `CoinFlight` — a week's stars, converted, sailing
+ * from a child's slide to the Shop tab. `--coin-dx`/`--coin-dy` are the whole
+ * trip, set per-flock from the two measured points; `--coin-arc` lifts the
+ * midpoint so the flock reads as thrown coins rather than a sheet sliding
+ * sideways; `--coin-spin` is a full-ish tumble, further for a coin launched
+ * earlier so the flock does not turn in lockstep.
+ */
+@keyframes coin-flight {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.7) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  45% {
+    transform: translate3d(
+        calc(var(--coin-dx) * 0.42),
+        calc(var(--coin-dy) * 0.42 - var(--coin-arc)),
+        0
+      )
+      scale(1.05) rotate(var(--coin-spin));
+  }
+  100% {
+    transform: translate3d(var(--coin-dx), var(--coin-dy), 0) scale(0.3)
+      rotate(calc(var(--coin-spin) * 2));
+    opacity: 0;
+  }
+}
+
+.coin-flight-piece {
+  animation-name: coin-flight;
+  animation-timing-function: cubic-bezier(0.34, 0.06, 0.64, 1);
+  animation-fill-mode: both;
+  will-change: transform, opacity;
+}
+
 /* ---------------------------------------------------------------- */
 /* The shopping list                                                 */
 /* ---------------------------------------------------------------- */
@@ -914,6 +952,15 @@ body,
    */
   .confetti-piece,
   .burst-piece {
+    display: none;
+  }
+
+  /*
+   * No coins in flight, belt-and-braces: `ChildSlide` already checks
+   * `useReducedMotion()` before ever mounting `CoinFlight` and settles the
+   * conversion at once instead, so this should never have anything to hide.
+   */
+  .coin-flight-piece {
     display: none;
   }
 

@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AwardCeremony } from "@/components/report/AwardCeremony";
+import { COIN_FLIGHT_MS } from "@/components/report/CoinFlight";
 import { childSlideMs } from "@/components/report/timing";
 import { CHORE_POOLS } from "@/config/chore-rotation";
 import { SOUND_STORAGE_KEY } from "@/config/app";
@@ -42,10 +43,11 @@ vi.mock("@/lib/stars/playlist", () => music);
 /*
  * `convertWeekToCoins` is a Server Action — a POST endpoint, not a plain
  * function — so it cannot run in jsdom and is mocked, the same way the
- * shopping board's actions are in `tests/shopping-board.test.tsx`. None of
- * the tests below pass `allowDecision`, so `ChildSlide` never calls this; it
- * only needs to exist so importing the component tree does not reach into
- * `@/lib/coins/store`'s real `import "server-only"`.
+ * shopping board's actions are in `tests/shopping-board.test.tsx`. Most of
+ * the tests below never pass `allowDecision`, so `ChildSlide` never calls
+ * this there; it only needs to exist so importing the component tree does
+ * not reach into `@/lib/coins/store`'s real `import "server-only"`. The
+ * "turning stars into coins" tests are the ones that actually exercise it.
  */
 const convertWeekToCoins = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/coins/actions", () => ({ convertWeekToCoins }));
@@ -504,6 +506,135 @@ describe("what a screen reader is told", () => {
     // read out in a row is not a ceremony.
     const hidden = stage().querySelectorAll('[aria-hidden="true"][inert]');
     expect(hidden.length).toBe(report().children.length + 1);
+  });
+});
+
+describe("turning stars into coins", () => {
+  /*
+   * `flightPoints()` looks the Shop tab up in the real document rather than
+   * through a prop, because it has to work from any ceremony page without
+   * `AwardCeremony` knowing anything about the bottom nav. The tests stand a
+   * bare stand-in for it next to the render, which is enough: only its
+   * position is ever read.
+   */
+  function addShopTabStub() {
+    const nav = document.createElement("nav");
+    nav.setAttribute("aria-label", "Main");
+    const link = document.createElement("a");
+    link.setAttribute("href", "/shop");
+    nav.appendChild(link);
+    document.body.appendChild(nav);
+    // Outside React's own tree, so RTL's automatic cleanup never touches it —
+    // removed by hand or the next test in this file would find a Shop tab
+    // that was never its own.
+    return nav;
+  }
+
+  afterEach(() => {
+    document.querySelectorAll('nav[aria-label="Main"]').forEach((node) => node.remove());
+  });
+
+  function renderDecidable() {
+    return render(
+      <AwardCeremony
+        report={report()}
+        dateLabel="Aug 3 – Aug 7"
+        conversions={{}}
+        allowDecision
+      />,
+    );
+  }
+
+  /** Drags onto the first child's slide, the same way `drag()` above does. */
+  function goToFirstChild() {
+    fireEvent.click(screen.getByRole("button", { name: /start the ceremony/i }));
+  }
+
+  beforeEach(() => {
+    convertWeekToCoins.mockReset();
+  });
+
+  it("offers cash or coins once a ceremony can decide, and not otherwise", () => {
+    render(<AwardCeremony report={report()} dateLabel="Aug 3 – Aug 7" />);
+    goToFirstChild();
+
+    expect(screen.queryByRole("button", { name: /convert to/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /take cash/i })).toBeNull();
+  });
+
+  it("flies the coins to the Shop tab, dwindles the cash pill, and lands permanently", async () => {
+    convertWeekToCoins.mockResolvedValue({
+      ok: true,
+      amount: report().children[0].earned,
+      alreadyConverted: false,
+    });
+    addShopTabStub();
+
+    renderDecidable();
+    goToFirstChild();
+
+    const convertButton = screen.getByRole("button", { name: /convert to/i });
+    const child = report().children[0];
+
+    await act(async () => {
+      fireEvent.click(convertButton);
+    });
+
+    expect(convertWeekToCoins).toHaveBeenCalledWith({
+      childId: child.childId,
+      weekStart: report().weekStart,
+    });
+    // Coins are in the air, and the choice cannot be made twice mid-flight.
+    expect(document.querySelectorAll(".coin-flight-piece").length).toBeGreaterThan(0);
+    expect((convertButton as HTMLButtonElement).disabled).toBe(true);
+
+    await act(async () => {
+      vi.advanceTimersByTime(COIN_FLIGHT_MS + 50);
+    });
+
+    // Landed: the flock is gone, the pill reads the permanent answer, and the
+    // choice is no longer on offer at all — not disabled, simply not there.
+    expect(document.querySelectorAll(".coin-flight-piece").length).toBe(0);
+    expect(
+      screen.getByText((text) => text.includes("Converted")),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /convert to/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /take cash/i })).toBeNull();
+  });
+
+  it("never asks again once cash is taken, for the rest of this viewing", () => {
+    renderDecidable();
+    goToFirstChild();
+
+    fireEvent.click(screen.getByRole("button", { name: /take cash/i }));
+
+    expect(screen.queryByRole("button", { name: /convert to/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /take cash/i })).toBeNull();
+    expect(convertWeekToCoins).not.toHaveBeenCalled();
+  });
+
+  it("does not fly coins nobody can see the Shop tab to receive", async () => {
+    // No stub added: `flightPoints()` cannot find a Shop tab, the way it
+    // could not if the bottom nav were ever missing from a page.
+    convertWeekToCoins.mockResolvedValue({
+      ok: true,
+      amount: report().children[0].earned,
+      alreadyConverted: false,
+    });
+
+    renderDecidable();
+    goToFirstChild();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /convert to/i }));
+    });
+
+    // Landed at once rather than stuck waiting on a flight that can never
+    // start.
+    expect(document.querySelectorAll(".coin-flight-piece").length).toBe(0);
+    expect(
+      screen.getByText((text) => text.includes("Converted")),
+    ).toBeTruthy();
   });
 });
 
