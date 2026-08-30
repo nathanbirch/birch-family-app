@@ -10,6 +10,7 @@
     "db:seed": "tsx --env-file=.env scripts/seed-database.ts",
     "db:seed-history": "tsx --env-file=.env scripts/seed-star-history.ts",
     "db:seed-rewards": "tsx --env-file=.env scripts/seed-rewards.ts",
+    "coins:reset": "tsx --env-file=.env scripts/reset-coins.ts",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -21,8 +22,8 @@
     "cache:clear": "rm -rf .next/cache/images",
     "avatars:generate": "node scripts/optimise-avatars.mjs",
     "pets:generate": "node scripts/optimise-pets.mjs",
+    "documents:generate": "node scripts/optimise-documents.mjs",
     "sound:generate": "node scripts/generate-cheer.mjs",
-    "music:generate": "node scripts/generate-fanfare.mjs",
     "api:openapi": "tsx scripts/generate-openapi.ts",
     "api:key": "node -e \"console.log(require('crypto').randomBytes(32).toString('base64url'))\"",
     "api:probe": "node scripts/family-api-probe.mjs"

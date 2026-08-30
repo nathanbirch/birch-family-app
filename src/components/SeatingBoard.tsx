@@ -44,8 +44,10 @@ export function SeatingBoard({
     [date, swapped],
   );
 
-  // Keyed on the week so a rollover re-measures: those scenes remount with a
-  // fresh set of <img> elements.
+  // Keyed on the week so a rollover re-measures: the table, the car and the
+  // sleepover floor all remount together with a fresh set of <img> elements —
+  // they share this one Monday clock, so they wait on each other's photos and
+  // walk in as one group.
   const scenes = useRef<HTMLDivElement>(null);
   const arriving = useImagesReady(scenes, { key: status.weekNumber });
 
@@ -61,17 +63,6 @@ export function SeatingBoard({
     key: toIsoDate(fhe.weekStart),
   });
 
-  /*
-    Sleepover night runs the same Monday clock as the table and the car — it
-    reuses `status.assignments` directly — so it gets its own container and
-    readiness watch keyed the same way `scenes` is, rather than sharing FHE's
-    Sunday-based one.
-  */
-  const sleepover = useRef<HTMLDivElement>(null);
-  const sleepoverArriving = useImagesReady(sleepover, {
-    key: status.weekNumber,
-  });
-
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
       <AppHeader
@@ -80,50 +71,64 @@ export function SeatingBoard({
         parentsSwapped={swapped}
         onSwapParents={toggle}
       />
-      <RotationStatus status={status} />
 
       {/*
-        `key` is the week number: when the rotation rolls over, the scenes
-        remount and everyone walks in and takes their new seat again.
-        Swapping the parents deliberately does *not* remount — that way the
-        two of them glide across rather than starting over.
-
-        `ref` + `useImagesReady` hold the walk-in until all fourteen avatars
-        have loaded, so nobody crosses the room as an empty circle. The images
-        are in the DOM from the first paint (transparent, via `.seat-arrival`),
-        so they are downloading the whole time this is waiting.
+        Grouped by clock, not by furniture: the table, the car and the
+        sleepover floor all turn over on the same Monday, so they share one
+        heading, one status card and one arrival watch. Family Home Evening
+        and the pets are each on a clock of their own, so they get sections of
+        their own below.
       */}
-      <div
-        key={status.weekNumber}
-        ref={scenes}
-        className="grid gap-4 sm:gap-6 lg:grid-cols-2 lg:items-start"
+      <section
+        aria-labelledby="seats-heading"
+        className="flex flex-col gap-4 sm:gap-6"
       >
-        <DinnerTable
-          assignments={status.assignments}
-          swapping={swapping}
-          arriving={arriving}
-        />
-        <Expedition
-          assignments={status.assignments}
-          swapping={swapping}
-          arriving={arriving}
-        />
-      </div>
+        <div className="flex items-baseline justify-between gap-3 px-1">
+          <h2
+            id="seats-heading"
+            className="text-lg font-bold tracking-tight sm:text-xl"
+          >
+            This Week&rsquo;s Seats
+          </h2>
+          <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+            Changes every Monday
+          </p>
+        </div>
 
-      {/*
-        Between the seats and the pets, which is where it belongs on both
-        counts: it is the third of the three turns, and it is the only one of
-        them that changes on a Sunday.
-      */}
+        <RotationStatus status={status} />
+
+        {/*
+          `key` is the week number: when the rotation rolls over, the scenes
+          remount and everyone walks in and takes their new seat again.
+          Swapping the parents deliberately does *not* remount — that way the
+          two of them glide across rather than starting over.
+
+          `ref` + `useImagesReady` hold the walk-in until every photograph in
+          this group has loaded, so nobody crosses the room as an empty
+          circle. The images are in the DOM from the first paint (transparent,
+          via `.seat-arrival`), so they are downloading the whole time this is
+          waiting.
+        */}
+        <div key={status.weekNumber} ref={scenes} className="flex flex-col gap-4 sm:gap-6">
+          <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 lg:items-start">
+            <DinnerTable
+              assignments={status.assignments}
+              swapping={swapping}
+              arriving={arriving}
+            />
+            <Expedition
+              assignments={status.assignments}
+              swapping={swapping}
+              arriving={arriving}
+            />
+          </div>
+
+          <Sleepover assignments={status.assignments} arriving={arriving} />
+        </div>
+      </section>
+
       <div key={toIsoDate(fhe.weekStart)} ref={house}>
         <FamilyHomeEvening status={fhe} arriving={houseArriving} />
-      </div>
-
-      <div key={status.weekNumber} ref={sleepover}>
-        <Sleepover
-          assignments={status.assignments}
-          arriving={sleepoverArriving}
-        />
       </div>
 
       <PetNights configs={petRotations} date={date} />

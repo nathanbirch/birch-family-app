@@ -25,13 +25,6 @@ import { getChartTasksForChild } from "@/lib/stars/tasks";
  *     asked for silence.
  */
 
-const playback = vi.hoisted(() => ({
-  startFanfare: vi.fn(),
-  stopFanfare: vi.fn(),
-  primeFanfare: vi.fn(),
-}));
-vi.mock("@/lib/stars/fanfare", () => playback);
-
 /*
  * The playlist, mocked, and answering `false` unless a test says otherwise.
  *
@@ -118,8 +111,8 @@ beforeEach(() => {
  * Let the music decision settle.
  *
  * Starting a song is asynchronous — YouTube's script, then the player, then
- * the playlist — so whether the fanfare plays instead is only known a
- * microtask after the press.
+ * the playlist — so whether it actually started is only known a microtask
+ * after the press.
  */
 async function settleMusic() {
   await act(async () => {});
@@ -135,7 +128,7 @@ describe("the curtain", () => {
 
     expect(slideNumber()).toBe(1);
     expect(screen.getByRole("button", { name: /start the ceremony/i })).toBeTruthy();
-    expect(playback.startFanfare).not.toHaveBeenCalled();
+    expect(music.startCeremonyPlaylist).not.toHaveBeenCalled();
   });
 
   it("does not turn over on its own before it has been started", () => {
@@ -149,6 +142,7 @@ describe("the curtain", () => {
   });
 
   it("starts the music and the first award on one press", async () => {
+    music.startCeremonyPlaylist.mockResolvedValue(true);
     renderCeremony();
 
     fireEvent.click(screen.getByRole("button", { name: /start the ceremony/i }));
@@ -156,35 +150,21 @@ describe("the curtain", () => {
     // The slide turns immediately; the music is decided a beat later.
     expect(slideNumber()).toBe(2);
     await settleMusic();
-    expect(playback.startFanfare).toHaveBeenCalledTimes(1);
-  });
-
-  it("plays a playlist song *instead of* the fanfare, never both", async () => {
-    /*
-     * The whole point of the fallback being a fallback. Two pieces of music at
-     * once is not a richer ceremony, it is a mess — and it is the failure mode
-     * an `await` in the wrong place produces.
-     */
-    music.startCeremonyPlaylist.mockResolvedValue(true);
-    renderCeremony();
-
-    fireEvent.click(screen.getByRole("button", { name: /start the ceremony/i }));
-    await settleMusic();
-
     expect(music.startCeremonyPlaylist).toHaveBeenCalledTimes(1);
-    expect(playback.startFanfare).not.toHaveBeenCalled();
   });
 
-  it("falls back to the fanfare when YouTube does not turn up", async () => {
+  it("runs in silence when YouTube does not turn up", async () => {
     // No playlist configured, no network, an ad-blocker, a private playlist:
-    // all one answer here, and all of them end in brass rather than silence.
+    // all one answer here, and all of them leave the ceremony without music
+    // rather than throwing or hanging.
     music.startCeremonyPlaylist.mockResolvedValue(false);
     renderCeremony();
 
     fireEvent.click(screen.getByRole("button", { name: /start the ceremony/i }));
     await settleMusic();
 
-    expect(playback.startFanfare).toHaveBeenCalledTimes(1);
+    expect(music.startCeremonyPlaylist).toHaveBeenCalledTimes(1);
+    expect(music.stopCeremonyPlaylist).not.toHaveBeenCalled();
   });
 
   it("does not start a song that arrived after the speaker was turned off", async () => {
@@ -212,7 +192,6 @@ describe("the curtain", () => {
     });
 
     expect(music.stopCeremonyPlaylist).toHaveBeenCalled();
-    expect(playback.startFanfare).not.toHaveBeenCalled();
   });
 });
 
@@ -326,9 +305,8 @@ describe("holding it while the room claps", () => {
     fireEvent.click(hold());
     fireEvent.click(goOn());
 
-    expect(playback.stopFanfare).not.toHaveBeenCalled();
     expect(music.stopCeremonyPlaylist).not.toHaveBeenCalled();
-    expect(playback.startFanfare).not.toHaveBeenCalled();
+    expect(music.startCeremonyPlaylist).not.toHaveBeenCalled();
   });
 });
 
@@ -428,9 +406,9 @@ describe("dragging through it by hand", () => {
       vi.advanceTimersByTime(currentSlideMs() + 50);
     });
     expect(slideNumber()).toBe(3);
-    // A swipe is a navigation. Brass arriving out of a page somebody was
+    // A swipe is a navigation. Music arriving out of a page somebody was
     // quietly looking through is how an app gets closed.
-    expect(playback.startFanfare).not.toHaveBeenCalled();
+    expect(music.startCeremonyPlaylist).not.toHaveBeenCalled();
   });
 });
 
@@ -466,36 +444,38 @@ describe("the music", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /start the ceremony/i }));
 
-    expect(playback.startFanfare).not.toHaveBeenCalled();
+    expect(music.startCeremonyPlaylist).not.toHaveBeenCalled();
     // …and the slides still run. Silence is a preference, not a fault.
     expect(slideNumber()).toBe(2);
   });
 
   it("can be switched on and off from the speaker, mid-ceremony", async () => {
+    music.startCeremonyPlaylist.mockResolvedValue(true);
     renderCeremony();
 
     const speaker = screen.getByRole("switch", {
       name: /turn the ceremony music off/i,
     });
     fireEvent.click(speaker);
-    expect(playback.stopFanfare).toHaveBeenCalled();
+    expect(music.stopCeremonyPlaylist).toHaveBeenCalled();
     expect(window.localStorage.getItem(SOUND_STORAGE_KEY)).toBe("off");
 
     fireEvent.click(
       screen.getByRole("switch", { name: /turn the ceremony music on/i }),
     );
     await settleMusic();
-    expect(playback.startFanfare).toHaveBeenCalled();
+    expect(music.startCeremonyPlaylist).toHaveBeenCalled();
   });
 
   it("takes the music with it when the page is left", () => {
+    music.startCeremonyPlaylist.mockResolvedValue(true);
     const view = renderCeremony();
     fireEvent.click(screen.getByRole("button", { name: /start the ceremony/i }));
 
     view.unmount();
 
-    // Otherwise the fanfare plays on over the star charts.
-    expect(playback.stopFanfare).toHaveBeenCalled();
+    // Otherwise the song plays on over the star charts.
+    expect(music.stopCeremonyPlaylist).toHaveBeenCalled();
   });
 });
 

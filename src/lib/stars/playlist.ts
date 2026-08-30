@@ -2,9 +2,8 @@
  * A random song from the family's playlist, under the award ceremony.
  *
  * Everything YouTube-shaped in the app lives here. The ceremony asks for music
- * and is told whether it got any; if it did not, it plays the fanfare it has
- * always played. That one boolean is the whole interface, and it is what keeps
- * a third-party embed from being able to leave a Sunday afternoon in silence.
+ * and is told whether it got any; if it did not, it simply runs without any.
+ * That one boolean is the whole interface.
  *
  * ---------------------------------------------------------------------------
  * NO API KEY, NO QUOTA
@@ -18,8 +17,8 @@
  * ---------------------------------------------------------------------------
  * IT NEVER STARTS ON ITS OWN
  * ---------------------------------------------------------------------------
- * The same rule the fanfare follows, for the same reason: the ceremony has a
- * Start button and the button is the gesture. `prime` builds the player early
+ * Browsers refuse to autoplay audio: the ceremony has a Start button and the
+ * button is the gesture. `prime` builds the player early
  * so it is ready and cued by the time somebody presses it — a player created
  * *inside* the click would still be fetching a script when the gesture expired,
  * which on Safari is the difference between music and no music.
@@ -243,7 +242,7 @@ export function primeCeremonyPlaylist(): void {
 
   ready = loadApi().then((api) => (api ? createPlayer(api) : null));
   // A rejection here would be an unhandled one, and the caller already treats
-  // "no player" as "play the fanfare".
+  // "no player" as "run in silence".
   ready.catch(() => null);
 }
 
@@ -253,7 +252,7 @@ export function primeCeremonyPlaylist(): void {
  * Resolves `true` when it has taken responsibility for the music, and `false`
  * for every way that can fail to happen — no playlist configured, no network,
  * a private playlist, a blocked script, or simply taking too long. The caller
- * plays the fanfare on `false`, which is why none of those cases needs to be
+ * runs in silence on `false`, which is why none of those cases needs to be
  * distinguished here.
  */
 export async function startCeremonyPlaylist(volume: number): Promise<boolean> {
@@ -301,8 +300,7 @@ export function stopCeremonyPlaylist(): void {
 }
 
 /**
- * Ramp the volume, because YouTube's player has no equivalent of the Web Audio
- * ramp the fanfare uses and a song that starts at full is a song that makes
+ * Ramp the volume, because a song that starts at full is a song that makes
  * everybody jump.
  */
 function fadeTo(instance: YouTubePlayer, target: number, done?: () => void) {

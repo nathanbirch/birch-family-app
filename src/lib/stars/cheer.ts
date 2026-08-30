@@ -22,9 +22,8 @@ import {
  * quieter than the whole day's without shipping two files.
  *
  * The context, the iOS session workaround and the decoded buffer all live in
- * `lib/audio.ts`, shared with the report's fanfare — see the note at the top
- * of that file for why there is only one context. What is left here is the
- * cheer itself.
+ * `lib/audio.ts` — see the note at the top of that file for why there is only
+ * one context. What is left here is the cheer itself.
  *
  * Every failure is silent, on purpose. The star is already ticked and the
  * confetti is already falling; the sound is the one part of this that is

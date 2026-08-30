@@ -98,6 +98,19 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // School document photos are content-hashed by
+        // `scripts/optimise-documents.mjs`, so they earn the same treatment
+        // as the avatars and pet photos, for the same reasons.
+        source: "/documents/:file*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: `public, max-age=${ONE_YEAR}, immutable`,
+          },
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noimageindex" },
+        ],
+      },
+      {
         // Content-hashed by `scripts/generate-cheer.mjs`, so it earns exactly
         // what the avatars and pet photos do. Generating a different cheer
         // changes the hash, and the old URL is simply never asked for again.

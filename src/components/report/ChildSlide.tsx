@@ -6,7 +6,6 @@ import { getPerson } from "@/config/family";
 import { formatMoney } from "@/config/rewards";
 import type { ChartId } from "@/config/stars";
 import { convertWeekToCoins } from "@/lib/coins/actions";
-import { startFanfare } from "@/lib/stars/fanfare";
 import {
   praiseFor,
   wholeRowsLabel,
@@ -25,16 +24,6 @@ import {
   chartDelayMs,
   totalDelayMs,
 } from "./timing";
-
-/**
- * How loud the fanfare plays when a conversion lands.
- *
- * Same instrument `AwardCeremony` already reaches for when the ceremony's own
- * music is the fanfare rather than the family playlist — a moment worth a
- * flourish, not a second soundtrack competing with whatever is already under
- * the slide.
- */
-const CONVERT_FANFARE_VOLUME = 0.5;
 
 /**
  * One child's moment.
@@ -94,7 +83,7 @@ export function ChildSlide({
   runKey,
   weekStart,
   initialConversion,
-  soundOn,
+  canDecide,
 }: {
   report: ChildReport;
   /**
@@ -114,8 +103,15 @@ export function ChildSlide({
   weekStart: string | null;
   /** Coins already converted for this child and week, or `null`. */
   initialConversion: number | null;
-  /** Whether the ceremony's own sound is on — gates the conversion fanfare. */
-  soundOn: boolean;
+  /**
+   * Whether "Convert to coins" / "Take cash" may be offered at all.
+   *
+   * True only on the one render where this ceremony is being opened for the
+   * first time ever *and* it is still the current week's ceremony — see the
+   * ceremony page. Every render after that is a rewatch, and a rewatch shows
+   * whatever was already decided (or nothing) rather than asking again.
+   */
+  canDecide: boolean;
 }) {
   const person = getPerson(report.childId);
   const totalDelay = totalDelayMs(report.charts.length);
@@ -154,7 +150,6 @@ export function ChildSlide({
     setConverted(result.amount);
     if (!result.alreadyConverted) {
       setCelebrate((value) => value + 1);
-      if (soundOn) startFanfare(CONVERT_FANFARE_VOLUME);
     }
   }
 
@@ -300,7 +295,7 @@ export function ChildSlide({
           while "take cash" has not been chosen *this visit* — see the note on
           `cashChosen` above.
         */}
-        {weekStart && converted === null && !cashChosen ? (
+        {weekStart && converted === null && !cashChosen && canDecide ? (
           <div
             className="reveal-rise flex w-full flex-col items-center gap-2"
             style={

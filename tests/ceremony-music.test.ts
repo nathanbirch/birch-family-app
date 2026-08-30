@@ -39,7 +39,7 @@ describe("choosing a song", () => {
 
   it("says there is nothing to play for an empty playlist", () => {
     // Which is how a playlist that loaded but turned out to be empty ends up
-    // playing the fanfare instead of throwing.
+    // running in silence instead of throwing.
     expect(pickTrackIndex(0, 0.5)).toBe(-1);
   });
 
@@ -71,13 +71,12 @@ describe("the volume", () => {
     expect(toPlayerVolume(4)).toBe(100);
   });
 
-  it("is quieter than the fanfare", () => {
+  it("plays well under full", () => {
     /*
-     * The fanfare is thin and brassy and was written to sit under a voice; a
-     * real record is mastered to be the thing you are listening to. At the
-     * same number the song buries whoever is reading a child's name out.
+     * A real record is mastered to be the thing you are listening to. At full
+     * volume the song buries whoever is reading a child's name out.
      */
-    expect(PLAYLIST_VOLUME).toBeLessThan(0.42);
+    expect(PLAYLIST_VOLUME).toBeLessThan(0.5);
   });
 });
 
@@ -99,7 +98,7 @@ describe("which playlists can work at all", () => {
     /*
      * Liked Music and the radio/mix playlists cannot be embedded whatever
      * their privacy is set to, and the failure otherwise arrives as a silent
-     * fallback to the fanfare that looks like a bug in this app.
+     * ceremony that looks like a bug in this app.
      */
     expect(isEmbeddablePlaylistId("LM")).toBe(false);
     expect(isEmbeddablePlaylistId("RDCLAK5uy_kLWIr9gv1XLlPbaDS965-Db4TrBoUTxQ8")).toBe(false);
@@ -116,7 +115,7 @@ describe("shipping without a playlist", () => {
   /*
    * The whole feature is safe to ship un-configured, and that is deliberate
    * rather than incidental: an empty id is a supported state in which the
-   * ceremony plays exactly the fanfare it played before any of this existed.
+   * ceremony simply runs without music.
    */
   it("says so when nothing is configured", async () => {
     const { CEREMONY_PLAYLIST_ID } = await import("@/config/ceremony-music");
@@ -193,10 +192,10 @@ describe("starting it", () => {
 
   it("gives up rather than hanging when YouTube never arrives", async () => {
     /*
-     * The guarantee the whole fallback rests on. Offline, blocked by an
-     * extension, or simply slow — it has to *answer*, because the ceremony is
-     * waiting on that answer to decide whether to play the fanfare instead. A
-     * promise that never settles is a silent Sunday afternoon.
+     * The guarantee the ceremony rests on. Offline, blocked by an extension,
+     * or simply slow — it has to *answer*, because the ceremony is waiting on
+     * that answer to decide whether there is music at all. A promise that
+     * never settles is a silent Sunday afternoon with no way out of it.
      */
     const { startCeremonyPlaylist } = await withPlaylist("PLtest123");
 

@@ -3,11 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AwardCeremony } from "@/components/report/AwardCeremony";
+import { CeremonyPinGate } from "@/components/report/CeremonyPinGate";
 import {
   getVisibleSpanCeremony,
   type SpanCeremony,
 } from "@/config/ceremonies";
+import { hasParentPinUnlock } from "@/lib/auth/parent-pin";
 import { requireUser } from "@/lib/auth/dal";
+import { hasBeenViewed, recordFirstView } from "@/lib/ceremonies/views-store";
 import { getConversionForWeek } from "@/lib/coins/store";
 import { formatDateRange, parseLocalDate } from "@/lib/dates";
 import { familyNow } from "@/lib/family-api/time";
@@ -18,6 +21,7 @@ import {
   ceremonyDateFor,
   ceremonyDateLabel,
   isCompletedWeek,
+  latestCompletedWeekStart,
 } from "@/lib/stars/report";
 import { getChorePools } from "@/lib/stars/rotation-store";
 import { parseWeekStart } from "@/lib/stars/week";
@@ -84,13 +88,20 @@ export default async function ReportWeekPage({ params }: PageProps) {
    * same 404 as an id somebody invented.
    */
   const span = getVisibleSpanCeremony(week, familyNow().date);
-  if (span) return renderSpan(span);
+  if (span) {
+    const gate = await gateCeremony(span.id);
+    if (!gate.show) return renderGate();
+    return renderSpan(span);
+  }
 
   const monday = parseWeekStart(week);
   if (!monday) notFound();
 
   // The family's clock rather than the server's — see the note on `/ceremonies`.
   if (!isCompletedWeek(week, familyNow().civilNoon)) notFound();
+
+  const gate = await gateCeremony(week);
+  if (!gate.show) return renderGate();
 
   const [pools, marks] = await Promise.all([
     getChorePools(),
@@ -117,6 +128,18 @@ export default async function ReportWeekPage({ params }: PageProps) {
     ),
   ) as Record<string, number>;
 
+  /*
+   * The cash-or-coins choice is only ever open on the ceremony that is
+   * currently the newest one on `/ceremonies`, and only on the render that
+   * just opened it for the very first time. Both have to hold: a week that
+   * has aged off the top of the page is a *previous* ceremony (see the same
+   * check in `convertWeekToCoins`), and a week that is current but has
+   * already been opened once is a rewatch, which shows whatever was decided
+   * rather than asking again.
+   */
+  const allowDecision =
+    gate.isFirstView && week === latestCompletedWeekStart(familyNow().civilNoon);
+
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-4 pt-6 sm:px-6 sm:pt-10">
       <BackLink />
@@ -126,8 +149,36 @@ export default async function ReportWeekPage({ params }: PageProps) {
           report={report}
           dateLabel={dateLabel}
           conversions={conversions}
+          allowDecision={allowDecision}
         />
       </div>
+    </main>
+  );
+}
+
+/**
+ * Whether a ceremony may be shown, and — if so — whether this is the render
+ * that opened it for the first time ever.
+ *
+ * `key` is the same string a ceremony is addressed by on the page: a week's
+ * Monday, or a span's id. Only ever call `recordFirstView` after the PIN gate
+ * has already been satisfied, which is exactly what this does — it is the one
+ * place that ordering is enforced.
+ */
+async function gateCeremony(
+  key: string,
+): Promise<{ show: true; isFirstView: boolean } | { show: false }> {
+  if (await hasBeenViewed(key)) return { show: true, isFirstView: false };
+  if (!(await hasParentPinUnlock())) return { show: false };
+  return { show: true, isFirstView: await recordFirstView(key) };
+}
+
+/** The PIN prompt, in the same shell every other state of this page uses. */
+function renderGate() {
+  return (
+    <main className="mx-auto w-full max-w-2xl flex-1 px-4 pb-4 pt-6 sm:px-6 sm:pt-10">
+      <BackLink />
+      <CeremonyPinGate />
     </main>
   );
 }

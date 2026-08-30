@@ -133,6 +133,19 @@ export const COLLECTIONS = {
    * so contributing can carry straight on. See `lib/rewards/store.ts`.
    */
   rewardPools: "rewardPools",
+  /**
+   * One document per Star Award Ceremony ever opened — weekly or spanning —
+   * keyed by the same `slug` the page addresses it by (a week's Monday, or a
+   * span's id from `config/ceremonies.ts`).
+   *
+   * Its only job is answering "has anybody opened this one before?". The
+   * first open of a ceremony needs the parent PIN and is the one chance to
+   * choose cash or coins (see `lib/coins/actions.ts` and
+   * `lib/ceremonies/views-store.ts`); every open after that shows the same
+   * ceremony straight away. Nothing is ever deleted from this collection —
+   * once opened, always opened.
+   */
+  ceremonyViews: "ceremonyViews",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];

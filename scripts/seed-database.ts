@@ -229,6 +229,18 @@ async function main() {
       `  • Run \`npm run db:seed-rewards\` to load the catalogue itself.`,
     );
 
+    /*
+     * Which ceremonies have ever been opened — see `lib/ceremonies/views-store.ts`.
+     * `key_unique` is what makes two requests racing to open the same ceremony
+     * for the first time resolve to exactly one "first view".
+     */
+    const ceremonyViews = db.collection(COLLECTIONS.ceremonyViews);
+    await ceremonyViews.createIndex(
+      { key: 1 },
+      { unique: true, name: "key_unique" },
+    );
+    console.log(`  ✓ ${COLLECTIONS.ceremonyViews}.key_unique (unique)`);
+
     /* --- Seed user ----------------------------------------------------- */
 
     const email = SEED_USER.email.trim().toLowerCase();

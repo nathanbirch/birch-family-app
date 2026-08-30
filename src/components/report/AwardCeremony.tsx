@@ -16,11 +16,6 @@ import {
   subscribeToSoundOn,
 } from "@/lib/sound-store";
 import {
-  primeFanfare,
-  startFanfare,
-  stopFanfare,
-} from "@/lib/stars/fanfare";
-import {
   primeCeremonyPlaylist,
   startCeremonyPlaylist,
   stopCeremonyPlaylist,
@@ -69,20 +64,11 @@ import { childSlideMs } from "./timing";
  * ---------------------------------------------------------------------------
  * Browsers refuse to autoplay audio, so it *cannot* start on load — but this
  * goes further than the policy requires: dragging into the ceremony starts the
- * slides and does not start the music. A swipe is a navigation, and brass
+ * slides and does not start the music. A swipe is a navigation, and a song
  * arriving out of a page somebody was quietly looking through is the kind of
  * thing that gets an app closed. The two ways to start it are both unambiguous
  * — the Start button and the speaker in the corner.
  */
-
-/**
- * How loud the fanfare plays, 0-1.
- *
- * Well under full: it is *under* the ceremony. A phone on a kitchen counter
- * with five children round it has to carry a name being read out over the top
- * of this, and music that competes is louder rather than better.
- */
-const MUSIC_VOLUME = 0.42;
 
 /** How far the slide has to be dragged, as a share of its width, to turn. */
 const DRAG_THRESHOLD = 0.2;
@@ -100,6 +86,7 @@ export function AwardCeremony({
   dateLabel,
   title,
   conversions,
+  allowDecision,
 }: {
   report: WeekReport;
   /** e.g. "Aug 3 – Aug 7", already formatted by the page. */
@@ -118,6 +105,12 @@ export function AwardCeremony({
    * `weekStart` prop for why a span cannot mean this.
    */
   conversions?: Readonly<Record<string, number>>;
+  /**
+   * Whether "Convert to coins" / "Take cash" may be offered on this render —
+   * see `ChildSlide`'s `canDecide` prop. Left out (falsy) for a span, which
+   * never offers the choice regardless.
+   */
+  allowDecision?: boolean;
 }) {
   const slides = useMemo<Slide[]>(
     () => [
@@ -206,30 +199,21 @@ export function AwardCeremony({
   /* --- The music ------------------------------------------------------- */
 
   /*
-   * A song from the family's playlist if there is one, and the fanfare if
-   * there is not.
+   * A song from the family's playlist, if YouTube turns one up.
    *
-   * The order matters and the fallback is the point. `startCeremonyPlaylist`
-   * answers `false` for every way YouTube can fail to turn up — nothing
-   * configured, no network, a private playlist, an ad-blocker, or simply
-   * taking too long — and each of those ends with the brass the ceremony has
-   * always had rather than with a silent Sunday afternoon.
-   *
-   * It is `async`, which the fanfare is not, so the two are guarded: a child
-   * who taps the speaker off while YouTube is still arriving must not have a
-   * song start on top of the silence they asked for. `wantsMusic` is read
-   * again on the other side of the await for exactly that.
+   * `startCeremonyPlaylist` is `async` — YouTube's script, then the player,
+   * then the playlist all have to arrive — so a child can tap the speaker off
+   * while it is still in flight. `wantsMusic` is read again on the other side
+   * of the await for exactly that: without it, a song that finally arrives
+   * would start on top of the silence somebody just asked for.
    */
   const playMusic = useCallback(async () => {
     if (await startCeremonyPlaylist(PLAYLIST_VOLUME)) {
       if (!wantsMusic.current) stopCeremonyPlaylist();
-      return;
     }
-    if (wantsMusic.current) startFanfare(MUSIC_VOLUME);
   }, []);
 
   const silence = useCallback(() => {
-    stopFanfare();
     stopCeremonyPlaylist();
   }, []);
 
@@ -324,16 +308,12 @@ export function AwardCeremony({
       locked: false,
     };
     /*
-     * Warm both, so that pressing Start next is a `play` and not a network
-     * request. The playlist needs it more than the fanfare does: YouTube's
-     * script, the player and the playlist all have to arrive before a song can
-     * begin, and a player built inside the click would still be fetching when
-     * the gesture expired.
+     * Warm it, so that pressing Start next is a `play` and not a network
+     * request. YouTube's script, the player and the playlist all have to
+     * arrive before a song can begin, and a player built inside the click
+     * would still be fetching when the gesture expired.
      */
-    if (soundOn) {
-      primeFanfare();
-      primeCeremonyPlaylist();
-    }
+    if (soundOn) primeCeremonyPlaylist();
   }
 
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
@@ -535,7 +515,7 @@ export function AwardCeremony({
                       conversions?.[report.children[slide.childIndex].childId] ??
                       null
                     }
-                    soundOn={soundOn}
+                    canDecide={Boolean(allowDecision)}
                   />
                 ) : (
                   <FinaleSlide report={report} runKey={isCurrent ? run : null} />

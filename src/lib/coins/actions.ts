@@ -7,7 +7,11 @@ import { coinsForStars } from "@/config/rewards";
 import { requireUser } from "@/lib/auth/dal";
 import { familyNow } from "@/lib/family-api/time";
 import { getWeekMarks } from "@/lib/stars/marks";
-import { buildWeekReport, isCompletedWeek } from "@/lib/stars/report";
+import {
+  buildWeekReport,
+  isCompletedWeek,
+  latestCompletedWeekStart,
+} from "@/lib/stars/report";
 import { getChorePools } from "@/lib/stars/rotation-store";
 import { parseWeekStart } from "@/lib/stars/week";
 
@@ -64,6 +68,22 @@ export async function convertWeekToCoins(input: {
   // that had not finished when it claims to have watched it.
   if (!isCompletedWeek(weekStart, familyNow().civilNoon)) {
     return { ok: false, message: "That week has not finished yet." };
+  }
+
+  /*
+   * Only the week whose ceremony is the current one on `/ceremonies` — the
+   * card at the top for its seven days — can still be turned into coins. The
+   * choice belongs to the ceremony's first showing, and a ceremony that has
+   * aged off the top of the page is a *previous* one: reopening it must never
+   * be a second chance to mint coins for stars already read out. The UI never
+   * offers the button past that point either, but the check lives here too,
+   * per the rule at the top of this file — every export is a public endpoint.
+   */
+  if (weekStart !== latestCompletedWeekStart(familyNow().civilNoon)) {
+    return {
+      ok: false,
+      message: "That ceremony has already happened — it can no longer be turned into coins.",
+    };
   }
 
   try {

@@ -227,6 +227,24 @@ function PickerIcon({ className }: IconProps) {
   );
 }
 
+/**
+ * A backpack — school documents.
+ *
+ * Nothing else in this set has a rounded top strap and a front pocket, so it
+ * reads as "school" rather than as a bag in general, even next to the
+ * shopping trolley and the gift box at the same 24px size.
+ */
+function SchoolIcon({ className }: IconProps) {
+  return (
+    <svg {...SHARED} className={className} aria-hidden="true">
+      <path d="M9 7V5.6a3 3 0 0 1 6 0V7" />
+      <rect x="5.5" y="7" width="13" height="13.5" rx="2.6" />
+      <path d="M9 12.2h6" />
+      <rect x="8.7" y="14.6" width="6.6" height="4.4" rx="1.1" />
+    </svg>
+  );
+}
+
 const ICONS = {
   seats: SeatsIcon,
   shopping: ShoppingIcon,
@@ -242,6 +260,7 @@ const ICONS = {
   chores: ChoresIcon,
   mantras: MantrasIcon,
   calendar: CalendarIcon,
+  school: SchoolIcon,
 } satisfies Record<
   NavIconName | PlannedIconName | DecorativeIconName,
   (props: IconProps) => React.JSX.Element

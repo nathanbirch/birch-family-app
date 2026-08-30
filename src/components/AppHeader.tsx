@@ -58,23 +58,11 @@ export function AppHeader({
       </div>
 
       {/*
-        "Whose Turn" is a short title, not a self-explanatory one, so the page
-        says what it means before it shows anything. Full width rather than
-        stacked under the date, which is a narrow column on a phone once the
-        app mark and the swap button have taken their share.
+        What each clock is and when it turns over now lives on its own
+        section below, next to the rotation it belongs to — see
+        `SeatingBoard` — rather than summarised here before any of them are
+        on screen.
       */}
-      <p className="text-sm sm:text-base" style={{ color: "var(--color-text-muted)" }}>
-        Three turns on three clocks:{" "}
-        <strong style={{ color: "var(--color-text)" }}>seats</strong> at the
-        table and in the Expedition change every Monday,{" "}
-        <strong style={{ color: "var(--color-text)" }}>
-          Family Home Evening
-        </strong>{" "}
-        jobs change every Sunday, and{" "}
-        <strong style={{ color: "var(--color-text)" }}>Bella and Leia</strong>{" "}
-        change every night.
-      </p>
-
       <div className="flex flex-wrap items-center gap-2">
         <Pill emphasis>
           Week {status.weekNumber} of {status.cycleLength}

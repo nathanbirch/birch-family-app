@@ -4,13 +4,11 @@
  * ---------------------------------------------------------------------------
  * WHY THIS IS SHARED RATHER THAN ONE PER SOUND
  * ---------------------------------------------------------------------------
- * There are two sounds now — the cheer on the star charts and the fanfare
- * under the weekly report — and a third would have made this inevitable, so it
- * is here at two. An AudioContext is not a lightweight object: it holds a
- * hardware output stream, iOS caps how many a page may have, and each one has
- * to be separately unlocked from inside a user gesture. Sharing one means the
- * gesture that starts the ceremony has already unlocked the context the cheer
- * will use, and vice versa.
+ * There is one sound today — the cheer on the star charts — and a second would
+ * have made this inevitable, so it is here already. An AudioContext is not a
+ * lightweight object: it holds a hardware output stream, iOS caps how many a
+ * page may have, and each one has to be separately unlocked from inside a user
+ * gesture.
  *
  * A decoded buffer belongs to the context that decoded it, so the sample cache
  * lives here too, keyed by URL. The URLs are content-hashed, which is what
@@ -75,10 +73,6 @@ type AudioSessionType =
  * "may well" is what an earlier version of this assumed. If the music stopping
  * turns out to be the bigger annoyance, this is a one-word change — try
  * `transient`, and check on a phone with the switch flicked to silent.
- *
- * (The fanfare is a different case and points the same way: two minutes of
- * ceremony music genuinely *is* playback, and should duck whatever else the
- * phone was doing.)
  *
  * Wrapped and feature-detected because the API exists only in Safari, and the
  * shape of a draft spec is allowed to move under us.

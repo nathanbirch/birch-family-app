@@ -105,7 +105,8 @@ export type NavIconName =
   | "shopping"
   | "note"
   | "picker"
-  | "rewards";
+  | "rewards"
+  | "school";
 
 /**
  * The live pages.
@@ -268,6 +269,14 @@ export const NAV_ITEMS: readonly NavItem[] = [
     description: "Coins from stars, and what they can become.",
     bar: 6.5,
     icon: "rewards",
+  },
+  {
+    href: "/school",
+    label: "School",
+    title: "School",
+    description: "Lunch menus, permission slips, and whatever else comes home.",
+    bar: 8.5,
+    icon: "school",
   },
   {
     href: "/note",
