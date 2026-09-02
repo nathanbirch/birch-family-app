@@ -151,15 +151,38 @@ export const STAR_TASKS: readonly StarTask[] = [
     assign: { kind: "fixed", children: ["james"] },
   },
   {
+    id: "trash-can-dump",
+    chart: "chores",
+    label: "Find a full trash can and dump it",
+    /*
+     * Not on the laminated chart — an app-only row, added so Clara's fixed
+     * load matches William's `pick-up-toys` and the two of them land on the
+     * same chore count every week regardless of which of the two rotating
+     * jobs below they're dealt. See `config/chore-rotation.ts` for why the
+     * rotating pool alone can't guarantee that.
+     */
+    assign: { kind: "fixed", children: ["clara"] },
+  },
+  {
     id: "vacuum-wooden-floor",
     chart: "chores",
     label: "Pick up & vacuum wooden floor",
     assign: { kind: "rotating" },
   },
   {
-    id: "pick-up-living-room",
+    id: "pick-up-vacuum-living-room",
     chart: "chores",
-    label: "Pick up living room floor",
+    /*
+     * One row, not two: this used to be `pick-up-living-room` and
+     * `vacuum-living-room` as separate chores, same as the wooden floor is
+     * pick-up-and-vacuum in a single row. Splitting the living room in two
+     * was what made the younger pair's pool three chores for two children —
+     * an odd chore that had to alternate. Merging them makes it two chores
+     * for two children, an even swap every week, matching `vacuum-wooden-floor`'s
+     * shape. Old stars filed against either retired id are dropped by
+     * `normaliseMarks()`, the same forgiveness the cello removal used.
+     */
+    label: "Pick up & vacuum living room floor",
     assign: { kind: "rotating" },
   },
   {
@@ -172,12 +195,6 @@ export const STAR_TASKS: readonly StarTask[] = [
     id: "kitchen-island",
     chart: "chores",
     label: "Clear & clean kitchen island & table",
-    assign: { kind: "rotating" },
-  },
-  {
-    id: "vacuum-living-room",
-    chart: "chores",
-    label: "Vacuum living room floor",
     assign: { kind: "rotating" },
   },
   {

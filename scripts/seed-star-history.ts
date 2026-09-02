@@ -112,7 +112,10 @@ const WEEKS: readonly Week[] = [
       },
       clara: {
         "tidy-room": "#....",
-        "pick-up-living-room": ".#...",
+        // Was two rows on the chart, "Pick up" and "Vacuum" the living room;
+        // merged into one task in `config/stars.ts`, so transcribed here
+        // against the row it replaces, same as the shower row above.
+        "pick-up-vacuum-living-room": ".#...",
         piano: "#....",
         "wash-hands-bathroom": "#....",
         "brush-morning": "#....",
@@ -150,8 +153,9 @@ const WEEKS: readonly Week[] = [
       },
       clara: {
         "tidy-room": "##...",
-        "pick-up-living-room": "##...",
-        "vacuum-living-room": "##...",
+        // Both rows had the same pattern this week, so the merge loses
+        // nothing here — see the note on the week above.
+        "pick-up-vacuum-living-room": "##...",
         "laundry-upstairs": "##...",
       },
       william: {

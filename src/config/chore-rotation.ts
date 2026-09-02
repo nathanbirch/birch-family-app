@@ -38,10 +38,13 @@
  * With two children in a pool that is simply "swap on Monday", but the
  * round-robin is kept rather than special-cased into a boolean, and it buys:
  *
- *  - **Uneven counts for free.** The younger pair has three chores between
- *    two children, so one of them does two this week and one next week. The
- *    odd chore alternates along with the rest; nothing has to know it is the
- *    odd one.
+ *  - **Uneven counts for free, if a pool ever needs them.** A pool with an
+ *    odd number of chores would have one child doing one more than the other
+ *    some weeks, the odd chore alternating along with the rest — nothing
+ *    would have to know it is the odd one. Both pools currently divide evenly
+ *    (four chores, two elder children; two chores, two younger children), by
+ *    design: see the `younger-pair` chores below for why that now matters
+ *    beyond tidiness.
  *  - **Everybody does everything.** Child `c` holds chore `j` exactly when
  *    `j ≡ c - offset (mod n)`, so after `n` weeks — two, here — every child
  *    has held every chore in their pair, and no child has the same chore two
@@ -115,6 +118,14 @@ export type ChorePool = {
  * Read the August column of the chore chart against these and they match, one
  * chore at a time — that is the anchor, and `tests/chore-rotation.test.ts`
  * pins it so a future edit cannot quietly move it.
+ *
+ * Exception: the `younger-pair` chores no longer read as two separate rows
+ * off that August photograph. The chart shows "Pick up living room floor"
+ * and "Vacuum living room floor" as two chores; they are merged here into
+ * one (`pick-up-vacuum-living-room`, see `config/stars.ts`) so the pool
+ * divides evenly between Clara and William. The anchor-week owner is
+ * unchanged — Clara still had the living room in the photograph — only the
+ * bookkeeping is different.
  */
 export const CHORE_POOLS: readonly ChorePool[] = [
   {
@@ -135,12 +146,11 @@ export const CHORE_POOLS: readonly ChorePool[] = [
     id: "younger-pair",
     name: "Clara & William",
     children: ["clara", "william"],
-    // Three chores between two children: Clara has two of them in the anchor
-    // week and William two the week after. The pair take turns at the odd one.
+    // Two chores between two children: an even swap every week, nobody ever
+    // takes the odd one twice running.
     chores: [
-      "pick-up-living-room", // Clara, in the anchor week
+      "pick-up-vacuum-living-room", // Clara, in the anchor week
       "vacuum-wooden-floor", // William
-      "vacuum-living-room", // Clara
     ],
     anchorWeek: "2026-08-10",
   },

@@ -84,9 +84,14 @@ describe("the task list", () => {
 
 describe("what each child's chart says", () => {
   /*
-   * Read straight off the three photographs, one column at a time. These
-   * counts are the transcription's proof: if somebody adds a task and forgets
-   * to say who it belongs to, or drops a child off a shared row, this fails.
+   * Read straight off the three photographs, one column at a time — except
+   * Clara and William's chores, which now also include `trash-can-dump` and
+   * the merged `pick-up-vacuum-living-room` (see `config/stars.ts`), neither
+   * of which is on the laminated chart. Both still land the two of them on
+   * four chores every week, which is why the counts below are unchanged.
+   * These counts are the transcription's proof: if somebody adds a task and
+   * forgets to say who it belongs to, or drops a child off a shared row,
+   * this fails.
    */
   const EXPECTED: Record<ChildId, { chores: number; learning: number; hygiene: number }> = {
     // The cello row is scored out in red pen on the fridge, so Hannah has the

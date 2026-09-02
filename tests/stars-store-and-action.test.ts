@@ -91,11 +91,7 @@ describe("reading the pools", () => {
         ...stored(),
         poolId: "younger-pair",
         children: ["clara", "william"],
-        chores: [
-          "pick-up-living-room",
-          "vacuum-wooden-floor",
-          "vacuum-living-room",
-        ],
+        chores: ["pick-up-vacuum-living-room", "vacuum-wooden-floor"],
       },
       stored(),
     ]);

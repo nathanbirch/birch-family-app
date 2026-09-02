@@ -75,8 +75,7 @@ describe("the anchor week", () => {
    * to the pools moves this week, this fails, which is the point.
    */
   const ANCHOR: [string, ChildId][] = [
-    ["pick-up-living-room", "clara"],
-    ["vacuum-living-room", "clara"],
+    ["pick-up-vacuum-living-room", "clara"],
     ["vacuum-wooden-floor", "william"],
     ["dishwasher", "emily"],
     ["yard-pickup", "emily"],
@@ -126,12 +125,12 @@ describe("swapping on Monday morning", () => {
     );
   });
 
-  it("passes the younger pair's odd chore over too", () => {
-    // Three chores between two children: two one week, one the next.
-    expect(getChoresForChild(CHORE_POOLS, ANCHOR_WEEK, "clara")).toHaveLength(2);
+  it("gives the younger pair one chore each, every week", () => {
+    // Two chores between two children now: an even swap, no odd one out.
+    expect(getChoresForChild(CHORE_POOLS, ANCHOR_WEEK, "clara")).toHaveLength(1);
     expect(getChoresForChild(CHORE_POOLS, ANCHOR_WEEK, "william")).toHaveLength(1);
     expect(getChoresForChild(CHORE_POOLS, NEXT_WEEK, "clara")).toHaveLength(1);
-    expect(getChoresForChild(CHORE_POOLS, NEXT_WEEK, "william")).toHaveLength(2);
+    expect(getChoresForChild(CHORE_POOLS, NEXT_WEEK, "william")).toHaveLength(1);
   });
 
   it("puts each pair back where it started every second week", () => {
@@ -139,7 +138,7 @@ describe("swapping on Monday morning", () => {
     for (const [taskId, childId] of [
       ["dishwasher", "emily"],
       ["kitchen-island", "hannah"],
-      ["pick-up-living-room", "clara"],
+      ["pick-up-vacuum-living-room", "clara"],
       ["vacuum-wooden-floor", "william"],
     ] as [string, ChildId][]) {
       expect(getChoreOwner(CHORE_POOLS, fortnight, taskId)).toBe(childId);
@@ -164,7 +163,7 @@ describe("swapping on Monday morning", () => {
         "emily",
       );
       expect(
-        getChoreOwner(CHORE_POOLS, localDate(day), "pick-up-living-room"),
+        getChoreOwner(CHORE_POOLS, localDate(day), "pick-up-vacuum-living-room"),
       ).toBe("clara");
       expect(
         getChoreOwner(CHORE_POOLS, localDate(day), "vacuum-wooden-floor"),

@@ -61,9 +61,10 @@ describe("looking things up in the config", () => {
 
   it("returns every rotating chore, and only those", () => {
     const rotating = getRotatingTasks();
-    // Seven: the eighth, feeding Bella, became James's own when the pairs
-    // started swapping weekly and left him with nobody to trade with.
-    expect(rotating.length).toBe(7);
+    // Six: feeding Bella became James's own when the pairs started swapping
+    // weekly and left him with nobody to trade with, and the living room's
+    // pick-up and vacuum rows were later merged into one.
+    expect(rotating.length).toBe(6);
     expect(rotating.map((task) => task.id)).not.toContain("feed-bella");
     expect(rotating.every((task) => task.assign.kind === "rotating")).toBe(true);
   });
@@ -229,7 +230,7 @@ describe("pools that are wrong in the ways real ones go wrong", () => {
       children: ["james", "william", "clara", "emily"],
     };
     const owners = new Set(getPoolAssignments(wide, AUGUST).map((a) => a.childId));
-    expect(owners.size).toBe(3);
+    expect(owners.size).toBe(2);
     // …and the child who misses out this week is not the one who misses out
     // next week.
     const next = new Set(
