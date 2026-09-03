@@ -875,6 +875,160 @@ body,
   will-change: transform, opacity;
 }
 
+/* ---------------------------------------------------------------- */
+/* The turns page's random picker                                    */
+/* ---------------------------------------------------------------- */
+
+/*
+ * Seven faces drifting and bouncing around the square canvas, waiting to be
+ * tapped — `RandomPicker.tsx` drives the *position* itself imperatively, one
+ * `requestAnimationFrame` loop setting `transform: translate3d()` directly on
+ * each avatar's wrapper (a screensaver-style bounce is 60fps physics, not
+ * something a CSS keyframe can drive without knowing the other six avatars'
+ * positions). This keyframe is the other half: a small, slow scale pulse
+ * layered on the *inner* element, so a moving avatar still reads as "alive"
+ * rather than a photograph sliding around. Each avatar's `animationDelay` is
+ * set inline, a fraction of the period per position, so all seven breathe out
+ * of step rather than as one pulsing block — the same trick `finger-pulse`
+ * uses.
+ */
+@keyframes picker-pulse {
+  0%,
+  100% {
+    transform: scale(0.94);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.picker-avatar-pulse {
+  animation: picker-pulse 2600ms ease-in-out infinite;
+  will-change: transform;
+}
+
+/*
+ * A losing avatar blown off the card. `--freeze-x/--freeze-y` are the exact
+ * pixel position the bounce physics left the avatar at the instant of the
+ * tap — the keyframe's `0%` reproduces them exactly, which is what lets this
+ * animation take over from the physics loop without the avatar visibly
+ * snapping to a different spot first. `--exit-dx/--exit-dy/--exit-rot` are
+ * then a random direction and distance rolled fresh on every tap, so the six
+ * who did not win never scatter the same way twice. `animationDelay` is also
+ * set inline, a spread of random milliseconds per avatar, so they do not
+ * vanish in one unnaturally simultaneous frame.
+ */
+@keyframes picker-wipe {
+  0% {
+    transform: translate3d(var(--freeze-x), var(--freeze-y), 0) rotate(0deg)
+      scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(
+        calc(var(--freeze-x) + var(--exit-dx)),
+        calc(var(--freeze-y) + var(--exit-dy)),
+        0
+      )
+      rotate(var(--exit-rot)) scale(0.15);
+    opacity: 0;
+  }
+}
+
+.picker-avatar-wipe {
+  animation: picker-wipe 1000ms cubic-bezier(0.34, 0.06, 0.68, 0.94) both;
+  will-change: transform, opacity;
+}
+
+/*
+ * The shockwave that guarantees the explosion actually reaches every edge of
+ * the screen, whatever `canvas-confetti`'s randomised physics do on top of
+ * it. `--boom-x`/`--boom-y` pin it to the tap point; `--boom-size` (set
+ * inline, `2 x` the real distance to the farthest corner) is what makes the
+ * ring's growth cover the whole viewport rather than an arbitrary radius.
+ *
+ * White-hot flash first, for the impact instant, then rings in a fire
+ * palette (not the family's avatar colours — this reads as flame, not
+ * confetti) a beat apart so the wave reads as expanding rather than as one
+ * shape resizing. Both are stretched to match the 2-second `exploding` phase
+ * in `RandomPicker.tsx`.
+ */
+@keyframes picker-boom-flash {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.picker-boom-flash {
+  background: radial-gradient(
+    circle at var(--boom-x) var(--boom-y),
+    #fff8e1 0%,
+    #ffab00 22%,
+    #ff3d00 45%,
+    transparent 68%
+  );
+  animation: picker-boom-flash 600ms ease-out both;
+}
+
+@keyframes picker-boom-ring {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.95;
+    border-width: clamp(10px, 2.4vw, 26px);
+  }
+  70% {
+    opacity: 0.4;
+  }
+  100% {
+    width: var(--boom-size);
+    height: var(--boom-size);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+.picker-boom-ring {
+  transform: translate(-50%, -50%);
+  border-style: solid;
+  animation: picker-boom-ring 1500ms cubic-bezier(0.16, 0.84, 0.32, 1) both;
+  will-change: width, height, opacity, border-width;
+}
+
+/*
+ * The winner's turn to fill the screen. One keyframe carries the whole
+ * `revealing` phase — pop in, hold, fade out — timed to the 2-second phase
+ * length in `RandomPicker.tsx` so the two never drift apart.
+ */
+@keyframes picker-reveal-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  15% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  25% {
+    transform: scale(1);
+  }
+  85% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+.picker-reveal {
+  animation: picker-reveal-pop 2000ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   /*
    * Every reveal is simply already there. This has to be spelled out — see the
@@ -970,6 +1124,27 @@ body,
    * discs is exactly the sort of thing this setting exists to switch off.
    */
   .finger-pulse {
+    animation: none;
+  }
+
+  /*
+   * The picker's explosion, belt-and-braces: `RandomPicker` already checks
+   * `useReducedMotion()` before ever calling `confetti()` or `vibrate()` and
+   * skips straight to the reveal, so this should never have much to hide —
+   * only the brief moment a losing avatar's `animationDelay` would otherwise
+   * leave it sitting on screen before this block's blanket
+   * `animation-duration` override lands.
+   */
+  .picker-avatar-pulse {
+    animation: none;
+  }
+
+  .picker-avatar-wipe {
+    animation: none;
+    opacity: 0;
+  }
+
+  .picker-reveal {
     animation: none;
   }
 

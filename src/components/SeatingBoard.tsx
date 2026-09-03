@@ -13,6 +13,7 @@ import { getRotationStatus } from "@/lib/rotation";
 import { AppHeader } from "./AppHeader";
 import { DinnerTable } from "./DinnerTable";
 import { Expedition } from "./Expedition";
+import { RandomPicker } from "./RandomPicker";
 import { RotationStatus } from "./RotationStatus";
 import { Sleepover } from "./Sleepover";
 import { FamilyHomeEvening } from "./fhe/FamilyHomeEvening";
@@ -132,6 +133,8 @@ export function SeatingBoard({
       </div>
 
       <PetNights configs={petRotations} date={date} />
+
+      <RandomPicker />
     </div>
   );
 }

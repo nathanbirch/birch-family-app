@@ -109,7 +109,13 @@
  * the worker at all, which is the more interesting half of this bump. See the
  * bypass at the top of the `fetch` handler.
  */
-const CACHE_VERSION = "v13";
+/*
+ * v14: the random picker arrived on the Whose Turn page. The v12 case again:
+ * no tab or dashboard card changed, but an installed device holding a cached
+ * `/turns` would go on painting a page with no picker card on it, and this is
+ * the cheapest way to be sure none does.
+ */
+const CACHE_VERSION = "v14";
 const CACHE_NAME = `birch-family-app-${CACHE_VERSION}`;
 const APP_SHELL = "/";
 
