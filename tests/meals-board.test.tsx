@@ -67,10 +67,12 @@ describe("the Meals list", () => {
     expect(cards[0].textContent).toContain(`for ${FAMILY_SIZE}`);
   });
 
-  it("collapses versions into one card", () => {
+  it("collapses versions into one card, the family's own recipe on top", () => {
     renderBoard();
-    const tacos = screen.getByRole("button", { name: /^Tacos \(beef\)/ });
-    expect(tacos.textContent).toContain("2 versions");
+    // The family's Tacos, with the two starter versions under it.
+    const tacos = screen.getByRole("button", { name: /^Tacos\s*Mexican/ });
+    expect(tacos.textContent).toContain("3 versions");
+    expect(screen.queryByRole("button", { name: /^Tacos \(beef\)/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /^Tacos \(chicken\)/ })).toBeNull();
   });
 

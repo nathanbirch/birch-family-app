@@ -46,7 +46,7 @@ import {
   pluralUnit,
   unitChoices,
 } from "@/lib/meals/quantity";
-import { compiledCatalog, findSeedProblem, seedId } from "@/lib/meals/seed";
+import { SEED_BATCHES, compiledCatalog, findSeedProblem, seedId } from "@/lib/meals/seed";
 import {
   EMPTY_FAMILY_STATE,
   type FamilyMealState,
@@ -777,6 +777,41 @@ describe("the starter catalog", () => {
     expect(costco).toMatchObject({ packLabel: "5 lb bag", packUnits: 20, estimated: true });
     const withCostco = catalog.ingredients.filter((i) => i.prices.some((p) => p.store === "Costco"));
     expect(withCostco.length).toBeGreaterThan(30);
+  });
+
+  it("carries the family's own recipes as a second batch, each with its link", () => {
+    const batch = SEED_BATCHES.find((b) => b.id === "family-favorites-2026-09");
+    expect(batch?.recipes).toHaveLength(54);
+    const catalog = compiledCatalog();
+    const costs = costAll(catalog.recipes, catalog.ingredients);
+    const withLinks = batch!.recipes.filter((r) => r.url);
+    expect(withLinks.length).toBeGreaterThanOrEqual(45);
+    for (const recipe of batch!.recipes) {
+      const view = catalog.recipes.find((r) => r.id === seedId("recipe", recipe.key));
+      expect(view?.instructions, recipe.name).toBeTruthy();
+      expect(costs.get(view!.id)?.priced, recipe.name).toBe(true);
+    }
+  });
+
+  it("puts the family's recipe on top of the starter one it supersedes", () => {
+    const catalog = compiledCatalog();
+    const byId = new Map(catalog.recipes.map((r) => [r.id, r]));
+    const starterWaffles = byId.get(seedId("recipe", "waffles"));
+    expect(starterWaffles?.variantOf).toBe(seedId("recipe", "fam-waffles"));
+    // Same name as the family's — renamed, so the switcher can tell them apart.
+    expect(starterWaffles?.name).toBe("Waffles (starter)");
+    // A different name is left alone.
+    expect(byId.get(seedId("recipe", "teriyaki-chicken"))?.name).toBe("Teriyaki Chicken & Rice");
+    // A chain collapses: Tacos (chicken) → Tacos (beef) → the family's Tacos.
+    const tacos = groupVersions(catalog.recipes).find((g) => g.primary.name === "Tacos");
+    expect(tacos?.versions.map((v) => v.name).sort()).toEqual(["Tacos", "Tacos (beef)", "Tacos (chicken)"]);
+  });
+
+  it("names no two versions of one meal the same", () => {
+    for (const group of groupVersions(compiledCatalog().recipes)) {
+      const names = group.versions.map((v) => v.name);
+      expect(new Set(names).size, names.join(" / ")).toBe(names.length);
+    }
   });
 
   it("covers every tab on the Meals list", () => {

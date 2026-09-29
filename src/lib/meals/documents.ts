@@ -111,6 +111,11 @@ export type MetaDocument = {
   seededAt: Date;
   ingredients: number;
   recipes: number;
+  /**
+   * Seed batches already written. Missing on a database seeded before batches
+   * existed, which means exactly `["starter"]`.
+   */
+  batches?: string[];
 };
 
 export type ApiKeyDocument = {

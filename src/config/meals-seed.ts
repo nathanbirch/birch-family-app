@@ -38,7 +38,7 @@
 import type { MealTime, MealType } from "./meals";
 
 /** [calories, carbs g, sugar g, protein g, fat g] per unit. */
-type NutritionTuple = readonly [number, number, number, number, number];
+export type NutritionTuple = readonly [number, number, number, number, number];
 
 export type SeedIngredient = {
   key: string;
@@ -49,6 +49,11 @@ export type SeedIngredient = {
   /** Store name → price of one pack. */
   prices: Readonly<Record<string, number>>;
   nutrition: NutritionTuple | null;
+  /**
+   * Costco's price in Costco's own pack: [price, pack, units]. The starter
+   * catalog keeps these in `SEED_COSTCO`; later batches put them here.
+   */
+  costco?: readonly [number, string, number];
 };
 
 export type SeedRecipe = {
@@ -65,6 +70,30 @@ export type SeedRecipe = {
   steps: readonly string[];
   /** Key of the recipe this is another version of. */
   variantOf?: string;
+  /** Where the recipe came from, if it came from a web page. */
+  url?: string;
+};
+
+/**
+ * A set of ingredients and recipes written into the database together, once.
+ *
+ * The starter catalog is the first batch; recipes the family asks to be added
+ * later arrive as further batches (see `config/meals-family.ts`). Each is
+ * applied the first time the app runs with it and recorded in `mealMeta`, so a
+ * recipe from a batch that a parent later deletes stays deleted.
+ */
+export type SeedBatch = {
+  /** Permanent. Recorded in `mealMeta.batches` once applied. */
+  id: string;
+  ingredients: readonly SeedIngredient[];
+  recipes: readonly SeedRecipe[];
+  /**
+   * Existing recipe key → this batch's recipe key: the existing recipe becomes
+   * another *version* of the new one, so the family's own recipe is the card
+   * and the one it supersedes is still there, one tap away. Only applied to a
+   * recipe that is not already a version of something.
+   */
+  regroup: Readonly<Record<string, string>>;
 };
 
 /** Walmart and Broulim's, the two shops almost everything is priced at. */

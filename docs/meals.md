@@ -221,9 +221,9 @@ is refused on save and checked again where it is drawn.
 ## It works on first open
 
 There is no setup step. The first time `/meals` is loaded against a database
-that has never had it, `ensureMealsSeeded` writes the **starter catalog** from
-`config/meals-seed.ts` — 89 recipes (79 cards once versions are grouped) and 150
-ingredients, every one priced at Walmart and Broulim's (and about 40 at Costco,
+that has never had it, `ensureMealsSeeded` writes the catalog — today 143
+recipes (119 cards once versions are grouped) and 231 ingredients, from the
+batches below. The starter batch is 89 recipes and 150 ingredients, every one priced at Walmart and Broulim's (and about 40 at Costco,
 in Costco's own pack sizes) and with nutrition — and creates the indexes.
 `npm run db:seed` does the same, for a fresh clone that wants it done up front.
 
@@ -233,9 +233,33 @@ Two things make that safe:
   Writing the seed twice — two instances on first load, or the page *and* the
   script — collides on `_id` and is skipped, so it can never double the
   catalog or overwrite anything a parent has edited.
-- **A marker document** (`mealMeta`, `_id: "seed"`) records that the seed has
-  been written once. After that, a starter meal a parent deleted stays deleted.
-  Delete the marker to have missing starter meals put back on the next load.
+- **A marker document** (`mealMeta`, `_id: "seed"`) records which **batches**
+  have been written. After that, a meal from a batch that a parent deleted
+  stays deleted. Delete the marker to have missing meals put back on the next
+  load.
+
+### Batches: adding recipes later
+
+The catalog arrives in batches (`SEED_BATCHES` in `lib/meals/seed.ts`), each
+applied once, the first time the app runs with it — so shipping new recipes is
+a deploy, with no script to remember:
+
+| Batch | What |
+|---|---|
+| `starter` | 89 starter recipes and 150 ingredients (`config/meals-seed.ts`). |
+| `family-favorites-2026-09` | The family's own 54 recipes and 81 more ingredients (`config/meals-family.ts`): 46 read from the pages the family listed — an archived copy where a site blocked reading — with the method rewritten in our own short steps and a link to the original, plus 8 house recipes (the frozen breads, BLTs, walking tacos, tacos, the smoothie). |
+
+Where a family recipe covers the same dish as a starter one (Waffles, Taco
+Soup, Chicken Pot Pie…), the batch's `regroup` makes the starter one a
+*version* of the family's, so the family's is the card and the starter is one
+tap away. A starter recipe with exactly the same name is renamed
+"… (starter)" so the version switcher can tell them apart; one a parent has
+already renamed or regrouped is left alone.
+
+Where a page's recipe is only a sauce (Alfredo, Spaghetti Sauce, Butter
+Chicken, Orange Chicken, Feijoada), the pasta or rice to serve it with is added
+as a line noted "to serve (not in the original)", so the meal costs what dinner
+costs. Frying oil counts only the quarter or so that is absorbed.
 
 **The starter prices are estimates**, written down for late 2026, not read off
 a shelf. Every one is stored with `estimated: true`, the Prices tab says

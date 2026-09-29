@@ -20,10 +20,12 @@
  *     showing the compiled catalog, because both call pancakes the same id.
  */
 
+import { FAMILY_FAVORITES_BATCH } from "@/config/meals-family";
 import {
   SEED_COSTCO,
   SEED_INGREDIENTS,
   SEED_RECIPES,
+  type SeedBatch,
   type SeedIngredient,
   type SeedRecipe,
 } from "@/config/meals-seed";
@@ -54,6 +56,18 @@ export function seedId(kind: "ingredient" | "recipe", key: string): string {
     .map((basis) => fnv1a(text, basis).toString(16).padStart(8, "0"))
     .join("");
 }
+
+/**
+ * Every batch, oldest first. Append; never reorder, rename or remove one —
+ * `mealMeta.batches` remembers them by id.
+ */
+export const SEED_BATCHES: readonly SeedBatch[] = [
+  { id: "starter", ingredients: SEED_INGREDIENTS, recipes: SEED_RECIPES, regroup: {} },
+  FAMILY_FAVORITES_BATCH,
+];
+
+const ALL_INGREDIENTS = SEED_BATCHES.flatMap((batch) => batch.ingredients);
+const ALL_RECIPES = SEED_BATCHES.flatMap((batch) => batch.recipes);
 
 /** Noon UTC on the day the starter prices were written down. */
 export const SEED_PRICES_TIME = Date.parse(`${SEED_PRICES_AS_OF}T12:00:00Z`);
@@ -88,7 +102,7 @@ export function seedIngredientView(seed: SeedIngredient): IngredientView {
 
 /** The Costco price from `SEED_COSTCO`, in Costco's own pack, if it has one. */
 function costcoPrice(seed: SeedIngredient): PriceView[] {
-  const costco = SEED_COSTCO[seed.key];
+  const costco = SEED_COSTCO[seed.key] ?? seed.costco;
   if (!costco || "Costco" in seed.prices) return [];
   const [price, packLabel, packUnits] = costco;
   return [{ store: "Costco", price, checkedAt: SEED_PRICES_TIME, estimated: true, packLabel, packUnits }];
@@ -104,7 +118,7 @@ export function seedRecipeView(seed: SeedRecipe): RecipeView {
     mealTimes: [...seed.mealTimes],
     type: seed.type,
     tags: [...seed.tags],
-    url: "",
+    url: seed.url ?? "",
     instructions: seed.steps.join("\n"),
     lines: seed.lines.map(([key, qty, note]) => ({
       ingredientId: seedId("ingredient", key),
@@ -122,12 +136,38 @@ export function seedRecipeView(seed: SeedRecipe): RecipeView {
  * What the page falls back to when MongoDB cannot be reached, so the Meals
  * page is never empty — only read-only for a while.
  */
+/**
+ * What regrouping a recipe does to its name: nothing, unless it has exactly
+ * the same name as the recipe it now sits under, when "Waffles / Waffles" on
+ * the version switcher would say nothing at all.
+ */
+export function regroupedName(name: string, parentName: string): string {
+  return name === parentName ? `${name} (starter)` : name;
+}
+
 export function compiledCatalog(): MealsCatalog {
+  const regroup = new Map<string, string>();
+  for (const batch of SEED_BATCHES) {
+    for (const [from, to] of Object.entries(batch.regroup)) {
+      regroup.set(seedId("recipe", from), seedId("recipe", to));
+    }
+  }
+  const nameById = new Map(ALL_RECIPES.map((recipe) => [seedId("recipe", recipe.key), recipe.name]));
   return {
-    ingredients: SEED_INGREDIENTS.map(seedIngredientView).sort((a, b) =>
+    ingredients: ALL_INGREDIENTS.map(seedIngredientView).sort((a, b) =>
       a.name.localeCompare(b.name),
     ),
-    recipes: SEED_RECIPES.map(seedRecipeView).sort((a, b) => a.name.localeCompare(b.name)),
+    recipes: ALL_RECIPES.map(seedRecipeView)
+      .map((recipe) =>
+        recipe.variantOf === null && regroup.has(recipe.id)
+          ? {
+              ...recipe,
+              name: regroupedName(recipe.name, nameById.get(regroup.get(recipe.id) ?? "") ?? ""),
+              variantOf: regroup.get(recipe.id) ?? null,
+            }
+          : recipe,
+      )
+      .sort((a, b) => a.name.localeCompare(b.name)),
     source: "compiled",
   };
 }
@@ -140,8 +180,14 @@ export function compiledCatalog(): MealsCatalog {
  * and a test both refuse to go on if this returns anything.
  */
 export function findSeedProblem(): string | null {
+  const batchIds = new Set<string>();
+  for (const batch of SEED_BATCHES) {
+    if (batchIds.has(batch.id)) return `Batch "${batch.id}" is listed twice.`;
+    batchIds.add(batch.id);
+  }
+
   const ingredientKeys = new Set<string>();
-  for (const ingredient of SEED_INGREDIENTS) {
+  for (const ingredient of ALL_INGREDIENTS) {
     if (ingredientKeys.has(ingredient.key)) return `Ingredient key "${ingredient.key}" is used twice.`;
     ingredientKeys.add(ingredient.key);
     if (!(ingredient.packUnits > 0)) return `"${ingredient.key}" has no pack size.`;
@@ -153,13 +199,23 @@ export function findSeedProblem(): string | null {
   }
 
   const recipeKeys = new Set<string>();
-  for (const recipe of SEED_RECIPES) {
+  for (const recipe of ALL_RECIPES) {
     if (recipeKeys.has(recipe.key)) return `Recipe key "${recipe.key}" is used twice.`;
     recipeKeys.add(recipe.key);
   }
 
-  for (const recipe of SEED_RECIPES) {
+  for (const batch of SEED_BATCHES) {
+    const own = new Set(batch.recipes.map((recipe) => recipe.key));
+    for (const [from, to] of Object.entries(batch.regroup)) {
+      if (!recipeKeys.has(from)) return `Batch "${batch.id}" regroups "${from}", which is not a recipe.`;
+      if (!own.has(to)) return `Batch "${batch.id}" regroups onto "${to}", which is not one of its recipes.`;
+    }
+  }
+
+  for (const recipe of ALL_RECIPES) {
     if (!(recipe.feeds > 0)) return `"${recipe.key}" does not say how many it feeds.`;
+    if (recipe.mealTimes.length === 0) return `"${recipe.key}" does not say when it is eaten.`;
+    if (recipe.url && !/^https:\/\//.test(recipe.url)) return `"${recipe.key}" has a link that is not https.`;
     if (recipe.variantOf && !recipeKeys.has(recipe.variantOf)) {
       return `"${recipe.key}" is a version of "${recipe.variantOf}", which does not exist.`;
     }

@@ -21,7 +21,7 @@ import type {
   RecipeDocument,
 } from "./documents";
 import { mergePrices, type TypedPrice } from "./prices";
-import { compiledCatalog } from "./seed";
+import { SEED_BATCHES, compiledCatalog, regroupedName, seedId } from "./seed";
 import { seedIngredientDocuments, seedRecipeDocuments } from "./seed-documents";
 import {
   EMPTY_FAMILY_STATE,
@@ -82,7 +82,8 @@ declare global {
 }
 
 /**
- * Write the starter catalog if this database has never had it.
+ * Write any seed batch this database has not had yet — the starter catalog
+ * the first time, and each later batch of family recipes once.
  *
  * Memoised per process, like the Mongo client in `lib/db.ts`, so it is one
  * `findOne` per server start rather than one per page view. A failure clears
@@ -98,31 +99,59 @@ export function ensureMealsSeeded(): Promise<void> {
 
 async function seedIfNeeded(): Promise<void> {
   const marker = await meta();
-  if (await marker.findOne({ _id: "seed" })) return;
+  const existing = await marker.findOne({ _id: "seed" });
+  // A marker from before batches existed means the starter catalog, only.
+  const applied = new Set(existing ? (existing.batches ?? ["starter"]) : []);
+  const pending = SEED_BATCHES.filter((batch) => !applied.has(batch.id));
+  if (pending.length === 0) return;
 
-  const now = new Date();
-  const ingredientDocs = seedIngredientDocuments(now);
-  const recipeDocs = seedRecipeDocuments(now);
+  for (const batch of pending) {
+    const now = new Date();
+    const ingredientDocs = seedIngredientDocuments(batch, now);
+    const recipeDocs = seedRecipeDocuments(batch, now);
 
-  await insertIgnoringDuplicates(await ingredients(), ingredientDocs);
-  await insertIgnoringDuplicates(await recipes(), recipeDocs);
-  await ensureMealIndexes();
+    await insertIgnoringDuplicates(await ingredients(), ingredientDocs);
+    await insertIgnoringDuplicates(await recipes(), recipeDocs);
 
-  await marker.updateOne(
-    { _id: "seed" },
-    {
-      $setOnInsert: {
-        seededAt: now,
-        ingredients: ingredientDocs.length,
-        recipes: recipeDocs.length,
+    // An existing recipe this batch supersedes becomes a version of the new
+    // one — unless a parent has already made it a version of something else.
+    for (const [from, to] of Object.entries(batch.regroup)) {
+      const target = await recipes();
+      const parent = batch.recipes.find((recipe) => recipe.key === to);
+      const regrouped = await target.findOneAndUpdate(
+        { _id: new ObjectId(seedId("recipe", from)), variantOf: null },
+        { $set: { variantOf: new ObjectId(seedId("recipe", to)) } },
+        { returnDocument: "after" },
+      );
+      // Two versions called the same thing is no choice at all — but a name
+      // a parent has already changed is theirs, and left alone.
+      if (regrouped && parent && regrouped.name === parent.name) {
+        await target.updateOne(
+          { _id: regrouped._id },
+          { $set: { name: regroupedName(regrouped.name, parent.name) } },
+        );
+      }
+    }
+
+    await marker.updateOne(
+      { _id: "seed" },
+      {
+        $setOnInsert: {
+          seededAt: now,
+          ingredients: ingredientDocs.length,
+          recipes: recipeDocs.length,
+        },
+        $addToSet: { batches: { $each: [...applied, batch.id] } },
       },
-    },
-    { upsert: true },
-  );
-  console.log(
-    `[meals] Seeded the starter catalog: ${recipeDocs.length} recipes, ` +
-      `${ingredientDocs.length} ingredients.`,
-  );
+      { upsert: true },
+    );
+    applied.add(batch.id);
+    console.log(
+      `[meals] Applied seed batch "${batch.id}": ${recipeDocs.length} recipes, ` +
+        `${ingredientDocs.length} ingredients.`,
+    );
+  }
+  await ensureMealIndexes();
 }
 
 async function insertIgnoringDuplicates<T extends Document>(

@@ -117,7 +117,7 @@ describe("reading", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-store");
     const body = await response.json();
-    expect(body.count).toBe(150);
+    expect(body.count).toBe(231);
     const cheddar = body.ingredients.find((i: { id: string }) => i.id === CHEDDAR);
     expect(cheddar).toMatchObject({
       name: "Cheddar cheese, shredded",

@@ -18,7 +18,7 @@ import { CHORE_POOLS } from "../src/config/chore-rotation";
 import { COLLECTIONS, DB_NAME } from "../src/config/db";
 import { DEFAULT_PET_ROTATIONS } from "../src/config/pets";
 import { compiledItems } from "../src/lib/bored/ideas";
-import { findSeedProblem } from "../src/lib/meals/seed";
+import { SEED_BATCHES, findSeedProblem, regroupedName, seedId } from "../src/lib/meals/seed";
 import {
   seedIngredientDocuments,
   seedRecipeDocuments,
@@ -458,31 +458,48 @@ async function main() {
       .createIndex({ recipeId: 1, day: -1 }, { name: "by_recipe_day" });
     console.log(`  ✓ ${COLLECTIONS.mealCooked}.by_recipe_day`);
 
-    const mealMeta = db.collection<{ _id: string }>(COLLECTIONS.mealMeta);
-    if (await mealMeta.findOne({ _id: "seed" })) {
-      console.log(`  • The meals starter catalog was already written — left untouched.`);
-    } else {
+    const mealMeta = db.collection<{ _id: string; batches?: string[] }>(COLLECTIONS.mealMeta);
+    const marker = await mealMeta.findOne({ _id: "seed" });
+    const applied = new Set(marker ? (marker.batches ?? ["starter"]) : []);
+    const mealRecipesCollection = db.collection(COLLECTIONS.mealRecipes);
+    for (const batch of SEED_BATCHES) {
+      if (applied.has(batch.id)) {
+        console.log(`  • Meals batch "${batch.id}" was already written — left untouched.`);
+        continue;
+      }
       const now = new Date();
-      const ingredientDocs = seedIngredientDocuments(now);
-      const recipeDocs = seedRecipeDocuments(now);
+      const ingredientDocs = seedIngredientDocuments(batch, now);
+      const recipeDocs = seedRecipeDocuments(batch, now);
       const addedIngredients = await insertNew(
         db.collection(COLLECTIONS.mealIngredients),
         ingredientDocs,
       );
-      const addedRecipes = await insertNew(db.collection(COLLECTIONS.mealRecipes), recipeDocs);
+      const addedRecipes = await insertNew(mealRecipesCollection, recipeDocs);
+      for (const [from, to] of Object.entries(batch.regroup)) {
+        const parent = batch.recipes.find((recipe) => recipe.key === to);
+        const regrouped = await mealRecipesCollection.findOneAndUpdate(
+          { _id: new ObjectId(seedId("recipe", from)), variantOf: null },
+          { $set: { variantOf: new ObjectId(seedId("recipe", to)) } },
+          { returnDocument: "after" },
+        );
+        if (regrouped && parent && regrouped.name === parent.name) {
+          await mealRecipesCollection.updateOne(
+            { _id: regrouped._id },
+            { $set: { name: regroupedName(regrouped.name as string, parent.name) } },
+          );
+        }
+      }
       await mealMeta.updateOne(
         { _id: "seed" },
         {
-          $setOnInsert: {
-            seededAt: now,
-            ingredients: ingredientDocs.length,
-            recipes: recipeDocs.length,
-          },
+          $setOnInsert: { seededAt: now, ingredients: ingredientDocs.length, recipes: recipeDocs.length },
+          $addToSet: { batches: { $each: [...applied, batch.id] } },
         },
         { upsert: true },
       );
+      applied.add(batch.id);
       console.log(
-        `  ✓ Seeded the meals catalog: ${addedRecipes} recipe(s), ${addedIngredients} ingredient(s).`,
+        `  ✓ Seeded meals batch "${batch.id}": ${addedRecipes} recipe(s), ${addedIngredients} ingredient(s).`,
       );
     }
 

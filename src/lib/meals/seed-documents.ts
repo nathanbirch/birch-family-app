@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 
-import { SEED_INGREDIENTS, SEED_RECIPES } from "@/config/meals-seed";
+import type { SeedBatch } from "@/config/meals-seed";
 
 import { seedIngredientView, seedRecipeView } from "./seed";
 import type { IngredientDocument, RecipeDocument } from "./documents";
@@ -14,8 +14,8 @@ import type { IngredientDocument, RecipeDocument } from "./documents";
  * the fallback cannot describe a meal differently.
  */
 
-export function seedIngredientDocuments(now: Date): IngredientDocument[] {
-  return SEED_INGREDIENTS.map((seed) => {
+export function seedIngredientDocuments(batch: SeedBatch, now: Date): IngredientDocument[] {
+  return batch.ingredients.map((seed) => {
     const view = seedIngredientView(seed);
     return {
       _id: new ObjectId(view.id),
@@ -37,8 +37,8 @@ export function seedIngredientDocuments(now: Date): IngredientDocument[] {
   });
 }
 
-export function seedRecipeDocuments(now: Date): RecipeDocument[] {
-  return SEED_RECIPES.map((seed) => {
+export function seedRecipeDocuments(batch: SeedBatch, now: Date): RecipeDocument[] {
+  return batch.recipes.map((seed) => {
     const view = seedRecipeView(seed);
     return {
       _id: new ObjectId(view.id),

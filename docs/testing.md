@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **1,596 tests across 71 files.**
+Vitest with jsdom and Testing Library. **1,599 tests across 71 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -629,7 +629,7 @@ drives. jsdom has neither.
 - Hiding the page closes the stream; coming back opens a new one; unmounting
   hangs up
 
-### `meals-logic.test.ts` — 57 tests
+### `meals-logic.test.ts` — 60 tests
 The Meals page's arithmetic — every number on every Meals screen comes through
 these functions:
 
@@ -659,6 +659,9 @@ these functions:
 - The starter catalog: no broken references, **distinct and pinned seed ids**,
   every meal priced with nutrition and a sane per-person price, every ingredient
   used, every price marked an estimate, every meal-time tab populated
+- The family's batch: all 54 recipes priced with a method, starter recipes
+  regrouped under the family's (and renamed only when the names collide), and
+  no meal with two versions of the same name
 
 ### `meals-board.test.tsx` — 23 tests
 The page, with the Server Actions mocked:
