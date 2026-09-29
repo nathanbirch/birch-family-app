@@ -18,6 +18,11 @@ import { CHORE_POOLS } from "../src/config/chore-rotation";
 import { COLLECTIONS, DB_NAME } from "../src/config/db";
 import { DEFAULT_PET_ROTATIONS } from "../src/config/pets";
 import { compiledItems } from "../src/lib/bored/ideas";
+import { findSeedProblem } from "../src/lib/meals/seed";
+import {
+  seedIngredientDocuments,
+  seedRecipeDocuments,
+} from "../src/lib/meals/seed-documents";
 import { findSharedNightProblem } from "../src/lib/pets/rotation";
 import { findChorePoolProblem } from "../src/lib/stars/rotation";
 
@@ -421,6 +426,66 @@ async function main() {
       );
     }
 
+    /* --- The Meals page's starter catalog -------------------------------- */
+
+    /*
+     * The page seeds this itself the first time it is opened (see
+     * `ensureMealsSeeded` in `src/lib/meals/store.ts`), so running it here is
+     * belt and braces rather than a required step — but a fresh clone should
+     * not have to open a page to get its indexes.
+     *
+     * Every document's `_id` is hashed from its seed key, so inserting one that
+     * already exists is a duplicate-key error that is simply skipped: nothing
+     * the family has edited, re-priced or added is ever touched. A starter meal
+     * a parent *deleted* is only put back if the `mealMeta` marker is removed
+     * too — the marker is what tells the page, and this script, that the seed
+     * has already been written once.
+     */
+    const mealProblem = findSeedProblem();
+    if (mealProblem) {
+      fail(`Refusing to seed a broken meal catalog.\n\n  ${mealProblem}`);
+    }
+
+    console.log();
+    const mealRecipes = db.collection(COLLECTIONS.mealRecipes);
+    await mealRecipes.createIndex({ "lines.ingredientId": 1 }, { name: "by_ingredient" });
+    await mealRecipes.createIndex({ variantOf: 1 }, { name: "by_parent" });
+    console.log(`  ✓ ${COLLECTIONS.mealRecipes}.by_ingredient, by_parent`);
+    await db.collection(COLLECTIONS.mealRatings).createIndex({ recipeId: 1 }, { name: "by_recipe" });
+    console.log(`  ✓ ${COLLECTIONS.mealRatings}.by_recipe`);
+    await db
+      .collection(COLLECTIONS.mealCooked)
+      .createIndex({ recipeId: 1, day: -1 }, { name: "by_recipe_day" });
+    console.log(`  ✓ ${COLLECTIONS.mealCooked}.by_recipe_day`);
+
+    const mealMeta = db.collection<{ _id: string }>(COLLECTIONS.mealMeta);
+    if (await mealMeta.findOne({ _id: "seed" })) {
+      console.log(`  • The meals starter catalog was already written — left untouched.`);
+    } else {
+      const now = new Date();
+      const ingredientDocs = seedIngredientDocuments(now);
+      const recipeDocs = seedRecipeDocuments(now);
+      const addedIngredients = await insertNew(
+        db.collection(COLLECTIONS.mealIngredients),
+        ingredientDocs,
+      );
+      const addedRecipes = await insertNew(db.collection(COLLECTIONS.mealRecipes), recipeDocs);
+      await mealMeta.updateOne(
+        { _id: "seed" },
+        {
+          $setOnInsert: {
+            seededAt: now,
+            ingredients: ingredientDocs.length,
+            recipes: recipeDocs.length,
+          },
+        },
+        { upsert: true },
+      );
+      console.log(
+        `  ✓ Seeded the meals catalog: ${addedRecipes} recipe(s), ${addedIngredients} ingredient(s).`,
+      );
+    }
+
     /* --- Summary ------------------------------------------------------- */
 
     const collections = await db.listCollections().toArray();
@@ -432,6 +497,28 @@ async function main() {
     console.log(`\nDone. Sign in at /login with ${SEED_USER.email} / ${SEED_USER.password}`);
   } finally {
     await client.close();
+  }
+}
+
+/**
+ * Insert whichever of `documents` are not there yet, by `_id`, and say how
+ * many that was. Duplicate keys are the expected case on a re-run, not an
+ * error.
+ */
+async function insertNew(
+  target: import("mongodb").Collection,
+  documents: readonly import("mongodb").Document[],
+): Promise<number> {
+  try {
+    const result = await target.insertMany([...documents], { ordered: false });
+    return result.insertedCount;
+  } catch (error) {
+    const writeErrors = (error as { writeErrors?: { code?: number }[] }).writeErrors ?? [];
+    const inserted = (error as { insertedCount?: number }).insertedCount ?? 0;
+    if (writeErrors.length > 0 && writeErrors.every((entry) => entry.code === 11000)) {
+      return inserted;
+    }
+    throw error;
   }
 }
 

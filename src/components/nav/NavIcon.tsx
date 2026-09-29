@@ -245,6 +245,26 @@ function SchoolIcon({ className }: IconProps) {
   );
 }
 
+/**
+ * A cooking pot with its lid on and steam rising — the Meals page.
+ *
+ * Not a plate and cutlery: that drawing was tried for the seating page and read
+ * as a target with horns at tab size (see `SeatsIcon`). A pot has handles on
+ * both sides and steam above, a silhouette nothing else in this set shares —
+ * which matters most beside the shopping trolley, the page it sits next to.
+ */
+function MealsIcon({ className }: IconProps) {
+  return (
+    <svg {...SHARED} className={className} aria-hidden="true">
+      <path d="M4.5 11.5h15v5.2a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3Z" />
+      <path d="M2.8 13h1.7M19.5 13h1.7" />
+      <path d="M4.5 11.5a7.5 2.2 0 0 1 15 0" />
+      <path d="M12 8.2v-.7" />
+      <path d="M9 5.6c-.6-.8-.6-1.6 0-2.4M12 5.2c-.6-.8-.6-1.6 0-2.4M15 5.6c-.6-.8-.6-1.6 0-2.4" />
+    </svg>
+  );
+}
+
 const ICONS = {
   seats: SeatsIcon,
   shopping: ShoppingIcon,
@@ -261,6 +281,7 @@ const ICONS = {
   mantras: MantrasIcon,
   calendar: CalendarIcon,
   school: SchoolIcon,
+  meals: MealsIcon,
 } satisfies Record<
   NavIconName | PlannedIconName | DecorativeIconName,
   (props: IconProps) => React.JSX.Element

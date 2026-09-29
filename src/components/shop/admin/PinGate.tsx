@@ -6,14 +6,22 @@ import { useState } from "react";
 import { unlockParentPin } from "@/lib/auth/parent-pin-actions";
 
 /**
- * The parent-only lock in front of `/shop/admin`.
+ * The parent-only lock in front of `/shop/admin` and `/meals/admin`.
  *
  * A plain form rather than anything fancier: this is a PIN typed on a family
  * tablet, not a login. `router.refresh()` on success re-runs the Server
  * Component, which reads the cookie the action just set and swaps this for
  * the real admin board — no client-side state has to mirror "am I unlocked".
+ *
+ * Both admin screens share it, and the cookie it sets: one PIN unlocks the
+ * shop, the ceremonies and the meals alike, for the same two hours.
  */
-export function PinGate() {
+export function PinGate({
+  description = "Enter the PIN to manage the shop.",
+}: {
+  /** The line under "Parent PIN", saying what it unlocks. */
+  description?: string;
+}) {
   const router = useRouter();
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +48,7 @@ export function PinGate() {
       <div>
         <h1 className="text-xl font-extrabold">Parent PIN</h1>
         <p className="mt-1 text-sm" style={{ color: "var(--color-text-muted)" }}>
-          Enter the PIN to manage the shop.
+          {description}
         </p>
       </div>
       <form onSubmit={onSubmit} className="flex flex-col gap-3">

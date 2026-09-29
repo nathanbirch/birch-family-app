@@ -146,6 +146,57 @@ export const COLLECTIONS = {
    * once opened, always opened.
    */
   ceremonyViews: "ceremonyViews",
+  /*
+   * ---------------------------------------------------------------------------
+   * THE MEALS PAGE
+   * ---------------------------------------------------------------------------
+   * Eight collections, in two kinds. The catalog — ingredients, recipes, and
+   * the recipes' photos — is what a parent edits behind the PIN. Everything
+   * else is what the family has *done* with it: the plan, favourites, who
+   * liked what, and when it was last made. See docs/meals.md and
+   * `lib/meals/store.ts`.
+   */
+  /**
+   * One document per thing bought: its unit, its pack, a price per shop and
+   * its nutrition. Seeded from `config/meals-seed.ts` on first use, with ids
+   * hashed from the seed keys — see `lib/meals/seed.ts`.
+   */
+  mealIngredients: "mealIngredients",
+  /** One document per recipe, its lines pointing at `mealIngredients` by `_id`. */
+  mealRecipes: "mealRecipes",
+  /**
+   * One document per recipe that has a photo, keyed by the recipe's `_id`.
+   * Kept out of `mealRecipes` so reading the catalog never drags a hundred
+   * JPEGs along with it; `/api/meals/photo/[id]` serves them one at a time.
+   */
+  mealPhotos: "mealPhotos",
+  /** One document per favourite recipe, keyed by the recipe's `_id`. */
+  mealFavorites: "mealFavorites",
+  /** One document per person per recipe, keyed `recipeId:personId`. */
+  mealRatings: "mealRatings",
+  /**
+   * One document per recipe per day it was made, keyed `recipeId:YYYY-MM-DD`.
+   * What "Haven't had in a while" sorts by.
+   */
+  mealCooked: "mealCooked",
+  /** The family's week: a single document, `_id: "family"`. */
+  mealPlan: "mealPlan",
+  /**
+   * Bookkeeping: a single document, `_id: "seed"`, recording that the starter
+   * catalog has been written. Delete it to have the seed re-added on the next
+   * page load — which restores deleted starter meals but never duplicates or
+   * overwrites anything.
+   */
+  mealMeta: "mealMeta",
+  /**
+   * Keys for the Meals price API (`/api/meals/v1/…`) — the one door a
+   * scheduled price-checking assistant uses to read ingredients and record
+   * what a store charges today. One document per key, `_id` the key's SHA-256
+   * in hex: the key itself is shown once when it is made
+   * (`npm run meals:api-key`) and stored nowhere. Delete a document to revoke
+   * that key. See docs/meals.md#the-price-api.
+   */
+  mealApiKeys: "mealApiKeys",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];

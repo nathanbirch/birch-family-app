@@ -24,6 +24,7 @@ Start here if you are picking it up cold:
 | [Family Home Evening](family-home-evening.md) | The seven jobs, the house picture, and why this one turns over on Sunday. |
 | [Star charts](stars.md) | The three charts off the fridge, the monthly chore rotation, and how a star is stored. |
 | [The shopping list](shopping.md) | The one live page: server-sent events instead of a WebSocket, and how a tick stays drawn before its write lands. |
+| [Meals](meals.md) | What each meal costs per person and for all seven, the week's plan and its store-split shopping list, the price book, and the parent PIN that edits it all. |
 | [Weekly report](report.md) | Monday's award ceremony: how a week is counted, what a star is worth, and the fanfare. |
 | [Pets](pets.md) | Bella and Leia, the nightly rotation in the database, and why nobody ever gets both. |
 | [Themes](themes.md) | All ten themes, the token system, persistence, and the no-flash script. |

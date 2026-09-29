@@ -2,8 +2,8 @@
 
 A private, installable web app for the Birch family. It sits behind a login and
 currently holds the weekly **seating rotation**, the **star charts**, the shared
-**shopping list**, the **family mantras** and the **Healthy Birches** lists —
-with rewards still planned.
+**shopping list**, **meals** with what each one costs, the **family mantras** and
+the **Healthy Birches** lists — with rewards still planned.
 
 ---
 
@@ -110,9 +110,16 @@ npm start          # serve the production build locally
   second later with nobody reloading anything, over server-sent events rather than
   a WebSocket — which is a deployment constraint, not a preference. See
   [the shopping list](docs/shopping.md).
+- **Meals** (`/meals`) — every family meal with what it costs per person and for
+  all seven, from per-store prices (the best of Walmart, Broulim's and Costco
+  per unit, plus tax); search, filters, a random pick, who likes what, and "haven't had in a
+  while". A shared weekly plan turns into a store-split shopping list that one
+  button puts on the live one. Parents add recipes and update prices behind the
+  same PIN as the shop. It seeds a starter catalog of 89 recipes by itself on
+  first open. See [Meals](docs/meals.md).
 - **Account** (`/account`) — who's signed in, the theme picker, sign out.
 - **Bottom tab bar** — Home pinned on the left, then everything else on a strip
-  that scrolls sideways: Stars · Shopping · Calendar · Turns · Bored · Ceremony ·
+  that scrolls sideways: Stars · Shopping · Meals · Calendar · Turns · Bored · Ceremony ·
   Healthy · Mantras · Note · Picker · Account. Home never scrolls away and is always drawn
   more strongly than the rest; the current page is a filled pill, and the strip
   slides itself so that pill is on screen.
@@ -146,6 +153,7 @@ Everything lives in **[`docs/`](docs/README.md)**:
 | [Mantras](docs/mantras.md) | The family mantras, the quoting rule, and the mantra of the day. |
 | [Star charts](docs/stars.md) | The three charts, the weekly chore swap, and how a star is stored. |
 | [The shopping list](docs/shopping.md) | The one live page: why it is server-sent events, and how a tick stays drawn before its write lands. |
+| [Meals](docs/meals.md) | How a meal is costed, the plan and its shopping list, the price book, the parent PIN, and the starter catalog that seeds itself. |
 | [Healthy Birches](docs/health.md) | The five lists off the wall, the transcription rule, and the drawings. |
 | [Database](docs/database.md) | MongoDB, collections, seeding, the Atlas allowlist trap. |
 | [Authentication](docs/authentication.md) | How login works, changing the password, adding people. |
@@ -183,6 +191,8 @@ Almost everything you would want to adjust is data, not code, and lives in
 | The five healthy lists off the wall | `health.ts` |
 | How long a shopping list item may be, and every live-stream timing | `shopping.ts` |
 | Things to do when bored, and Dad Bucks prices | `bored.ts` |
+| Sales tax, the three stores, meal types and tags | `meals.ts` |
+| The Meals starter catalog (first seed only — after that, `/meals/admin`) | `meals-seed.ts` |
 | Seat positions, parent defaults, animation timing | `seating.ts` |
 | The seven Family Home Evening jobs, and who has which | `fhe.ts` |
 | The ten themes | `themes.ts` |

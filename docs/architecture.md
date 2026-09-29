@@ -31,6 +31,8 @@ src/app/
     ├── ceremonies/[week]/   /ceremonies/…  one week's award ceremony
     │   └── page.tsx
     ├── shopping/page.tsx   /shopping  the family shopping list — the live one
+    ├── meals/page.tsx      /meals     what meals cost, the week's plan, the price book
+    ├── meals/admin/…       /meals/admin  recipes and prices, behind the parent PIN
     ├── calendar/page.tsx   /calendar  the family Google Calendar
     ├── note/page.tsx       /note      the pad on the fridge — a *tool*
     ├── picker/page.tsx     /picker    who goes first — a *tool*
@@ -99,6 +101,15 @@ whose changes have a latency budget. See [the shopping list](shopping.md), which
 is mostly the argument for why that connection is server-sent events rather than
 a WebSocket — the answer is in the deployment, not in a preference.
 
+**Stored, and seeded on first use** — the Meals page. Its catalog (recipes,
+ingredients, prices) is family data a parent edits from a phone, so it is in
+the database; but the page has to be useful the first time it is opened, so it
+writes a starter catalog into an empty database itself, with ids hashed from
+the seed keys so doing that twice is harmless. The family's plan, favourites,
+ratings and "made it" log sit beside it. Every price on the page is *derived*
+from that stored data by one pure function, `costRecipe`, and never stored. See
+[Meals](meals.md).
+
 Keep new features on the right side of that line where you can. A chore *chart*
 (who is assigned what, on what cycle) may well be derivable config like the
 seating schedule; whether a chore was *done* is genuinely state and belongs in
@@ -127,6 +138,9 @@ Client components exist only where there is a specific interactive reason:
 | `SwapParentsButton` | reads the swap store |
 | `ServiceWorker` | calls `navigator.serviceWorker.register` |
 | `ShoppingBoard` | the only page in the app that is *shared live*: it holds an `EventSource` open, applies its own edits before they are written, and reconciles the two |
+| `MealsBoard` | searches, filters, sorts and prices the whole catalog on every keystroke, and draws each tap before its write lands (`useOptimistic`) |
+| `RecipeEditor` / `IngredientEditor` | long forms with a live cost preview, an unsaved-changes guard, and a photo shrunk in the browser |
+| `MealsCardBadge` | "Tonight: Tacos" depends on the *device's* weekday, like the seating badge |
 | `error.tsx` | React error boundaries must be client components |
 
 The seating page renders the shell on the server and hands the island an
@@ -165,6 +179,8 @@ here, strongly typed, with no logic beyond simple lookups.
 | `navigation.ts` | The pages, the tools, where each sits in the tab bar, the planned-feature cards |
 | `bored.ts` | Inside, outside and money: the built-in ideas, the Dad Bucks prices, and the pictures a family-added idea may choose from |
 | `shopping.ts` | The shopping list's ceilings, and every timing the live stream runs on |
+| `meals.ts` | Family size (from the roster), tax, the stores, meal times, types, tags, filter and auto-tag thresholds |
+| `meals-seed.ts` | The Meals page's starter catalog: 150 priced ingredients and 89 recipes |
 | `note.ts` | The Note's tools, inks, nibs, papers and the pad's fixed shape |
 | `picker.ts` | Finger Picker's timings and its ten circle colours |
 | `ceremony-music.ts` | The ceremony's playlist id, its volume, and how long YouTube gets |
@@ -195,6 +211,7 @@ Pure functions. Nothing here imports React.
 | `shopping/list.ts` | The shopping list as a value: names, ids, sorting, optimistic patches, reconciliation |
 | `shopping/stream.ts` | The event-stream wire format, shared by the route handler and the browser |
 | `shopping/store.ts` | The `shoppingItems` collection |
+| `meals/` | Costing, quantities, browsing, the plan and its shopping list, the seed; `store.ts` and the two action files are the only server-side parts. See [Meals](meals.md#where-things-are) |
 | `db.ts` | The shared MongoDB client, and readable connection errors |
 | `auth/` | Sessions, users, passwords, the DAL, the sign-in/out actions |
 
@@ -238,6 +255,13 @@ shopping/ShoppingBoard  the live island; owns the list, the stream and the exit 
 
 note/StickyNote       pointer events into strokes, and two stacked canvases
 note/NoteToolbar      the tray: tools, nibs, inks, papers, undo, clear
+meals/MealsBoard      the Meals page: tabs, filters, the dice, optimistic saves
+├── MealList          search, meal-time strip, filters, sort, tiles, cards
+├── MealSheet         one meal: cost, nutrition, faces, made it, ingredients
+├── PlanView          the week, the budget, the store-split shopping list
+└── PricesView        the price book, and a parent's quick price update
+meals/admin/…         MealsAdminBoard, RecipeEditor, IngredientEditor
+
 picker/FingerPicker   the full-screen overlay, the clock and the draw
 picker/EdgeConfetti   paper fired inward from all four edges
 

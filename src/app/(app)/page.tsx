@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { NavIcon } from "@/components/nav/NavIcon";
 import { CalendarCardBadge } from "@/components/dashboard/CalendarCardBadge";
+import { MealsCardBadge } from "@/components/dashboard/MealsCardBadge";
 import { MottoBanner } from "@/components/motto/MottoBanner";
 import { SeatingCardBadge } from "@/components/dashboard/SeatingCardBadge";
 import { APP_NAME } from "@/config/app";
@@ -15,6 +16,7 @@ import { requireUser } from "@/lib/auth/dal";
 import { upcomingEvents } from "@/lib/calendar/events";
 import { loadCalendarFeed } from "@/lib/calendar/feed";
 import { toIsoDate } from "@/lib/dates";
+import { readPlanPreview } from "@/lib/meals/store";
 
 /**
  * How many upcoming events the calendar card is given.
@@ -85,6 +87,13 @@ export default async function DashboardPage() {
                     </span>
                     {item.href === "/turns" ? (
                       <SeatingCardBadge initialDateIso={initialDateIso} />
+                    ) : null}
+                    {item.href === "/meals" ? (
+                      // Its own boundary, like the calendar's: a slow read
+                      // of the plan never holds up the rest of the cards.
+                      <Suspense fallback={null}>
+                        <MealsBadgeSlot initialDateIso={initialDateIso} />
+                      </Suspense>
                     ) : null}
                     {item.href === "/calendar" ? (
                       /*
@@ -236,6 +245,13 @@ async function CalendarBadgeSlot({
   return (
     <CalendarCardBadge events={events} initialDateIso={initialDateIso} />
   );
+}
+
+/** "Tonight: Tacos", or how many meals are planned — or nothing at all. */
+async function MealsBadgeSlot({ initialDateIso }: { initialDateIso: string }) {
+  const planned = await readPlanPreview();
+  if (planned.length === 0) return null;
+  return <MealsCardBadge planned={planned} initialDateIso={initialDateIso} />;
 }
 
 function ChevronRight() {

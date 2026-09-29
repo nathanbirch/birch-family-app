@@ -7,7 +7,7 @@ npm run test:coverage # with a coverage report
 npm run check         # typecheck → lint → test
 ```
 
-Vitest with jsdom and Testing Library. **1,482 tests across 68 files.**
+Vitest with jsdom and Testing Library. **1,596 tests across 71 files.**
 
 Most files run in jsdom. The server-only modules opt into the Node environment
 with a `@vitest-environment node` docblock, because that is where they actually
@@ -628,6 +628,73 @@ drives. jsdom has neither.
   closed
 - Hiding the page closes the stream; coming back opens a new one; unmounting
   hangs up
+
+### `meals-logic.test.ts` — 57 tests
+The Meals page's arithmetic — every number on every Meals screen comes through
+these functions:
+
+- Quantities: "1 1/2", "1½", "¾", ".25" and friends parse; nonsense, zero and
+  "1/0" do not; numbers print as a recipe card would and round-trip; cup/tbsp/tsp
+  and lb/oz convert and nothing else does; units pluralise, `cup dry` and
+  `hot dog` included
+- Costing: each ingredient at its **cheapest store per unit, independently** —
+  a store's own bigger pack (Costco) compared fairly — and the shopping list
+  buying wherever **the amount needed** costs least, which flips to the big pack
+  only when the week needs enough; cost of what
+  is used, tax, per person, family = per person × 7 **from the roster**; scaling
+  moves the total but never the per-person price; a missing price or nutrition is
+  named rather than treated as free, and earns no tag
+- Only the tightest time tag; tags from the thresholds; estimates never count as
+  "checked"
+- Browsing: versions collapse (chains too, orphans kept), search is word by word
+  across names and ingredients, every filter, unpriced meals last in both price
+  sorts, never-made meals first under "Haven't had in a while"
+- The plan: needs are summed **before** rounding to packs; floating-point dust
+  does not buy an extra pack; split by cheapest store; the one-store comparison
+  fills gaps and counts them; pantry ticks; line names without brackets in
+  brackets; budget in day order, deleted meals skipped
+- Every optimistic change, and that none mutates the state it is given
+- Merging typed prices: unchanged keeps its date, changed or confirmed is dated
+  today
+- The starter catalog: no broken references, **distinct and pinned seed ids**,
+  every meal priced with nutrition and a sane per-person price, every ingredient
+  used, every price marked an estimate, every meal-time tab populated
+
+### `meals-board.test.tsx` — 23 tests
+The page, with the Server Actions mocked:
+
+- The starter catalog renders cheapest first with the family price; versions are
+  one card; search by ingredient; the meal-time strip; the dice, including "nothing
+  to pick from"
+- A shared link opens the sheet **for 7**; versions switch
+- Favourite, rating and "made it" are drawn **before the server answers**, sent
+  with the right arguments (the phone's local date for "made it"), and put back
+  with the reason when refused
+- Add to plan sends a fresh id and the family's servings
+- Edit is on every meal (the editor asks for the PIN); copy and version links
+  only once the PIN is in; no Share button
+- The plan: empty state, budget, store groups, servings, pantry, and the report
+  after sending to the family shopping list
+- With the database away: the starter menu, a banner, and nothing offered that
+  would fail
+- The price book: estimates labelled as such, and a quick update only for a
+  parent
+
+### `meals-price-api.test.ts` — 20 tests *(Node environment)*
+The price API, with the database mocked — the part of the app open to the
+internet behind nothing but a key:
+
+- No key, a wrong key, or one the wrong length never reaches the catalog or a
+  write; keys are looked up by hash; ten wrong keys from one address get a 429
+- The list has every ingredient with its unit, usual pack, each store's pack
+  and per-unit price, the best, and its recipe count; search; one by id; 404s
+- The offline starter catalog is refused (503) rather than served as real, and
+  a database failure is a plain 503 that leaks nothing
+- A write sets one store's price, in the usual pack or the store's own; only
+  Walmart, Broulim's and Costco; nonsense, half a pack, not-JSON and oversized
+  bodies are refused
+- A pack in the wrong unit (a 5 lb bag as "5" cups) is held back with a 409
+  until confirmed
 
 ### `stores.test.ts` — 9 tests
 The `useSyncExternalStore` contract for both preferences: a stable snapshot, a

@@ -157,8 +157,14 @@ describe("dashboard cards", () => {
      * splitting pages that are read just as often as the full-width ones into
      * a visually different, lower-status shelf. Revisit if the list keeps
      * growing — this is not a promise that eleven is the new ten.
+     *
+     * Meals made it twelve, and the same call was made again, on purpose: it
+     * is opened most evenings to answer "what's for dinner", which is a
+     * Shopping-and-Stars kind of page, not a Mantras-and-Healthy kind that a
+     * smaller shelf would suit. Twelve is where grouping the cards stops being
+     * a question to put off — the next page should settle it.
      */
-    expect(DASHBOARD_PAGES.length).toBeLessThanOrEqual(11);
+    expect(DASHBOARD_PAGES.length).toBeLessThanOrEqual(12);
   });
 
   it("keeps the tools on their shelf as well as in the bar", () => {

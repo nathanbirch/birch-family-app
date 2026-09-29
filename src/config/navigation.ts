@@ -106,7 +106,8 @@ export type NavIconName =
   | "note"
   | "picker"
   | "rewards"
-  | "school";
+  | "school"
+  | "meals";
 
 /**
  * The live pages.
@@ -198,6 +199,23 @@ export const NAV_ITEMS: readonly NavItem[] = [
       "What we need. Anyone can add to it, and it updates on every phone at once.",
     bar: 2,
     icon: "shopping",
+  },
+  /*
+   * Just past Shopping in the strip, and for the same kind of reason Shopping
+   * sits where it does: the two are one errand. The week's plan turns into a
+   * shopping list, and a button on it puts that list on the live one — so the
+   * page you plan on and the page you shop from want to be a thumb apart.
+   * `2.5`, not `3`, for the reason `6.5` gives below: the numbers are sort
+   * keys, and slotting in costs nobody else a renumber.
+   */
+  {
+    href: "/meals",
+    label: "Meals",
+    title: "Meals",
+    description:
+      "What's for dinner, what it costs the whole family, and the week's plan.",
+    bar: 2.5,
+    icon: "meals",
   },
   {
     href: "/mantras",

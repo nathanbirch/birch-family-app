@@ -115,7 +115,17 @@
  * `/turns` would go on painting a page with no picker card on it, and this is
  * the cheapest way to be sure none does.
  */
-const CACHE_VERSION = "v14";
+/*
+ * v15: the Meals page arrived, with a tab and a dashboard card — the v13 case,
+ * so every installed device drops a shell that has no way to reach it.
+ *
+ * Its meal photos are served from `/api/meals/photo/…` behind the login, so
+ * the worker leaves them alone like everything else under `/api/` (see the
+ * bypass in the `fetch` handler). The browser's own cache keeps them instead:
+ * each URL carries the photo's version and is sent `immutable`, so a repeat
+ * view costs no request at all.
+ */
+const CACHE_VERSION = "v15";
 const CACHE_NAME = `birch-family-app-${CACHE_VERSION}`;
 const APP_SHELL = "/";
 

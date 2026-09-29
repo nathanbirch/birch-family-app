@@ -28,6 +28,22 @@ import { config } from "@/proxy";
 const MATCHER = new RegExp(`^${config.matcher[0]}$`);
 const runsOn = (pathname: string) => MATCHER.test(pathname);
 
+describe("the Meals price API", () => {
+  it.each([
+    "/api/meals/v1/ingredients",
+    "/api/meals/v1/ingredients/0123456789abcdef01234567",
+    "/api/meals/v1/ingredients/0123456789abcdef01234567/prices",
+  ])("skips %s, which checks its own bearer key", (pathname) => {
+    expect(runsOn(pathname)).toBe(false);
+  });
+
+  it("still guards the meal photos beside it, which sit behind the login", () => {
+    expect(runsOn("/api/meals/photo/0123456789abcdef01234567")).toBe(true);
+    expect(runsOn("/meals")).toBe(true);
+    expect(runsOn("/meals/admin")).toBe(true);
+  });
+});
+
 describe("paths the proxy must skip", () => {
   it.each([
     // The folder that was missed. Every one of these must be reachable.

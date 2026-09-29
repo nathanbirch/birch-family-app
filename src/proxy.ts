@@ -102,5 +102,11 @@ export const config = {
    * switches and the bearer check run before anything else. This proxy was
    * never their boundary and must not pretend to be.
    */
-  matcher: ["/((?!_next/|api/family/|.*\\.[a-zA-Z0-9]+$).*)"],
+  /*
+   * `api/meals/v1/` is excluded for exactly the same reason: the Meals price
+   * API authenticates with a bearer key of its own and fails closed in
+   * `src/lib/meals/price-api.ts`. Only `v1/` — the recipe photos beside it
+   * under `api/meals/photo/` stay behind the login.
+   */
+  matcher: ["/((?!_next/|api/family/|api/meals/v1/|.*\\.[a-zA-Z0-9]+$).*)"],
 };

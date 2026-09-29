@@ -232,6 +232,24 @@ whatever the family buys and is never pruned; only the newest hundred finished
 rows are ever *shown*. (`boredIdeas` grows too, but by a handful of rows ever
 rather than on a clock.)
 
+### The Meals page's eight collections
+
+`mealIngredients`, `mealRecipes`, `mealPhotos`, `mealFavorites`, `mealRatings`,
+`mealCooked`, `mealPlan` and `mealMeta`. Their shapes, and why each is keyed
+the way it is, are in [Meals](meals.md#what-the-familys-state-is-and-where-it-lives);
+the document types are `src/lib/meals/documents.ts`.
+
+The one thing about them that no other collection does: **the page seeds the
+catalog itself** the first time it is opened against an empty database, so it
+never depends on anyone having run the script. The seeded documents' `_id`s are
+hashed from their seed keys, which makes the write idempotent — see
+[Meals](meals.md#it-works-on-first-open).
+
+**Indexes:** `mealRecipes.by_ingredient` (`lines.ingredientId`, for "is this
+ingredient still used?"), `mealRecipes.by_parent` (`variantOf`),
+`mealRatings.by_recipe` and `mealCooked.by_recipe_day`. The rest are read whole
+or by `_id`. Created by the first-load seed and by `npm run db:seed` alike.
+
 ---
 
 ## Seeding
@@ -240,8 +258,8 @@ rather than on a clock.)
 npm run db:seed
 ```
 
-Creates every index, the first login account, the pet rotation and the chore
-pools. **Safe to run repeatedly** — it never overwrites an existing account, pet
+Creates every index, the first login account, the pet rotation, the chore
+pools, the Bored Page's ideas and the Meals page's starter catalog. **Safe to run repeatedly** — it never overwrites an existing account, pet
 rotation or chore pool, so re-running it after you have changed a password,
 re-anchored Bella or re-anchored the chores does not undo any of them. Index
 creation is idempotent by definition.

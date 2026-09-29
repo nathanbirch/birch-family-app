@@ -26,7 +26,8 @@
     "sound:generate": "node scripts/generate-cheer.mjs",
     "api:openapi": "tsx scripts/generate-openapi.ts",
     "api:key": "node -e \"console.log(require('crypto').randomBytes(32).toString('base64url'))\"",
-    "api:probe": "node scripts/family-api-probe.mjs"
+    "api:probe": "node scripts/family-api-probe.mjs",
+    "meals:api-key": "tsx --env-file=.env scripts/meals-api-key.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
