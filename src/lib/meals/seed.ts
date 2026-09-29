@@ -22,16 +22,14 @@
 
 import { FAMILY_FAVORITES_BATCH } from "@/config/meals-family";
 import {
-  SEED_COSTCO,
   SEED_INGREDIENTS,
   SEED_RECIPES,
   type SeedBatch,
   type SeedIngredient,
   type SeedRecipe,
 } from "@/config/meals-seed";
-import { SEED_PRICES_AS_OF } from "@/config/meals";
 
-import type { IngredientView, MealsCatalog, PriceView, RecipeView } from "./types";
+import type { IngredientView, MealsCatalog, RecipeView } from "./types";
 
 /** FNV-1a, 32-bit, from a chosen starting basis. */
 function fnv1a(text: string, basis: number): number {
@@ -69,9 +67,6 @@ export const SEED_BATCHES: readonly SeedBatch[] = [
 const ALL_INGREDIENTS = SEED_BATCHES.flatMap((batch) => batch.ingredients);
 const ALL_RECIPES = SEED_BATCHES.flatMap((batch) => batch.recipes);
 
-/** Noon UTC on the day the starter prices were written down. */
-export const SEED_PRICES_TIME = Date.parse(`${SEED_PRICES_AS_OF}T12:00:00Z`);
-
 export function seedIngredientView(seed: SeedIngredient): IngredientView {
   return {
     id: seedId("ingredient", seed.key),
@@ -79,15 +74,9 @@ export function seedIngredientView(seed: SeedIngredient): IngredientView {
     unit: seed.unit,
     packLabel: seed.packLabel,
     packUnits: seed.packUnits,
-    prices: [
-      ...Object.entries(seed.prices).map(([store, price]) => ({
-        store,
-        price,
-        checkedAt: SEED_PRICES_TIME,
-        estimated: true,
-      })),
-      ...costcoPrice(seed),
-    ],
+    // Never seeded: every price comes from somebody checking it. See the note
+    // at the top of `config/meals-seed.ts`.
+    prices: [],
     nutrition: seed.nutrition
       ? {
           calories: seed.nutrition[0],
@@ -98,14 +87,6 @@ export function seedIngredientView(seed: SeedIngredient): IngredientView {
         }
       : null,
   };
-}
-
-/** The Costco price from `SEED_COSTCO`, in Costco's own pack, if it has one. */
-function costcoPrice(seed: SeedIngredient): PriceView[] {
-  const costco = SEED_COSTCO[seed.key] ?? seed.costco;
-  if (!costco || "Costco" in seed.prices) return [];
-  const [price, packLabel, packUnits] = costco;
-  return [{ store: "Costco", price, checkedAt: SEED_PRICES_TIME, estimated: true, packLabel, packUnits }];
 }
 
 export function seedRecipeView(seed: SeedRecipe): RecipeView {
@@ -191,11 +172,6 @@ export function findSeedProblem(): string | null {
     if (ingredientKeys.has(ingredient.key)) return `Ingredient key "${ingredient.key}" is used twice.`;
     ingredientKeys.add(ingredient.key);
     if (!(ingredient.packUnits > 0)) return `"${ingredient.key}" has no pack size.`;
-  }
-
-  for (const [key, [price, , units]] of Object.entries(SEED_COSTCO)) {
-    if (!ingredientKeys.has(key)) return `Costco has a price for "${key}", which is not an ingredient.`;
-    if (!(price > 0) || !(units > 0)) return `Costco's "${key}" needs a price and a pack size.`;
   }
 
   const recipeKeys = new Set<string>();

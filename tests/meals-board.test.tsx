@@ -29,6 +29,30 @@ vi.mock("@/lib/meals/admin-actions", () => ({ saveIngredientPrices: vi.fn() }));
 const TACOS = seedId("recipe", "tacos-beef");
 const TACOS_CHICKEN = seedId("recipe", "tacos-chicken");
 
+/**
+ * The catalog with a real-looking price on every ingredient — nothing is
+ * seeded with one any more, and most of these tests are about what the page
+ * does *with* prices. The price scales with the pack so meals differ.
+ */
+function pricedCatalog(): MealsCatalog {
+  const compiled = compiledCatalog();
+  return {
+    ...compiled,
+    source: "database",
+    ingredients: compiled.ingredients.map((ingredient) => ({
+      ...ingredient,
+      prices: [
+        {
+          store: "Walmart",
+          price: Math.round((1 + ingredient.packUnits * 0.3) * 100) / 100,
+          checkedAt: Date.UTC(2026, 8, 29, 12),
+          estimated: false,
+        },
+      ],
+    })),
+  };
+}
+
 function renderBoard(
   overrides: {
     catalog?: MealsCatalog;
@@ -38,7 +62,7 @@ function renderBoard(
     initialMealId?: string | null;
   } = {},
 ) {
-  const catalog = overrides.catalog ?? { ...compiledCatalog(), source: "database" as const };
+  const catalog = overrides.catalog ?? pricedCatalog();
   return render(
     <MealsBoard
       catalog={catalog}
@@ -59,12 +83,23 @@ beforeEach(() => {
 });
 
 describe("the Meals list", () => {
-  it("shows the starter catalog, cheapest first, with a price for the whole family", () => {
+  it("shows the catalog cheapest first, with a price for the whole family", () => {
     renderBoard();
     const cards = screen.getAllByRole("button", { name: /per person/ });
-    expect(cards.length).toBeGreaterThan(60);
-    expect(cards[0].textContent).toContain("White Rice");
+    expect(cards.length).toBeGreaterThan(100);
     expect(cards[0].textContent).toContain(`for ${FAMILY_SIZE}`);
+    const perPerson = cards.map((card) => {
+      const match = /\$(\d+\.\d\d)|(\d+)¢/.exec(card.textContent ?? "");
+      return match?.[1] ? Number(match[1]) : Number(match?.[2] ?? 0) / 100;
+    });
+    expect(perPerson).toEqual([...perPerson].sort((a, b) => a - b));
+  });
+
+  it("shows no number at all for a meal without real prices — never $0.00", () => {
+    renderBoard({ catalog: { ...compiledCatalog(), source: "database" } });
+    expect(screen.queryAllByRole("button", { name: /per person/ })).toHaveLength(0);
+    expect(screen.getAllByText("No price yet").length).toBeGreaterThan(100);
+    expect(screen.queryByText("$0.00")).toBeNull();
   });
 
   it("collapses versions into one card, the family's own recipe on top", () => {
@@ -211,6 +246,13 @@ describe("the plan", () => {
     expect(screen.getByText(/No meals planned yet/)).toBeTruthy();
   });
 
+  it("says there are no prices yet rather than a budget of nothing", () => {
+    renderBoard({ initialTab: "plan", state: planned, catalog: { ...compiledCatalog(), source: "database" } });
+    expect(screen.getByText("No prices yet")).toBeTruthy();
+    expect(screen.getByText(/The budget shows once every planned meal has real prices/)).toBeTruthy();
+    expect(screen.queryByText("$0.00")).toBeNull();
+  });
+
   it("shows the budget and the shopping list, split by store", () => {
     renderBoard({ initialTab: "plan", state: planned });
     expect(screen.getByText("Budget")).toBeTruthy();
@@ -270,7 +312,12 @@ describe("the price book", () => {
     renderBoard({ initialTab: "prices" });
     expect(screen.getByText("Cheddar cheese, shredded")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Update price" })).toBeNull();
-    expect(screen.getAllByText(/Starter estimate/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Checked today/).length).toBeGreaterThan(0);
+  });
+
+  it("says plainly which ingredients have no price yet", () => {
+    renderBoard({ initialTab: "prices", catalog: { ...compiledCatalog(), source: "database" } });
+    expect(screen.getAllByText("No price yet").length).toBeGreaterThan(200);
   });
 
   it("offers a quick price update once the PIN is in", () => {

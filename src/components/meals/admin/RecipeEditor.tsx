@@ -670,7 +670,11 @@ export function RecipeEditor({
         ) : (
           <>
             <div className="mt-2 grid grid-cols-3 gap-2">
-              <StatTile label="Recipe total" value={formatDollars(preview.total)} detail={`with ${Math.round(SALES_TAX_RATE * 100)}% tax`} />
+              <StatTile
+                label="Recipe total"
+                value={preview.priced ? formatDollars(preview.total) : "—"}
+                detail={`with ${Math.round(SALES_TAX_RATE * 100)}% tax`}
+              />
               <StatTile label="Per person" value={formatMoney(preview.perPerson)} />
               <StatTile label={`For ${FAMILY_SIZE}`} value={formatMoney(preview.family)} />
             </div>

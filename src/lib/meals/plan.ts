@@ -36,8 +36,11 @@ export type PlannedMeal = {
 
 export type PlanBudget = {
   meals: PlannedMeal[];
-  /** What the planned meals use, with tax. */
-  total: number;
+  /**
+   * What the planned meals use, with tax — `null` while any of them is missing
+   * a price, because a budget that leaves out a meal is not the week's budget.
+   */
+  total: number | null;
   /** `total` spread across everybody the meals feed. */
   perServing: number | null;
   averagePerMeal: number | null;
@@ -87,11 +90,12 @@ export function budgetPlan(
     if (!meal.costed.priced) partlyPriced += 1;
   }
 
+  const complete = partlyPriced === 0 && counted > 0;
   return {
     meals,
-    total,
-    perServing: servings > 0 ? total / servings : null,
-    averagePerMeal: counted > 0 ? total / counted : null,
+    total: complete ? total : null,
+    perServing: complete && servings > 0 ? total / servings : null,
+    averagePerMeal: complete ? total / counted : null,
     partlyPriced,
   };
 }
@@ -334,7 +338,13 @@ export function shoppingListText(list: ShoppingPlanList): string {
   }
 
   if (sections.length === 0) return "Nothing to buy.";
-  sections.push(`Total with tax: about $${list.total.toFixed(2)}`);
+  if (list.byStore.length > 0) {
+    sections.push(
+      list.unpriced.length > 0
+        ? `Priced items, with tax: about $${list.total.toFixed(2)} (the ${list.unpriced.length} without a price are not in it)`
+        : `Total with tax: about $${list.total.toFixed(2)}`,
+    );
+  }
   return sections.join("\n\n");
 }
 
@@ -347,5 +357,11 @@ export function planText(budget: PlanBudget): string {
       return `${day} — ${meal.recipe?.name}, for ${meal.entry.servings}`;
     });
   if (lines.length === 0) return "Nothing planned yet.";
-  return [...lines, "", `Budget: about $${budget.total.toFixed(2)}`].join("\n");
+  return [
+    ...lines,
+    "",
+    budget.total === null
+      ? "Budget: not every meal has prices yet."
+      : `Budget: about $${budget.total.toFixed(2)}`,
+  ].join("\n");
 }

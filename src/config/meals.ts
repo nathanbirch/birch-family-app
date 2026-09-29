@@ -37,19 +37,10 @@ export const SALES_TAX_RATE = 0.06;
  * `PriceView`).
  *
  * None of the three publishes a price feed anybody outside can use (see
- * docs/meals.md#where-prices-come-from), so every price here was typed by a
- * person.
+ * docs/meals.md#where-prices-come-from), so every price in the app was
+ * checked by a person or by the scheduled price check — none is seeded.
  */
 export const MAIN_STORES = ["Walmart", "Broulim's", "Costco"] as const;
-
-/**
- * The date the starter prices in `config/meals-seed.ts` were written down.
- *
- * They are researched estimates, not prices somebody read off a shelf, which
- * is why every seeded price also carries `estimated: true` — the Prices tab
- * says "estimate" beside them until a parent confirms or corrects one.
- */
-export const SEED_PRICES_AS_OF = "2026-09-28";
 
 /** A price older than this is flagged as due for a check on the Prices tab. */
 export const STALE_PRICE_DAYS = 60;

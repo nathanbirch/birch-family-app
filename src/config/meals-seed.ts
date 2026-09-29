@@ -19,11 +19,17 @@
  * ---------------------------------------------------------------------------
  * THE NUMBERS
  * ---------------------------------------------------------------------------
- * Prices are researched estimates for late 2026, not receipts: every one is
- * seeded with `estimated: true`, and the Prices tab says so until a parent
- * confirms or corrects it at the shop. Nutrition is per one of the
- * ingredient's units, from typical package labels — estimates too, and the
- * page labels them that way.
+ * **There are no prices here, on purpose.** An earlier version shipped
+ * researched estimates, and the family decided every money figure on the page
+ * must be real: a price arrives only when somebody checks it — a parent on the
+ * Prices tab, or the scheduled price check through `/api/meals/v1/…`. Until an
+ * ingredient has one, the meals that use it show "No price yet" rather than a
+ * guess.
+ *
+ * What *is* here is the pack each ingredient usually comes in and how many of
+ * its units that holds — the number every real price is divided by — and
+ * nutrition per unit from typical package labels, which the page labels as an
+ * estimate.
  *
  * Quantities are in each ingredient's own unit. Butter is in tablespoons (a
  * stick is 8), sugar in cups (2 tbsp is 0.125) — the page converts back to
@@ -46,14 +52,7 @@ export type SeedIngredient = {
   unit: string;
   packLabel: string;
   packUnits: number;
-  /** Store name → price of one pack. */
-  prices: Readonly<Record<string, number>>;
   nutrition: NutritionTuple | null;
-  /**
-   * Costco's price in Costco's own pack: [price, pack, units]. The starter
-   * catalog keeps these in `SEED_COSTCO`; later batches put them here.
-   */
-  costco?: readonly [number, string, number];
 };
 
 export type SeedRecipe = {
@@ -103,19 +102,9 @@ function ing(
   unit: string,
   packLabel: string,
   packUnits: number,
-  walmart: number,
-  broulims: number,
   nutrition: NutritionTuple | null,
 ): SeedIngredient {
-  return {
-    key,
-    name,
-    unit,
-    packLabel,
-    packUnits,
-    prices: { Walmart: walmart, "Broulim's": broulims },
-    nutrition,
-  };
+  return { key, name, unit, packLabel, packUnits, nutrition };
 }
 
 /** Something bought from a named vendor rather than off a grocery shelf. */
@@ -124,10 +113,9 @@ function vendor(
   name: string,
   unit: string,
   packLabel: string,
-  prices: Readonly<Record<string, number>>,
   nutrition: NutritionTuple | null,
 ): SeedIngredient {
-  return { key, name, unit, packLabel, packUnits: 1, prices, nutrition };
+  return { key, name, unit, packLabel, packUnits: 1, nutrition };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -136,173 +124,172 @@ function vendor(
 
 export const SEED_INGREDIENTS: readonly SeedIngredient[] = [
   // --- Dairy and eggs -----------------------------------------------------
-  ing("eggs", "Eggs", "egg", "18 ct carton", 18, 3.97, 4.99, [72, 0.4, 0.2, 6.3, 4.8]),
-  ing("milk", "Milk, 2%", "cup", "1 gal jug", 16, 3.12, 3.49, [122, 12, 12, 8, 4.8]),
-  ing("butter", "Butter", "tbsp", "1 lb (4 sticks)", 32, 4.12, 4.99, [102, 0, 0, 0.1, 11.5]),
-  ing("cheddar", "Cheddar cheese, shredded", "cup", "2 lb bag", 8, 8.47, 9.99, [455, 1.4, 0.4, 28, 37]),
-  ing("mozzarella", "Mozzarella, shredded", "cup", "2 lb bag", 8, 8.47, 9.99, [336, 2.4, 1, 25, 25]),
-  ing("parmesan", "Parmesan, grated", "tbsp", "8 oz canister", 45, 3.48, 4.29, [22, 0.2, 0, 1.9, 1.4]),
-  ing("american-cheese", "American cheese slices", "slice", "16 slice pack", 16, 2.48, 3.29, [60, 1.5, 1, 3, 4.5]),
-  ing("cream-cheese", "Cream cheese", "oz", "8 oz block", 8, 1.98, 2.49, [99, 1.6, 1, 1.7, 9.8]),
-  ing("sour-cream", "Sour cream", "cup", "16 oz tub", 2, 1.97, 2.49, [445, 10, 7.7, 5.4, 45]),
-  ing("heavy-cream", "Heavy whipping cream", "cup", "1 pint carton", 2, 3.12, 3.99, [821, 6.6, 6.6, 6.8, 88]),
-  ing("yogurt", "Vanilla yogurt", "cup", "32 oz tub", 4, 2.24, 2.99, [208, 34, 34, 12, 3]),
-  ing("ricotta", "Ricotta cheese", "cup", "15 oz tub", 1.75, 3.48, 3.99, [428, 7.5, 0.6, 28, 32]),
+  ing("eggs", "Eggs", "egg", "18 ct carton", 18, [72, 0.4, 0.2, 6.3, 4.8]),
+  ing("milk", "Milk, 2%", "cup", "1 gal jug", 16, [122, 12, 12, 8, 4.8]),
+  ing("butter", "Butter", "tbsp", "1 lb (4 sticks)", 32, [102, 0, 0, 0.1, 11.5]),
+  ing("cheddar", "Cheddar cheese, shredded", "cup", "2 lb bag", 8, [455, 1.4, 0.4, 28, 37]),
+  ing("mozzarella", "Mozzarella, shredded", "cup", "2 lb bag", 8, [336, 2.4, 1, 25, 25]),
+  ing("parmesan", "Parmesan, grated", "tbsp", "8 oz canister", 45, [22, 0.2, 0, 1.9, 1.4]),
+  ing("american-cheese", "American cheese slices", "slice", "16 slice pack", 16, [60, 1.5, 1, 3, 4.5]),
+  ing("cream-cheese", "Cream cheese", "oz", "8 oz block", 8, [99, 1.6, 1, 1.7, 9.8]),
+  ing("sour-cream", "Sour cream", "cup", "16 oz tub", 2, [445, 10, 7.7, 5.4, 45]),
+  ing("heavy-cream", "Heavy whipping cream", "cup", "1 pint carton", 2, [821, 6.6, 6.6, 6.8, 88]),
+  ing("yogurt", "Vanilla yogurt", "cup", "32 oz tub", 4, [208, 34, 34, 12, 3]),
+  ing("ricotta", "Ricotta cheese", "cup", "15 oz tub", 1.75, [428, 7.5, 0.6, 28, 32]),
 
   // --- Meat and fish ------------------------------------------------------
-  ing("ground-beef", "Ground beef, 80/20", "lb", "3 lb pack", 3, 16.47, 17.97, [1120, 0, 0, 76, 88]),
-  ing("chicken-breast", "Chicken breasts, boneless", "lb", "3 lb pack", 3, 9.91, 10.47, [544, 0, 0, 102, 12]),
-  ing("chicken-thighs", "Chicken thighs, boneless", "lb", "3 lb pack", 3, 9.47, 10.49, [544, 0, 0, 90, 18]),
-  ing("drumsticks", "Chicken drumsticks", "lb", "5 lb family pack", 5, 7.35, 8.95, [550, 0, 0, 65, 30]),
-  ing("pork-shoulder", "Pork shoulder roast", "lb", "4 lb roast", 4, 10.72, 11.96, [1070, 0, 0, 77, 83]),
-  ing("chuck-roast", "Beef chuck roast", "lb", "3 lb roast", 3, 21.87, 23.97, [1130, 0, 0, 85, 86]),
-  ing("sausage", "Breakfast sausage", "lb", "1 lb roll", 1, 3.47, 3.99, [1520, 0, 0, 64, 136]),
-  ing("smoked-sausage", "Smoked sausage", "package", "14 oz package", 1, 3.48, 3.99, [1260, 14, 7, 49, 112]),
-  ing("bacon", "Bacon", "slice", "16 oz pack", 16, 4.97, 6.99, [43, 0.1, 0, 3, 3.3]),
-  ing("ham", "Ham, sliced deli", "oz", "16 oz pack", 16, 4.48, 5.99, [30, 1, 1, 5, 1]),
-  ing("hot-dogs", "Hot dogs", "hot dog", "8 ct pack", 8, 1.48, 1.99, [150, 2, 1, 5, 13]),
-  ing("pepperoni", "Pepperoni", "oz", "6 oz bag", 6, 2.97, 3.49, [140, 0, 0, 6, 13]),
-  ing("salmon", "Salmon fillets, frozen", "lb", "2 lb bag", 2, 13.98, 15.98, [940, 0, 0, 91, 62]),
-  ing("tuna", "Tuna, chunk light", "can", "5 oz can", 1, 0.98, 1.39, [100, 0, 0, 22, 1]),
-  ing("fish-sticks", "Fish sticks", "stick", "44 ct box", 44, 6.48, 7.99, [50, 4.5, 0.3, 2.5, 2.5]),
-  ing("nuggets", "Chicken nuggets, frozen", "nugget", "32 oz bag (~50)", 50, 7.47, 8.99, [45, 3, 0.1, 2.6, 2.6]),
-  ing("meatballs", "Meatballs, frozen", "meatball", "32 oz bag (~64)", 64, 7.47, 8.99, [47, 1.5, 0.5, 2.3, 3.5]),
+  ing("ground-beef", "Ground beef, 80/20", "lb", "3 lb pack", 3, [1120, 0, 0, 76, 88]),
+  ing("chicken-breast", "Chicken breasts, boneless", "lb", "3 lb pack", 3, [544, 0, 0, 102, 12]),
+  ing("chicken-thighs", "Chicken thighs, boneless", "lb", "3 lb pack", 3, [544, 0, 0, 90, 18]),
+  ing("drumsticks", "Chicken drumsticks", "lb", "5 lb family pack", 5, [550, 0, 0, 65, 30]),
+  ing("pork-shoulder", "Pork shoulder roast", "lb", "4 lb roast", 4, [1070, 0, 0, 77, 83]),
+  ing("chuck-roast", "Beef chuck roast", "lb", "3 lb roast", 3, [1130, 0, 0, 85, 86]),
+  ing("sausage", "Breakfast sausage", "lb", "1 lb roll", 1, [1520, 0, 0, 64, 136]),
+  ing("smoked-sausage", "Smoked sausage", "package", "14 oz package", 1, [1260, 14, 7, 49, 112]),
+  ing("bacon", "Bacon", "slice", "16 oz pack", 16, [43, 0.1, 0, 3, 3.3]),
+  ing("ham", "Ham, sliced deli", "oz", "16 oz pack", 16, [30, 1, 1, 5, 1]),
+  ing("hot-dogs", "Hot dogs", "hot dog", "8 ct pack", 8, [150, 2, 1, 5, 13]),
+  ing("pepperoni", "Pepperoni", "oz", "6 oz bag", 6, [140, 0, 0, 6, 13]),
+  ing("salmon", "Salmon fillets, frozen", "lb", "2 lb bag", 2, [940, 0, 0, 91, 62]),
+  ing("tuna", "Tuna, chunk light", "can", "5 oz can", 1, [100, 0, 0, 22, 1]),
+  ing("fish-sticks", "Fish sticks", "stick", "44 ct box", 44, [50, 4.5, 0.3, 2.5, 2.5]),
+  ing("nuggets", "Chicken nuggets, frozen", "nugget", "32 oz bag (~50)", 50, [45, 3, 0.1, 2.6, 2.6]),
+  ing("meatballs", "Meatballs, frozen", "meatball", "32 oz bag (~64)", 64, [47, 1.5, 0.5, 2.3, 3.5]),
   {
     key: "rotisserie-chicken",
     name: "Rotisserie chicken",
     unit: "chicken",
     packLabel: "whole chicken",
     packUnits: 1,
-    prices: { Walmart: 6.97, "Broulim's": 7.99, Costco: 4.99 },
     nutrition: [1500, 0, 0, 200, 75],
   },
 
   // --- Produce ------------------------------------------------------------
-  ing("potatoes", "Russet potatoes", "lb", "10 lb bag", 10, 4.97, 5.99, [350, 79, 3, 9.5, 0.4]),
-  ing("onion", "Yellow onion", "onion", "3 lb bag (~6)", 6, 2.97, 3.49, [44, 10, 4.7, 1.2, 0.1]),
-  ing("garlic", "Garlic", "clove", "3 bulb pack (~30 cloves)", 30, 1.47, 1.99, [4.5, 1, 0, 0.2, 0]),
-  ing("carrots", "Carrots", "cup", "2 lb bag", 7, 1.68, 1.99, [52, 12, 6, 1.2, 0.3]),
-  ing("celery", "Celery", "stalk", "1 bunch (~9 stalks)", 9, 1.48, 1.99, [6, 1.2, 0.5, 0.3, 0.1]),
-  ing("bell-pepper", "Bell pepper", "pepper", "each", 1, 0.84, 1.29, [30, 7, 4, 1, 0.3]),
-  ing("broccoli", "Broccoli florets", "cup", "12 oz bag", 4, 1.97, 2.49, [31, 6, 1.5, 2.6, 0.3]),
-  ing("romaine", "Romaine hearts", "cup", "3 ct pack", 11, 2.98, 3.99, [8, 1.5, 0.6, 0.6, 0.1]),
-  ing("iceberg", "Iceberg lettuce", "cup", "1 head", 7.5, 1.97, 2.29, [10, 2, 1.4, 0.6, 0.1]),
-  ing("tomato", "Roma tomatoes", "tomato", "each", 1, 0.24, 0.33, [11, 2.4, 1.6, 0.5, 0.1]),
-  ing("cucumber", "Cucumber", "cucumber", "each", 1, 0.68, 0.99, [45, 11, 5, 2, 0.3]),
-  ing("zucchini", "Zucchini", "zucchini", "each", 1, 0.84, 0.99, [33, 6, 5, 2.4, 0.6]),
-  ing("mushrooms", "Mushrooms, sliced", "cup", "8 oz pack", 3, 1.97, 2.49, [15, 2.3, 1.4, 2.2, 0.2]),
-  ing("banana", "Bananas", "banana", "each", 1, 0.26, 0.35, [105, 27, 14, 1.3, 0.4]),
-  ing("apple", "Apples", "apple", "3 lb bag (~8)", 8, 3.97, 4.99, [95, 25, 19, 0.5, 0.3]),
-  ing("lemon", "Lemons", "lemon", "each", 1, 0.58, 0.79, [17, 5.4, 1.5, 0.6, 0.2]),
-  ing("lime", "Limes", "lime", "each", 1, 0.34, 0.5, [20, 7, 1.1, 0.5, 0.1]),
-  ing("strawberries", "Strawberries", "cup", "1 lb clamshell", 3, 2.97, 3.49, [53, 13, 8, 1.1, 0.5]),
-  ing("grapes", "Grapes", "cup", "2 lb bag", 6, 4.96, 5.98, [104, 27, 23, 1.1, 0.2]),
-  ing("avocado", "Avocados", "avocado", "each", 1, 0.88, 1.25, [240, 13, 1, 3, 22]),
-  ing("cilantro", "Cilantro", "bunch", "1 bunch", 1, 0.78, 0.99, [10, 1.6, 0.4, 0.9, 0.2]),
-  ing("green-onions", "Green onions", "bunch", "1 bunch", 1, 0.64, 0.99, [32, 7, 2.3, 1.8, 0.2]),
-  ing("jalapeno", "Jalapeños", "pepper", "each", 1, 0.12, 0.15, [4, 0.9, 0.6, 0.1, 0.1]),
+  ing("potatoes", "Russet potatoes", "lb", "10 lb bag", 10, [350, 79, 3, 9.5, 0.4]),
+  ing("onion", "Yellow onion", "onion", "3 lb bag (~6)", 6, [44, 10, 4.7, 1.2, 0.1]),
+  ing("garlic", "Garlic", "clove", "3 bulb pack (~30 cloves)", 30, [4.5, 1, 0, 0.2, 0]),
+  ing("carrots", "Carrots", "cup", "2 lb bag", 7, [52, 12, 6, 1.2, 0.3]),
+  ing("celery", "Celery", "stalk", "1 bunch (~9 stalks)", 9, [6, 1.2, 0.5, 0.3, 0.1]),
+  ing("bell-pepper", "Bell pepper", "pepper", "each", 1, [30, 7, 4, 1, 0.3]),
+  ing("broccoli", "Broccoli florets", "cup", "12 oz bag", 4, [31, 6, 1.5, 2.6, 0.3]),
+  ing("romaine", "Romaine hearts", "cup", "3 ct pack", 11, [8, 1.5, 0.6, 0.6, 0.1]),
+  ing("iceberg", "Iceberg lettuce", "cup", "1 head", 7.5, [10, 2, 1.4, 0.6, 0.1]),
+  ing("tomato", "Roma tomatoes", "tomato", "each", 1, [11, 2.4, 1.6, 0.5, 0.1]),
+  ing("cucumber", "Cucumber", "cucumber", "each", 1, [45, 11, 5, 2, 0.3]),
+  ing("zucchini", "Zucchini", "zucchini", "each", 1, [33, 6, 5, 2.4, 0.6]),
+  ing("mushrooms", "Mushrooms, sliced", "cup", "8 oz pack", 3, [15, 2.3, 1.4, 2.2, 0.2]),
+  ing("banana", "Bananas", "banana", "each", 1, [105, 27, 14, 1.3, 0.4]),
+  ing("apple", "Apples", "apple", "3 lb bag (~8)", 8, [95, 25, 19, 0.5, 0.3]),
+  ing("lemon", "Lemons", "lemon", "each", 1, [17, 5.4, 1.5, 0.6, 0.2]),
+  ing("lime", "Limes", "lime", "each", 1, [20, 7, 1.1, 0.5, 0.1]),
+  ing("strawberries", "Strawberries", "cup", "1 lb clamshell", 3, [53, 13, 8, 1.1, 0.5]),
+  ing("grapes", "Grapes", "cup", "2 lb bag", 6, [104, 27, 23, 1.1, 0.2]),
+  ing("avocado", "Avocados", "avocado", "each", 1, [240, 13, 1, 3, 22]),
+  ing("cilantro", "Cilantro", "bunch", "1 bunch", 1, [10, 1.6, 0.4, 0.9, 0.2]),
+  ing("green-onions", "Green onions", "bunch", "1 bunch", 1, [32, 7, 2.3, 1.8, 0.2]),
+  ing("jalapeno", "Jalapeños", "pepper", "each", 1, [4, 0.9, 0.6, 0.1, 0.1]),
 
   // --- Frozen -------------------------------------------------------------
-  ing("frozen-corn", "Corn, frozen", "cup", "12 oz bag", 2.5, 1.12, 1.49, [125, 27, 4, 4, 1]),
-  ing("frozen-peas", "Peas, frozen", "cup", "12 oz bag", 2.5, 1.12, 1.49, [110, 20, 7, 7, 0.5]),
-  ing("mixed-veg", "Mixed vegetables, frozen", "cup", "12 oz bag", 2.5, 1.12, 1.49, [90, 18, 4, 4, 0.3]),
-  ing("stir-fry-veg", "Stir-fry vegetables, frozen", "cup", "16 oz bag", 4.5, 1.97, 2.49, [40, 8, 3, 2, 0.2]),
-  ing("green-beans", "Green beans, frozen", "cup", "12 oz bag", 3, 1.12, 1.49, [35, 8, 3, 2, 0.1]),
-  ing("hash-browns", "Hash browns, shredded frozen", "cup", "30 oz bag", 10, 2.97, 3.49, [70, 15, 0.3, 1.7, 0.1]),
-  ing("fries", "French fries, frozen", "serving", "32 oz bag (~11 servings)", 11, 2.97, 3.49, [120, 19, 0, 2, 4.5]),
-  ing("berries", "Mixed berries, frozen", "cup", "48 oz bag", 9.5, 9.24, 11.49, [70, 17, 11, 1, 0.5]),
-  ing("ice-cream", "Vanilla ice cream", "cup", "48 oz tub", 6, 3.47, 4.99, [274, 32, 28, 4.6, 14.5]),
-  ing("whipped-topping", "Whipped topping", "tub", "8 oz tub", 1, 1.48, 2.29, [625, 55, 42, 0, 38]),
-  ing("frozen-pizza", "Frozen pepperoni pizza, 12\"", "pizza", "each", 1, 4.47, 5.99, [1280, 132, 16, 52, 60]),
+  ing("frozen-corn", "Corn, frozen", "cup", "12 oz bag", 2.5, [125, 27, 4, 4, 1]),
+  ing("frozen-peas", "Peas, frozen", "cup", "12 oz bag", 2.5, [110, 20, 7, 7, 0.5]),
+  ing("mixed-veg", "Mixed vegetables, frozen", "cup", "12 oz bag", 2.5, [90, 18, 4, 4, 0.3]),
+  ing("stir-fry-veg", "Stir-fry vegetables, frozen", "cup", "16 oz bag", 4.5, [40, 8, 3, 2, 0.2]),
+  ing("green-beans", "Green beans, frozen", "cup", "12 oz bag", 3, [35, 8, 3, 2, 0.1]),
+  ing("hash-browns", "Hash browns, shredded frozen", "cup", "30 oz bag", 10, [70, 15, 0.3, 1.7, 0.1]),
+  ing("fries", "French fries, frozen", "serving", "32 oz bag (~11 servings)", 11, [120, 19, 0, 2, 4.5]),
+  ing("berries", "Mixed berries, frozen", "cup", "48 oz bag", 9.5, [70, 17, 11, 1, 0.5]),
+  ing("ice-cream", "Vanilla ice cream", "cup", "48 oz tub", 6, [274, 32, 28, 4.6, 14.5]),
+  ing("whipped-topping", "Whipped topping", "tub", "8 oz tub", 1, [625, 55, 42, 0, 38]),
+  ing("frozen-pizza", "Frozen pepperoni pizza, 12\"", "pizza", "each", 1, [1280, 132, 16, 52, 60]),
 
   // --- Cans, jars and sauces ----------------------------------------------
-  ing("diced-tomatoes", "Diced tomatoes", "can", "14.5 oz can", 1, 0.88, 1.19, [88, 18, 11, 4, 0.5]),
-  ing("tomato-sauce", "Tomato sauce", "can", "15 oz can", 1, 0.84, 0.99, [70, 16, 11, 3, 0.5]),
-  ing("pasta-sauce", "Spaghetti sauce", "jar", "24 oz jar", 1, 1.67, 2.49, [385, 60, 40, 10, 12]),
-  ing("pizza-sauce", "Pizza sauce", "jar", "14 oz jar", 1, 1.48, 1.99, [140, 24, 14, 4, 4]),
-  ing("black-beans", "Black beans", "can", "15 oz can", 1, 0.78, 0.99, [350, 63, 1, 22, 1]),
-  ing("pinto-beans", "Pinto beans", "can", "15 oz can", 1, 0.78, 0.99, [350, 63, 2, 21, 2]),
-  ing("kidney-beans", "Kidney beans", "can", "15 oz can", 1, 0.78, 0.99, [350, 60, 4, 24, 1]),
-  ing("white-beans", "Great Northern beans", "can", "15 oz can", 1, 0.88, 1.19, [350, 63, 2, 24, 1]),
-  ing("refried-beans", "Refried beans", "can", "16 oz can", 1, 1.12, 1.39, [385, 63, 3, 21, 5]),
-  ing("green-chiles", "Diced green chiles", "can", "4 oz can", 1, 0.98, 1.29, [20, 4, 2, 1, 0]),
-  ing("enchilada-sauce", "Red enchilada sauce", "can", "10 oz can", 1, 1.42, 1.99, [70, 12, 3, 2, 2]),
-  ing("cream-of-chicken", "Cream of chicken soup", "can", "10.5 oz can", 1, 0.98, 1.29, [300, 23, 2, 6, 20]),
-  ing("cream-of-mushroom", "Cream of mushroom soup", "can", "10.5 oz can", 1, 0.98, 1.29, [250, 22, 2, 4, 16]),
-  ing("tomato-soup", "Tomato soup, condensed", "can", "10.75 oz can", 1, 0.84, 1.25, [225, 50, 30, 5, 0]),
-  ing("sloppy-joe-sauce", "Sloppy joe sauce", "can", "15 oz can", 1, 1.48, 1.99, [280, 56, 42, 7, 0]),
-  ing("chicken-broth", "Chicken broth", "cup", "32 oz carton", 4, 1.38, 1.99, [10, 1, 0.5, 1, 0.5]),
-  ing("beef-broth", "Beef broth", "cup", "32 oz carton", 4, 1.38, 1.99, [15, 1, 1, 2, 0.5]),
-  ing("pineapple", "Pineapple chunks", "can", "20 oz can", 1, 1.48, 1.99, [270, 70, 60, 2, 0]),
-  ing("mandarins", "Mandarin oranges", "can", "15 oz can", 1, 1.12, 1.29, [240, 58, 54, 2, 0]),
-  ing("salsa", "Salsa", "cup", "16 oz jar", 2, 1.78, 2.49, [70, 16, 8, 3, 0.4]),
-  ing("bbq-sauce", "BBQ sauce", "cup", "18 oz bottle", 1.75, 1.18, 1.99, [560, 136, 112, 0, 1]),
-  ing("teriyaki", "Teriyaki sauce", "cup", "20 oz bottle", 2.25, 2.12, 2.99, [240, 48, 32, 16, 0]),
-  ing("ketchup", "Ketchup", "tbsp", "38 oz bottle", 64, 2.47, 3.49, [20, 5, 4, 0.2, 0]),
-  ing("mustard", "Yellow mustard", "tbsp", "20 oz bottle", 38, 0.98, 1.49, [9, 0.6, 0, 0.6, 0.4]),
-  ing("mayo", "Mayonnaise", "tbsp", "30 oz jar", 60, 3.68, 4.99, [90, 0, 0, 0, 10]),
-  ing("ranch", "Ranch dressing", "tbsp", "16 oz bottle", 30, 1.98, 2.99, [65, 1, 0.5, 0.2, 7]),
-  ing("soy-sauce", "Soy sauce", "tbsp", "15 oz bottle", 30, 1.88, 2.49, [10, 1, 0.4, 1.3, 0]),
-  ing("honey", "Honey", "tbsp", "12 oz bottle", 16, 3.72, 4.49, [64, 17, 17, 0, 0]),
-  ing("syrup", "Pancake syrup", "cup", "24 oz bottle", 3, 2.12, 2.99, [840, 208, 128, 0, 0]),
-  ing("peanut-butter", "Peanut butter", "tbsp", "40 oz jar", 70, 4.98, 6.49, [95, 3.5, 1.5, 3.5, 8]),
-  ing("jam", "Strawberry jam", "tbsp", "30 oz jar", 42, 2.98, 3.49, [50, 13, 12, 0, 0]),
-  ing("chocolate-syrup", "Chocolate syrup", "tbsp", "24 oz bottle", 36, 2.24, 2.99, [50, 12, 10, 0.4, 0.2]),
-  ing("frosting", "Chocolate frosting", "tub", "16 oz tub", 1, 1.68, 2.49, [1680, 264, 240, 0, 66]),
+  ing("diced-tomatoes", "Diced tomatoes", "can", "14.5 oz can", 1, [88, 18, 11, 4, 0.5]),
+  ing("tomato-sauce", "Tomato sauce", "can", "15 oz can", 1, [70, 16, 11, 3, 0.5]),
+  ing("pasta-sauce", "Spaghetti sauce", "jar", "24 oz jar", 1, [385, 60, 40, 10, 12]),
+  ing("pizza-sauce", "Pizza sauce", "jar", "14 oz jar", 1, [140, 24, 14, 4, 4]),
+  ing("black-beans", "Black beans", "can", "15 oz can", 1, [350, 63, 1, 22, 1]),
+  ing("pinto-beans", "Pinto beans", "can", "15 oz can", 1, [350, 63, 2, 21, 2]),
+  ing("kidney-beans", "Kidney beans", "can", "15 oz can", 1, [350, 60, 4, 24, 1]),
+  ing("white-beans", "Great Northern beans", "can", "15 oz can", 1, [350, 63, 2, 24, 1]),
+  ing("refried-beans", "Refried beans", "can", "16 oz can", 1, [385, 63, 3, 21, 5]),
+  ing("green-chiles", "Diced green chiles", "can", "4 oz can", 1, [20, 4, 2, 1, 0]),
+  ing("enchilada-sauce", "Red enchilada sauce", "can", "10 oz can", 1, [70, 12, 3, 2, 2]),
+  ing("cream-of-chicken", "Cream of chicken soup", "can", "10.5 oz can", 1, [300, 23, 2, 6, 20]),
+  ing("cream-of-mushroom", "Cream of mushroom soup", "can", "10.5 oz can", 1, [250, 22, 2, 4, 16]),
+  ing("tomato-soup", "Tomato soup, condensed", "can", "10.75 oz can", 1, [225, 50, 30, 5, 0]),
+  ing("sloppy-joe-sauce", "Sloppy joe sauce", "can", "15 oz can", 1, [280, 56, 42, 7, 0]),
+  ing("chicken-broth", "Chicken broth", "cup", "32 oz carton", 4, [10, 1, 0.5, 1, 0.5]),
+  ing("beef-broth", "Beef broth", "cup", "32 oz carton", 4, [15, 1, 1, 2, 0.5]),
+  ing("pineapple", "Pineapple chunks", "can", "20 oz can", 1, [270, 70, 60, 2, 0]),
+  ing("mandarins", "Mandarin oranges", "can", "15 oz can", 1, [240, 58, 54, 2, 0]),
+  ing("salsa", "Salsa", "cup", "16 oz jar", 2, [70, 16, 8, 3, 0.4]),
+  ing("bbq-sauce", "BBQ sauce", "cup", "18 oz bottle", 1.75, [560, 136, 112, 0, 1]),
+  ing("teriyaki", "Teriyaki sauce", "cup", "20 oz bottle", 2.25, [240, 48, 32, 16, 0]),
+  ing("ketchup", "Ketchup", "tbsp", "38 oz bottle", 64, [20, 5, 4, 0.2, 0]),
+  ing("mustard", "Yellow mustard", "tbsp", "20 oz bottle", 38, [9, 0.6, 0, 0.6, 0.4]),
+  ing("mayo", "Mayonnaise", "tbsp", "30 oz jar", 60, [90, 0, 0, 0, 10]),
+  ing("ranch", "Ranch dressing", "tbsp", "16 oz bottle", 30, [65, 1, 0.5, 0.2, 7]),
+  ing("soy-sauce", "Soy sauce", "tbsp", "15 oz bottle", 30, [10, 1, 0.4, 1.3, 0]),
+  ing("honey", "Honey", "tbsp", "12 oz bottle", 16, [64, 17, 17, 0, 0]),
+  ing("syrup", "Pancake syrup", "cup", "24 oz bottle", 3, [840, 208, 128, 0, 0]),
+  ing("peanut-butter", "Peanut butter", "tbsp", "40 oz jar", 70, [95, 3.5, 1.5, 3.5, 8]),
+  ing("jam", "Strawberry jam", "tbsp", "30 oz jar", 42, [50, 13, 12, 0, 0]),
+  ing("chocolate-syrup", "Chocolate syrup", "tbsp", "24 oz bottle", 36, [50, 12, 10, 0.4, 0.2]),
+  ing("frosting", "Chocolate frosting", "tub", "16 oz tub", 1, [1680, 264, 240, 0, 66]),
 
   // --- Oils, baking and spices --------------------------------------------
-  ing("olive-oil", "Olive oil", "tbsp", "17 oz bottle", 34, 5.97, 6.99, [120, 0, 0, 0, 14]),
-  ing("vegetable-oil", "Vegetable oil", "tbsp", "48 oz bottle", 96, 3.48, 4.49, [120, 0, 0, 0, 14]),
-  ing("flour", "Flour, all-purpose", "cup", "5 lb bag", 18, 2.72, 3.29, [455, 95, 0.3, 13, 1.2]),
-  ing("sugar", "Sugar", "cup", "4 lb bag", 9, 3.24, 3.99, [774, 200, 200, 0, 0]),
-  ing("brown-sugar", "Brown sugar", "cup", "2 lb bag", 4, 1.97, 2.49, [829, 214, 213, 0, 0]),
-  ing("powdered-sugar", "Powdered sugar", "cup", "2 lb bag", 7.5, 1.97, 2.49, [467, 120, 117, 0, 0]),
-  ing("baking-powder", "Baking powder", "tsp", "8.1 oz can", 50, 1.28, 1.79, [2, 1.3, 0, 0, 0]),
-  ing("baking-soda", "Baking soda", "tsp", "1 lb box", 98, 0.88, 1.29, [0, 0, 0, 0, 0]),
-  ing("yeast", "Active dry yeast", "packet", "3 ct strip", 3, 1.62, 2.29, [21, 2.7, 0, 2.8, 0.3]),
-  ing("cornstarch", "Cornstarch", "tbsp", "16 oz box", 57, 1.12, 1.49, [30, 7, 0, 0, 0]),
-  ing("cocoa", "Cocoa powder", "tbsp", "8 oz canister", 42, 3.68, 4.49, [12, 3, 0.1, 1, 0.7]),
-  ing("chocolate-chips", "Chocolate chips", "cup", "12 oz bag", 2, 2.62, 3.49, [805, 107, 93, 7, 48]),
-  ing("marshmallows", "Mini marshmallows", "cup", "10 oz bag", 5.5, 1.28, 1.79, [159, 41, 29, 0.9, 0.1]),
-  ing("vanilla", "Vanilla extract", "tsp", "8 oz bottle", 48, 1.24, 1.99, [2, 0.5, 0.5, 0, 0]),
-  ing("salt", "Salt", "tsp", "26 oz canister", 122, 0.58, 0.99, [0, 0, 0, 0, 0]),
-  ing("pepper", "Black pepper", "tsp", "3 oz shaker", 37, 1.98, 2.49, [6, 1.5, 0, 0.2, 0.1]),
-  ing("cinnamon", "Cinnamon", "tsp", "2.4 oz jar", 26, 1.24, 1.99, [6, 2, 0, 0.1, 0]),
-  ing("cumin", "Ground cumin", "tsp", "2 oz jar", 28, 1.98, 2.49, [8, 0.9, 0, 0.4, 0.5]),
-  ing("chili-powder", "Chili powder", "tbsp", "2.5 oz jar", 9, 1.24, 1.79, [24, 4, 0.6, 1, 1.2]),
-  ing("garlic-powder", "Garlic powder", "tsp", "3.4 oz jar", 31, 1.24, 1.99, [10, 2, 0.1, 0.5, 0]),
-  ing("italian-seasoning", "Italian seasoning", "tsp", "0.9 oz jar", 25, 0.98, 1.49, [3, 0.6, 0, 0.1, 0.1]),
-  ing("taco-seasoning", "Taco seasoning", "packet", "1 oz packet", 1, 0.54, 0.89, [120, 24, 6, 0, 0]),
-  ing("ranch-mix", "Ranch seasoning mix", "packet", "1 oz packet", 1, 1.28, 1.99, [60, 12, 0, 0, 0]),
-  ing("gravy-mix", "Brown gravy mix", "packet", "0.87 oz packet", 1, 0.64, 0.99, [70, 12, 0, 2, 2]),
-  ing("pancake-mix", "Pancake mix, complete", "cup", "32 oz box", 7.5, 2.12, 2.99, [450, 90, 12, 12, 4.5]),
-  ing("brownie-mix", "Brownie mix", "box", "18.3 oz box", 1, 1.48, 2.49, [1960, 392, 280, 16, 30]),
-  ing("cake-mix", "Chocolate cake mix", "box", "15.25 oz box", 1, 1.28, 1.99, [1680, 340, 190, 16, 30]),
+  ing("olive-oil", "Olive oil", "tbsp", "17 oz bottle", 34, [120, 0, 0, 0, 14]),
+  ing("vegetable-oil", "Vegetable oil", "tbsp", "48 oz bottle", 96, [120, 0, 0, 0, 14]),
+  ing("flour", "Flour, all-purpose", "cup", "5 lb bag", 18, [455, 95, 0.3, 13, 1.2]),
+  ing("sugar", "Sugar", "cup", "4 lb bag", 9, [774, 200, 200, 0, 0]),
+  ing("brown-sugar", "Brown sugar", "cup", "2 lb bag", 4, [829, 214, 213, 0, 0]),
+  ing("powdered-sugar", "Powdered sugar", "cup", "2 lb bag", 7.5, [467, 120, 117, 0, 0]),
+  ing("baking-powder", "Baking powder", "tsp", "8.1 oz can", 50, [2, 1.3, 0, 0, 0]),
+  ing("baking-soda", "Baking soda", "tsp", "1 lb box", 98, [0, 0, 0, 0, 0]),
+  ing("yeast", "Active dry yeast", "packet", "3 ct strip", 3, [21, 2.7, 0, 2.8, 0.3]),
+  ing("cornstarch", "Cornstarch", "tbsp", "16 oz box", 57, [30, 7, 0, 0, 0]),
+  ing("cocoa", "Cocoa powder", "tbsp", "8 oz canister", 42, [12, 3, 0.1, 1, 0.7]),
+  ing("chocolate-chips", "Chocolate chips", "cup", "12 oz bag", 2, [805, 107, 93, 7, 48]),
+  ing("marshmallows", "Mini marshmallows", "cup", "10 oz bag", 5.5, [159, 41, 29, 0.9, 0.1]),
+  ing("vanilla", "Vanilla extract", "tsp", "8 oz bottle", 48, [2, 0.5, 0.5, 0, 0]),
+  ing("salt", "Salt", "tsp", "26 oz canister", 122, [0, 0, 0, 0, 0]),
+  ing("pepper", "Black pepper", "tsp", "3 oz shaker", 37, [6, 1.5, 0, 0.2, 0.1]),
+  ing("cinnamon", "Cinnamon", "tsp", "2.4 oz jar", 26, [6, 2, 0, 0.1, 0]),
+  ing("cumin", "Ground cumin", "tsp", "2 oz jar", 28, [8, 0.9, 0, 0.4, 0.5]),
+  ing("chili-powder", "Chili powder", "tbsp", "2.5 oz jar", 9, [24, 4, 0.6, 1, 1.2]),
+  ing("garlic-powder", "Garlic powder", "tsp", "3.4 oz jar", 31, [10, 2, 0.1, 0.5, 0]),
+  ing("italian-seasoning", "Italian seasoning", "tsp", "0.9 oz jar", 25, [3, 0.6, 0, 0.1, 0.1]),
+  ing("taco-seasoning", "Taco seasoning", "packet", "1 oz packet", 1, [120, 24, 6, 0, 0]),
+  ing("ranch-mix", "Ranch seasoning mix", "packet", "1 oz packet", 1, [60, 12, 0, 0, 0]),
+  ing("gravy-mix", "Brown gravy mix", "packet", "0.87 oz packet", 1, [70, 12, 0, 2, 2]),
+  ing("pancake-mix", "Pancake mix, complete", "cup", "32 oz box", 7.5, [450, 90, 12, 12, 4.5]),
+  ing("brownie-mix", "Brownie mix", "box", "18.3 oz box", 1, [1960, 392, 280, 16, 30]),
+  ing("cake-mix", "Chocolate cake mix", "box", "15.25 oz box", 1, [1680, 340, 190, 16, 30]),
 
   // --- Grains, bread and pasta --------------------------------------------
-  ing("oats", "Rolled oats", "cup", "42 oz canister", 15, 3.48, 4.49, [300, 54, 1, 10, 5]),
-  ing("rice", "White rice, long grain", "cup dry", "5 lb bag", 12, 3.48, 4.49, [675, 148, 0.2, 13, 1.2]),
-  ing("cereal", "Toasted oat cereal", "cup", "18 oz box", 18, 2.98, 3.99, [100, 20, 1.3, 3.4, 2]),
-  ing("crisp-rice", "Crisp rice cereal", "cup", "12 oz box", 13, 2.72, 3.79, [105, 24, 3, 2, 0]),
-  ing("raisins", "Raisins", "cup", "12 oz box", 2, 2.48, 2.99, [490, 130, 97, 5, 0.8]),
-  ing("popcorn", "Popcorn kernels", "cup", "30 oz jar", 4.25, 2.98, 3.49, [760, 150, 1, 25, 9]),
-  ing("bread", "Sandwich bread", "slice", "20 oz loaf (~22 slices)", 22, 1.42, 2.49, [70, 13, 1.5, 2, 1]),
-  ing("hamburger-buns", "Hamburger buns", "bun", "8 ct pack", 8, 1.38, 1.99, [120, 22, 3, 4, 1.5]),
-  ing("hot-dog-buns", "Hot dog buns", "bun", "8 ct pack", 8, 1.38, 1.99, [110, 20, 3, 4, 1.5]),
-  ing("french-bread", "French bread", "loaf", "1 loaf", 1, 1.48, 2.49, [1100, 210, 8, 40, 8]),
-  ing("bagels", "Plain bagels", "bagel", "6 ct bag", 6, 2.48, 2.99, [270, 53, 6, 10, 1.5]),
-  ing("large-tortillas", "Flour tortillas, 10\"", "tortilla", "10 ct pack", 10, 2.38, 2.99, [210, 35, 2, 6, 5]),
-  ing("small-tortillas", "Flour tortillas, 8\"", "tortilla", "20 ct pack", 20, 2.62, 3.49, [140, 24, 1, 4, 3.5]),
-  ing("taco-shells", "Hard taco shells", "shell", "18 ct box", 18, 1.84, 2.49, [50, 6.5, 0, 0.8, 2.5]),
-  ing("tortilla-chips", "Tortilla chips", "oz", "13 oz bag", 13, 2.12, 3.49, [140, 19, 0, 2, 7]),
-  ing("spaghetti", "Spaghetti", "lb", "1 lb box", 1, 1.12, 1.29, [1600, 336, 12, 56, 8]),
-  ing("fettuccine", "Fettuccine", "lb", "1 lb box", 1, 1.12, 1.29, [1600, 336, 12, 56, 8]),
-  ing("elbow-macaroni", "Elbow macaroni", "lb", "1 lb box", 1, 1.12, 1.29, [1600, 336, 12, 56, 8]),
-  ing("lasagna-noodles", "Lasagna noodles", "lb", "1 lb box", 1, 1.48, 1.99, [1600, 336, 12, 56, 8]),
-  ing("egg-noodles", "Egg noodles", "oz", "12 oz bag", 12, 1.98, 2.49, [110, 20, 1, 4, 1.3]),
-  ing("mac-box", "Macaroni & cheese, boxed", "box", "7.25 oz box", 1, 0.58, 0.99, [725, 138, 17, 29, 8]),
-  ing("pie-crust", "Refrigerated pie crust", "crust", "2 ct box", 2, 2.48, 3.29, [880, 96, 8, 8, 52]),
-  ing("biscuits", "Refrigerated biscuits", "can", "8 ct can", 1, 1.48, 2.29, [1360, 176, 24, 32, 56]),
+  ing("oats", "Rolled oats", "cup", "42 oz canister", 15, [300, 54, 1, 10, 5]),
+  ing("rice", "White rice, long grain", "cup dry", "5 lb bag", 12, [675, 148, 0.2, 13, 1.2]),
+  ing("cereal", "Toasted oat cereal", "cup", "18 oz box", 18, [100, 20, 1.3, 3.4, 2]),
+  ing("crisp-rice", "Crisp rice cereal", "cup", "12 oz box", 13, [105, 24, 3, 2, 0]),
+  ing("raisins", "Raisins", "cup", "12 oz box", 2, [490, 130, 97, 5, 0.8]),
+  ing("popcorn", "Popcorn kernels", "cup", "30 oz jar", 4.25, [760, 150, 1, 25, 9]),
+  ing("bread", "Sandwich bread", "slice", "20 oz loaf (~22 slices)", 22, [70, 13, 1.5, 2, 1]),
+  ing("hamburger-buns", "Hamburger buns", "bun", "8 ct pack", 8, [120, 22, 3, 4, 1.5]),
+  ing("hot-dog-buns", "Hot dog buns", "bun", "8 ct pack", 8, [110, 20, 3, 4, 1.5]),
+  ing("french-bread", "French bread", "loaf", "1 loaf", 1, [1100, 210, 8, 40, 8]),
+  ing("bagels", "Plain bagels", "bagel", "6 ct bag", 6, [270, 53, 6, 10, 1.5]),
+  ing("large-tortillas", "Flour tortillas, 10\"", "tortilla", "10 ct pack", 10, [210, 35, 2, 6, 5]),
+  ing("small-tortillas", "Flour tortillas, 8\"", "tortilla", "20 ct pack", 20, [140, 24, 1, 4, 3.5]),
+  ing("taco-shells", "Hard taco shells", "shell", "18 ct box", 18, [50, 6.5, 0, 0.8, 2.5]),
+  ing("tortilla-chips", "Tortilla chips", "oz", "13 oz bag", 13, [140, 19, 0, 2, 7]),
+  ing("spaghetti", "Spaghetti", "lb", "1 lb box", 1, [1600, 336, 12, 56, 8]),
+  ing("fettuccine", "Fettuccine", "lb", "1 lb box", 1, [1600, 336, 12, 56, 8]),
+  ing("elbow-macaroni", "Elbow macaroni", "lb", "1 lb box", 1, [1600, 336, 12, 56, 8]),
+  ing("lasagna-noodles", "Lasagna noodles", "lb", "1 lb box", 1, [1600, 336, 12, 56, 8]),
+  ing("egg-noodles", "Egg noodles", "oz", "12 oz bag", 12, [110, 20, 1, 4, 1.3]),
+  ing("mac-box", "Macaroni & cheese, boxed", "box", "7.25 oz box", 1, [725, 138, 17, 29, 8]),
+  ing("pie-crust", "Refrigerated pie crust", "crust", "2 ct box", 2, [880, 96, 8, 8, 52]),
+  ing("biscuits", "Refrigerated biscuits", "can", "8 ct can", 1, [1360, 176, 24, 32, 56]),
 
   // --- Bought ready-made --------------------------------------------------
   vendor(
@@ -310,7 +297,6 @@ export const SEED_INGREDIENTS: readonly SeedIngredient[] = [
     "Little Caesars pepperoni pizza",
     "pizza",
     "large",
-    { "Little Caesars": 7.99 },
     [2240, 256, 24, 96, 88],
   ),
   vendor(
@@ -318,7 +304,6 @@ export const SEED_INGREDIENTS: readonly SeedIngredient[] = [
     "Domino's large pepperoni pizza",
     "pizza",
     "large, carryout",
-    { "Domino's": 9.99 },
     [2400, 264, 24, 100, 104],
   ),
   vendor(
@@ -326,64 +311,9 @@ export const SEED_INGREDIENTS: readonly SeedIngredient[] = [
     "Papa Murphy's large pepperoni pizza",
     "pizza",
     "large, take and bake",
-    { "Papa Murphy's": 13.99 },
     [2640, 272, 24, 112, 120],
   ),
 ];
-
-/* -------------------------------------------------------------------------- */
-/* Costco                                                                      */
-/* -------------------------------------------------------------------------- */
-
-/**
- * Costco's price for the staples it sells, and **its own pack** — which is
- * almost never the size the other two stores sell. [price, pack, units in the
- * pack], the units being the ingredient's own (cups, tbsp, lb…).
- *
- * Estimates for late 2026, like every other starter price. Costco only wins a
- * line on the shopping list when the week needs enough to make the big pack
- * the smaller bill — see `bestBuy` in `lib/meals/costing.ts`.
- */
-export const SEED_COSTCO: Readonly<Record<string, readonly [number, string, number]>> = {
-  eggs: [9.99, "60 ct (5 dozen)", 60],
-  milk: [6.49, "2 × 1 gal", 32],
-  butter: [14.99, "4 lb (16 sticks)", 128],
-  cheddar: [16.99, "5 lb bag", 20],
-  mozzarella: [16.49, "5 lb bag", 20],
-  "cream-cheese": [10.99, "6 × 8 oz", 48],
-  "heavy-cream": [7.99, "½ gallon", 8],
-  "ground-beef": [24.95, "5 lb pack", 5],
-  "chicken-breast": [20.94, "6 lb pack", 6],
-  "chicken-thighs": [17.45, "5 lb pack", 5],
-  bacon: [17.99, "4 × 1 lb", 64],
-  salmon: [26.99, "3 lb bag", 3],
-  tuna: [15.99, "8 × 7 oz cans", 11.2],
-  potatoes: [7.99, "15 lb bag", 15],
-  onion: [7.99, "10 lb bag (~20)", 20],
-  carrots: [8.49, "10 lb bag", 35],
-  banana: [1.99, "3 lb bunch (~7)", 7],
-  strawberries: [9.99, "4 lb clamshell", 12],
-  avocado: [6.99, "bag of 5", 5],
-  romaine: [5.49, "6 ct pack", 22],
-  broccoli: [6.99, "3 lb bag", 16],
-  berries: [13.49, "4 lb bag", 12.5],
-  flour: [9.99, "25 lb bag", 90],
-  sugar: [8.99, "10 lb bag", 22.5],
-  rice: [18.99, "25 lb bag", 60],
-  oats: [10.99, "10 lb bag", 56],
-  "olive-oil": [18.99, "2 L bottle", 135],
-  "peanut-butter": [11.99, "2 × 40 oz", 140],
-  "tortilla-chips": [6.49, "40 oz bag", 40],
-  spaghetti: [11.99, "8 × 1 lb", 8],
-  "pasta-sauce": [9.99, "3 × 32 oz", 4],
-  "black-beans": [8.99, "8 × 15 oz", 8],
-  "diced-tomatoes": [8.49, "8 × 14.5 oz", 8],
-  "chicken-broth": [11.99, "6 × 32 oz", 24],
-  "chocolate-chips": [13.99, "4.5 lb bag", 12],
-  ketchup: [8.99, "3 × 44 oz", 222],
-  mayo: [8.99, "64 oz jar", 128],
-  honey: [14.49, "3 lb jar", 64],
-};
 
 /* -------------------------------------------------------------------------- */
 /* Recipes                                                                     */

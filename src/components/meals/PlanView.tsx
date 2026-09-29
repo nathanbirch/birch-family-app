@@ -126,7 +126,11 @@ export function PlanView({
         </div>
 
         <div className="mt-3 grid grid-cols-3 gap-2">
-          <StatTile label="Budget" value={formatDollars(budget.total)} detail={`${budget.meals.length} meals`} />
+          <StatTile
+            label="Budget"
+            value={budget.total === null ? "—" : formatDollars(budget.total)}
+            detail={`${budget.meals.length} meals`}
+          />
           <StatTile
             label="Per serving"
             value={formatMoney(budget.perServing)}
@@ -135,9 +139,10 @@ export function PlanView({
           <StatTile label="Avg meal" value={formatMoney(budget.averagePerMeal)} />
         </div>
         {budget.partlyPriced > 0 ? (
-          <p className="mt-2 text-xs font-semibold" style={{ color: WARNING_COLOR }}>
-            {budget.partlyPriced} planned meal{budget.partlyPriced === 1 ? " has" : "s have"} an
-            ingredient with no price, so the budget is too low.
+          <p className="mt-2 text-xs font-semibold" style={MUTED_TEXT}>
+            The budget shows once every planned meal has real prices —{" "}
+            {budget.partlyPriced} {budget.partlyPriced === 1 ? "is" : "are"} still missing some.
+            Add them on the Prices tab.
           </p>
         ) : null}
 
@@ -154,8 +159,9 @@ export function PlanView({
                     >
                       <span className="block font-bold leading-snug">{meal.recipe.name}</span>
                       <span className="text-xs" style={MUTED_TEXT}>
-                        {formatDollars(meal.costed?.total ?? null)} for {meal.entry.servings}
-                        {meal.costed && !meal.costed.priced ? "*" : ""}
+                        {meal.costed?.priced
+                          ? `${formatDollars(meal.costed.total)} for ${meal.entry.servings}`
+                          : `No price yet · for ${meal.entry.servings}`}
                       </span>
                     </button>
                     <button
@@ -255,13 +261,24 @@ export function PlanView({
         <div className="app-card mt-3 p-3">
           <div className="flex items-baseline justify-between">
             <span className="text-sm font-bold">
-              {list.byStore.length > 1 ? "Splitting stores" : list.byStore.length === 1 ? `All at ${list.byStore[0].store}` : "Nothing left to buy"}
+              {list.byStore.length > 1
+                ? "Splitting stores"
+                : list.byStore.length === 1
+                  ? `All at ${list.byStore[0].store}`
+                  : list.unpriced.length > 0
+                    ? "No prices yet"
+                    : "Nothing left to buy"}
             </span>
-            <span className="text-lg font-extrabold tabular-nums">{formatDollars(list.total)}</span>
+            <span className="text-lg font-extrabold tabular-nums">
+              {list.byStore.length > 0 ? formatDollars(list.total) : "—"}
+            </span>
           </div>
           <p className="text-xs" style={MUTED_TEXT}>
-            With {Math.round(SALES_TAX_RATE * 100)}% tax. More than the budget when packs are
-            bigger than the recipes need — the rest is next week&apos;s pantry.
+            {list.unpriced.length > 0
+              ? list.byStore.length > 0
+                ? `With ${Math.round(SALES_TAX_RATE * 100)}% tax, for the priced items only — ${list.unpriced.length} still ${list.unpriced.length === 1 ? "has" : "have"} no price and ${list.unpriced.length === 1 ? "isn't" : "aren't"} in it.`
+                : "None of these ingredients has a real price yet. Add them on the Prices tab, or let the scheduled price check fill them in."
+              : `With ${Math.round(SALES_TAX_RATE * 100)}% tax. More than the budget when packs are bigger than the recipes need — the rest is next week's pantry.`}
           </p>
           {list.byStore.length > 0 ? (
             <ul className="mt-2 space-y-0.5 text-xs">

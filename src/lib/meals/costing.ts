@@ -17,7 +17,8 @@
  *     are counted, because that is what the till charges.)
  *   - Sales tax is added to the recipe total.
  *   - Per person is the total divided by how many the recipe feeds; the family
- *     cost is that times `FAMILY_SIZE`.
+ *     cost is that times `FAMILY_SIZE`. Both exist only when every ingredient
+ *     has a real price — otherwise there is no number to show, and none is.
  */
 
 import {
@@ -153,11 +154,16 @@ export type CostedRecipe = {
   subtotal: number;
   tax: number;
   total: number;
-  /** Independent of scale. `null` when the recipe does not say how many it feeds. */
+  /**
+   * Independent of scale. `null` unless **every** line has a price — a total
+   * missing the cheese is not what the meal costs, and the page shows no
+   * number rather than a wrong one. `subtotal` and `total` above are still the
+   * sum of the priced lines, for the editor to say "so far".
+   */
   perPerson: number | null;
   /** `perPerson × FAMILY_SIZE`. */
   family: number | null;
-  /** Whether every line has a price. When not, the numbers above are a floor. */
+  /** Whether every line has a price. Only then is there a meal cost to show. */
   priced: boolean;
   /** Names of the ingredients with no price. */
   unpriced: string[];
@@ -222,7 +228,9 @@ export function costRecipe(
   const tax = subtotal * SALES_TAX_RATE;
   const total = subtotal + tax;
 
-  const perPerson = recipe.feeds > 0 ? (asWritten * (1 + SALES_TAX_RATE)) / recipe.feeds : null;
+  const priced = unpriced.length === 0 && recipe.lines.length > 0;
+  const perPerson =
+    priced && recipe.feeds > 0 ? (asWritten * (1 + SALES_TAX_RATE)) / recipe.feeds : null;
   const family = perPerson === null ? null : perPerson * FAMILY_SIZE;
 
   const nutrition =
@@ -231,8 +239,6 @@ export function costRecipe(
           Object.entries(totals).map(([key, value]) => [key, value / recipe.feeds]),
         ) as Nutrition)
       : null;
-
-  const priced = unpriced.length === 0 && recipe.lines.length > 0;
 
   return {
     lines,
@@ -247,7 +253,7 @@ export function costRecipe(
     nutrition,
     missingNutrition,
     autoTags: autoTags({
-      perPerson: priced ? perPerson : null,
+      perPerson,
       totalMinutes: recipe.totalMinutes,
       nutrition: missingNutrition.length === 0 ? nutrition : null,
     }),

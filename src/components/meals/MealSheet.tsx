@@ -229,28 +229,13 @@ function RecipeDetail({
       ) : null}
 
       <div className="grid grid-cols-2 gap-2">
-        <StatTile
-          label="Per person"
-          value={
-            <>
-              {formatMoney(costed.perPerson)}
-              {!costed.priced ? "*" : ""}
-            </>
-          }
-        />
-        <StatTile
-          label={`For ${FAMILY_SIZE}`}
-          value={
-            <>
-              {formatMoney(costed.family)}
-              {!costed.priced ? "*" : ""}
-            </>
-          }
-        />
+        <StatTile label="Per person" value={formatMoney(costed.perPerson)} />
+        <StatTile label={`For ${FAMILY_SIZE}`} value={formatMoney(costed.family)} />
       </div>
       {!costed.priced && costed.unpriced.length > 0 ? (
-        <p className="mt-2 text-xs font-semibold" style={{ color: WARNING_COLOR }}>
-          * No price yet for {costed.unpriced.join(", ")}, so this is too low.
+        <p className="mt-2 text-xs font-semibold" style={MUTED_TEXT}>
+          The cost shows once every ingredient has a real price. Still needed:{" "}
+          {costed.unpriced.join(", ")}.
         </p>
       ) : null}
 
@@ -539,7 +524,9 @@ function RecipeDetail({
               (with {Math.round(SALES_TAX_RATE * 100)}% tax)
             </span>
           </span>
-          <span className="font-extrabold tabular-nums">{formatDollars(costed.total)}</span>
+          <span className="font-extrabold tabular-nums">
+            {costed.priced ? formatDollars(costed.total) : "No price yet"}
+          </span>
         </div>
       </section>
 

@@ -65,9 +65,11 @@ disagree.
    × `FAMILY_SIZE`, which is `FAMILY.length` — read from the roster, so it is 7
    without anyone typing 7.
 
-A recipe with an unpriced ingredient still shows a cost, with an asterisk and
-the ingredient named — it is a floor, and the page says so rather than
-pretending the salsa was free.
+**A meal shows a cost only when every one of its ingredients has a real
+price.** Until then it says "No price yet" and names what is missing — no
+floor, no asterisk, never $0.00. The plan's budget follows the same rule: it
+appears once every planned meal is fully priced. The shopping list does show
+the prices it has, labelled as covering only the priced items.
 
 ### Computed tags
 
@@ -223,8 +225,9 @@ is refused on save and checked again where it is drawn.
 There is no setup step. The first time `/meals` is loaded against a database
 that has never had it, `ensureMealsSeeded` writes the catalog — today 143
 recipes (119 cards once versions are grouped) and 231 ingredients, from the
-batches below. The starter batch is 89 recipes and 150 ingredients, every one priced at Walmart and Broulim's (and about 40 at Costco,
-in Costco's own pack sizes) and with nutrition — and creates the indexes.
+batches below. The starter batch is 89 recipes and 150 ingredients, each with
+the pack it usually comes in and nutrition — **but no prices** (below) — and it
+creates the indexes.
 `npm run db:seed` does the same, for a fresh clone that wants it done up front.
 
 Two things make that safe:
@@ -261,11 +264,13 @@ Chicken, Orange Chicken, Feijoada), the pasta or rice to serve it with is added
 as a line noted "to serve (not in the original)", so the meal costs what dinner
 costs. Frying oil counts only the quarter or so that is absorbed.
 
-**The starter prices are estimates**, written down for late 2026, not read off
-a shelf. Every one is stored with `estimated: true`, the Prices tab says
-"Starter estimate — not checked at a store yet" beside it, and "last checked"
-ignores estimates entirely. Confirm or correct them as you shop; the admin
-screen counts how many are left.
+**No price is ever seeded.** The first version shipped researched estimates,
+and on 2026-09-29 the family decided every money figure in the app must be
+real, so the estimates were removed from the seed files and deleted from the
+production database. Prices now come only from somebody checking them — a
+parent's **Update price** on the Prices tab, or the scheduled price check
+through the price API. (The `estimated` flag on a price still exists, so an
+estimate can never be mistaken for a checked price, but nothing writes one.)
 
 If the database cannot be reached, the page shows the **same starter catalog,
 read-only**, with a banner saying so — the same ids, so a plan saved earlier

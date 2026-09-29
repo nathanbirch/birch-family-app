@@ -28,6 +28,7 @@ export function MealCard({
   const recipe = group.primary;
   const tags = [...recipe.tags, ...(cost?.autoTags ?? [])].slice(0, 3);
   const priced = cost?.priced ?? false;
+  const pricedCount = cost ? cost.lines.filter((line) => line.cost !== null).length : 0;
 
   return (
     <button
@@ -63,15 +64,25 @@ export function MealCard({
         </span>
 
         <span className="flex items-end justify-between gap-2">
-          <span>
-            <span className="block text-2xl font-extrabold leading-none tabular-nums">
-              {formatMoney(cost?.perPerson ?? null)}
-              {!priced ? <span className="text-base align-top" title="Some ingredients have no price">*</span> : null}
+          {priced ? (
+            <span>
+              <span className="block text-2xl font-extrabold leading-none tabular-nums">
+                {formatMoney(cost?.perPerson ?? null)}
+              </span>
+              <span className="text-xs" style={MUTED_TEXT}>
+                per person · {formatMoney(cost?.family ?? null)} for {FAMILY_SIZE}
+              </span>
             </span>
-            <span className="text-xs" style={MUTED_TEXT}>
-              per person · {formatMoney(cost?.family ?? null)} for {FAMILY_SIZE}
+          ) : (
+            <span>
+              <span className="block text-base font-extrabold leading-tight" style={MUTED_TEXT}>
+                No price yet
+              </span>
+              <span className="text-xs" style={MUTED_TEXT}>
+                {pricedCount} of {recipe.lines.length} ingredients priced
+              </span>
             </span>
-          </span>
+          )}
           <span className="text-right text-xs leading-tight" style={MUTED_TEXT}>
             {cost?.nutrition ? (
               <span className="block tabular-nums">{Math.round(cost.nutrition.calories)} kcal</span>

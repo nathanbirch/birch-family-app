@@ -274,6 +274,10 @@ describe("costing", () => {
     expect(costed.unpriced).toEqual(["salsa"]);
     expect(costed.missingNutrition).toEqual(["salsa"]);
     expect(costed.lines[2].cost).toBeNull();
+    // No per-person or family cost at all — a total missing the salsa is not
+    // what the meal costs.
+    expect(costed.perPerson).toBeNull();
+    expect(costed.family).toBeNull();
     // An untrustworthy figure earns no tag from it.
     expect(costed.autoTags).not.toContain("under $1");
     expect(costed.autoTags.some((tag) => tag.startsWith("low-"))).toBe(false);
@@ -585,13 +589,22 @@ describe("the plan and its shopping list", () => {
     expect(shoppingListText(list)).toContain("No price yet");
   });
 
-  it("budgets what the meals use, in day order, skipping deleted meals", () => {
+  it("gives no budget while any planned meal is missing a price", () => {
     const budget = budgetPlan(plan, recipes, ingredients);
     expect(orderPlan(plan.entries).map((e) => e.id)).toEqual(["3", "2", "1"]);
     expect(budget.meals.map((m) => m.recipe?.id ?? null)).toEqual([null, "tacos", "soup"]);
+    // The soup's saffron has no price: a budget without it is not the budget.
     expect(budget.partlyPriced).toBe(1);
-    const tacosCost = costRecipe(tacos, ingredients, 14).total;
-    const soupCost = costRecipe(soup, ingredients, 7).total;
+    expect(budget.total).toBeNull();
+    expect(budget.perServing).toBeNull();
+  });
+
+  it("budgets what the meals use once every one is priced, skipping deleted meals", () => {
+    const pricedSaffron = { ...saffron, prices: [price("Walmart", 12)] };
+    const all = indexIngredients([cheese, lime, garlic, pricedSaffron]);
+    const budget = budgetPlan(plan, recipes, all);
+    const tacosCost = costRecipe(tacos, all, 14).total;
+    const soupCost = costRecipe(soup, all, 7).total;
     expect(budget.total).toBeCloseTo(tacosCost + soupCost);
     expect(budget.perServing).toBeCloseTo((tacosCost + soupCost) / 21);
   });
@@ -740,16 +753,17 @@ describe("the starter catalog", () => {
     expect(seedId("recipe", "tacos-beef")).toBe("d0ee59e00fe3db3c9475c144");
   });
 
-  it("prices every starter meal and knows its nutrition", () => {
+  it("seeds no price at all — every one has to be checked by somebody", () => {
     const catalog = compiledCatalog();
+    for (const item of catalog.ingredients) {
+      expect(item.prices, item.name).toEqual([]);
+      expect(item.packUnits, item.name).toBeGreaterThan(0);
+    }
     const costs = costAll(catalog.recipes, catalog.ingredients);
     for (const meal of catalog.recipes) {
       const cost = costs.get(meal.id);
-      expect(cost?.priced, meal.name).toBe(true);
+      expect(cost?.perPerson, meal.name).toBeNull();
       expect(cost?.missingNutrition, meal.name).toEqual([]);
-      expect(cost?.perPerson, meal.name).toBeGreaterThan(0);
-      // Nothing absurd: a per-person price between a nickel and six dollars.
-      expect(cost?.perPerson, meal.name).toBeLessThan(6);
       expect(meal.mealTimes.length, meal.name).toBeGreaterThan(0);
     }
   });
@@ -761,35 +775,16 @@ describe("the starter catalog", () => {
     expect(unused).toEqual([]);
   });
 
-  it("marks every starter price as an estimate until somebody checks it", () => {
-    const catalog = compiledCatalog();
-    expect(catalog.source).toBe("compiled");
-    for (const item of catalog.ingredients) {
-      expect(item.prices.length, item.name).toBeGreaterThan(0);
-      expect(item.prices.every((p) => p.estimated), item.name).toBe(true);
-    }
-  });
-
-  it("prices Costco's staples in Costco's own pack sizes", () => {
-    const catalog = compiledCatalog();
-    const cheese = catalog.ingredients.find((i) => i.name === "Cheddar cheese, shredded");
-    const costco = cheese?.prices.find((p) => p.store === "Costco");
-    expect(costco).toMatchObject({ packLabel: "5 lb bag", packUnits: 20, estimated: true });
-    const withCostco = catalog.ingredients.filter((i) => i.prices.some((p) => p.store === "Costco"));
-    expect(withCostco.length).toBeGreaterThan(30);
-  });
-
   it("carries the family's own recipes as a second batch, each with its link", () => {
     const batch = SEED_BATCHES.find((b) => b.id === "family-favorites-2026-09");
     expect(batch?.recipes).toHaveLength(54);
     const catalog = compiledCatalog();
-    const costs = costAll(catalog.recipes, catalog.ingredients);
     const withLinks = batch!.recipes.filter((r) => r.url);
     expect(withLinks.length).toBeGreaterThanOrEqual(45);
     for (const recipe of batch!.recipes) {
       const view = catalog.recipes.find((r) => r.id === seedId("recipe", recipe.key));
       expect(view?.instructions, recipe.name).toBeTruthy();
-      expect(costs.get(view!.id)?.priced, recipe.name).toBe(true);
+      expect(view?.lines.length, recipe.name).toBeGreaterThan(0);
     }
   });
 

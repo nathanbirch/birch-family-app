@@ -243,7 +243,8 @@ export function MealList({
 
       {groups.some((group) => !costs.get(group.primary.id)?.priced) ? (
         <p className="mt-6 text-center text-xs leading-relaxed" style={MUTED_TEXT}>
-          * Some ingredients have no price yet, so the cost shown is too low.
+          A meal shows its cost once every one of its ingredients has a real price — enter
+          them on the Prices tab as you shop.
         </p>
       ) : null}
     </section>

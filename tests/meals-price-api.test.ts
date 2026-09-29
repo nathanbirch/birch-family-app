@@ -32,8 +32,35 @@ const KEY = "k".repeat(API_KEY_LENGTH);
 const CHEDDAR = seedId("ingredient", "cheddar");
 const BASE = "https://birch.example/api/meals/v1/ingredients";
 
+/*
+ * Nothing is seeded with a price any more, so the tests give cheddar two real
+ * ones: Walmart's usual bag and Costco's bigger one.
+ */
+const CHECKED = Date.UTC(2026, 8, 29, 12);
 function catalog() {
-  return { ...compiledCatalog(), source: "database" as const };
+  const compiled = compiledCatalog();
+  return {
+    ...compiled,
+    source: "database" as const,
+    ingredients: compiled.ingredients.map((ingredient) =>
+      ingredient.id === CHEDDAR
+        ? {
+            ...ingredient,
+            prices: [
+              { store: "Walmart", price: 8.47, checkedAt: CHECKED, estimated: false },
+              {
+                store: "Costco",
+                price: 16.99,
+                checkedAt: CHECKED,
+                estimated: false,
+                packLabel: "5 lb bag",
+                packUnits: 20,
+              },
+            ],
+          }
+        : ingredient,
+    ),
+  };
 }
 
 function request(url: string, init: RequestInit & { key?: string | null } = {}) {
@@ -222,7 +249,7 @@ describe("writing a price", () => {
 });
 
 describe("the price-jump check", () => {
-  const cheddar = compiledCatalog().ingredients.find((i) => i.id === CHEDDAR)!;
+  const cheddar = catalog().ingredients.find((i) => i.id === CHEDDAR)!;
 
   it("passes an ordinary change and a fair bulk price", () => {
     expect(suspiciousJump(cheddar, { store: "Walmart", price: 9.49 })).toBe(false);

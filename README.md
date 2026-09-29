@@ -115,8 +115,8 @@ npm start          # serve the production build locally
   per unit, plus tax); search, filters, a random pick, who likes what, and "haven't had in a
   while". A shared weekly plan turns into a store-split shopping list that one
   button puts on the live one. Parents add recipes and update prices behind the
-  same PIN as the shop. It seeds a starter catalog of 89 recipes by itself on
-  first open. See [Meals](docs/meals.md).
+  same PIN as the shop. It seeds its recipes by itself on first open — with no
+  prices: every price shown was checked by somebody. See [Meals](docs/meals.md).
 - **Account** (`/account`) — who's signed in, the theme picker, sign out.
 - **Bottom tab bar** — Home pinned on the left, then everything else on a strip
   that scrolls sideways: Stars · Shopping · Meals · Calendar · Turns · Bored · Ceremony ·
