@@ -113,7 +113,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["oven"],
     url: "https://www.allrecipes.com/recipe/9023/baked-teriyaki-chicken/",
     lines: [["cornstarch", 1], ["sugar", 0.5], ["soy-sauce", 8], ["cider-vinegar", 4], ["garlic", 1, "minced"], ["ground-ginger", 0.5], ["pepper", 0.25], ["chicken-thighs", 3, "12 skinless thighs"]],
-    steps: ["Stir the cornstarch, cold water, sugar, soy sauce, vinegar, garlic, ginger and pepper together in a small saucepan and simmer on low, stirring often, until the sauce bubbles and thickens.","Heat the oven to 425°F (220°C) and grease a 9x13-inch baking dish.","Lay the chicken thighs in the dish and brush both sides with the sauce.","Bake 30 minutes, flip the pieces, and bake about 30 minutes more until cooked through with clear juices, basting with sauce every 10 minutes."],
+    steps: ["You'll also need: 1 tablespoon cold water (for the cornstarch).","Stir the cornstarch, cold water, sugar, soy sauce, vinegar, garlic, ginger and pepper together in a small saucepan and simmer on low, stirring often, until the sauce bubbles and thickens.","Heat the oven to 425°F (220°C) and grease a 9x13-inch baking dish.","Lay the chicken thighs in the dish and brush both sides with the sauce.","Bake 30 minutes, flip the pieces, and bake about 30 minutes more until cooked through with clear juices, basting with sauce every 10 minutes."],
   },
   {
     key: "fam-best-chocolate-chip-cookies",
@@ -139,7 +139,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["stove top","kid favorite"],
     url: "https://www.food.com/recipe/panda-express-orange-chicken-103215",
     lines: [["chicken-breast", 2, "bite-sized pieces"], ["eggs", 1], ["salt", 1.5], ["vegetable-oil", 6, "for frying — about ¼ of the 1½ cups used is absorbed"], ["cornstarch", 8, "for coating"], ["flour", 0.25], ["soy-sauce", 3, "sauce"], ["orange-juice", 0.75, "sauce"], ["brown-sugar", 0.5, "sauce"], ["orange", 1, "zest, for the sauce"], ["vegetable-oil", 1, "sauce"], ["fresh-ginger", 2, "minced"], ["garlic", 2, "minced"], ["red-pepper-flakes", 1], ["green-onions", 0.5, "chopped"], ["mirin", 2], ["cornstarch", 2, "sauce"], ["sesame-oil", 0.33, "optional"], ["rice", 2, "to serve (not in the original)"]],
-    steps: ["Beat the egg with the salt, white pepper and a tablespoon of oil; in another bowl mix 1/2 cup cornstarch with the flour.","Heat frying oil in a wok or deep fryer to 375°F.","Dip the chicken pieces in the egg mixture, then the flour mixture, and fry in small batches 3–4 minutes until golden; drain on paper towels.","For the sauce, stir together the soy sauce, orange juice, brown sugar and orange zest.","In a clean hot wok, briefly stir-fry the ginger, garlic, chili flakes and green onion in 1 tablespoon oil until fragrant, then add the rice wine and the soy-orange mixture.","Toss in the fried chicken, then stir in the water-cornstarch slurry until the sauce thickens; finish with sesame oil if you like and serve over jasmine rice."],
+    steps: ["You'll also need: white pepper to taste; ½ cup water (for the sauce).","Beat the egg with the salt, white pepper and a tablespoon of oil; in another bowl mix 1/2 cup cornstarch with the flour.","Heat frying oil in a wok or deep fryer to 375°F.","Dip the chicken pieces in the egg mixture, then the flour mixture, and fry in small batches 3–4 minutes until golden; drain on paper towels.","For the sauce, stir together the soy sauce, orange juice, brown sugar and orange zest.","In a clean hot wok, briefly stir-fry the ginger, garlic, chili flakes and green onion in 1 tablespoon oil until fragrant, then add the rice wine and the soy-orange mixture.","Toss in the fried chicken, then stir in the water-cornstarch slurry until the sauce thickens; finish with sesame oil if you like and serve over jasmine rice."],
   },
   {
     key: "fam-chow-mein",
@@ -152,7 +152,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["stove top"],
     url: "https://www.favfamilyrecipes.com/our-version-of-panda-express-chow-mein/",
     lines: [["soy-sauce", 4], ["brown-sugar", 0.0625], ["garlic", 2, "minced"], ["fresh-ginger", 0.33, "grated"], ["vegetable-oil", 2], ["yakisoba", 3, "refrigerated, seasoning packets discarded"], ["celery", 2, "sliced diagonally"], ["onion", 1, "thinly sliced"], ["cabbage", 2, "chopped"]],
-    steps: ["Mix the soy sauce, brown sugar, garlic, ginger and pepper in a small bowl.","Unpack the yakisoba noodles, throw away the seasoning packets, then rinse and drain the noodles.","Heat the oil in a wok or large skillet and sauté the celery and onion 1–2 minutes until the onion softens; add the cabbage and cook another minute.","Add the noodles and sauce and stir-fry over medium-high heat 2–3 minutes until hot throughout."],
+    steps: ["You'll also need: black pepper to taste.","Mix the soy sauce, brown sugar, garlic, ginger and pepper in a small bowl.","Unpack the yakisoba noodles, throw away the seasoning packets, then rinse and drain the noodles.","Heat the oil in a wok or large skillet and sauté the celery and onion 1–2 minutes until the onion softens; add the cabbage and cook another minute.","Add the noodles and sauce and stir-fry over medium-high heat 2–3 minutes until hot throughout."],
   },
   {
     key: "fam-cafe-rio-sweet-pork",
@@ -165,7 +165,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["crock pot","make ahead","freezer"],
     url: "https://www.favfamilyrecipes.com/cafe-rio-sweet-pork/",
     lines: [["pork-ribs", 2, "boneless pork ribs"], ["coke", 3, "not diet"], ["brown-sugar", 0.25, "for the marinade"], ["garlic-salt", 0.125], ["green-chiles", 1], ["enchilada-sauce", 1, "red, 10 oz"], ["brown-sugar", 1, "for the sauce"]],
-    steps: ["Put the pork in a zip-top bag with about 1.5 cans of Coke and 1/4 cup brown sugar and marinate a few hours or overnight.","Discard the marinade and slow-cook the pork with half a can of Coke, the water and the garlic salt (high 3–4 hours or low 8 hours) until it shreds easily.","Take the pork out, pour off the liquid, and shred the meat.","Blend the remaining half can of Coke with the green chilies, enchilada sauce and 1 cup brown sugar, thinning with more Coke if too thick.","Return the shredded pork and sauce to the slow cooker and cook on low 2 more hours."],
+    steps: ["You'll also need: ¼ cup water.","Put the pork in a zip-top bag with about 1.5 cans of Coke and 1/4 cup brown sugar and marinate a few hours or overnight.","Discard the marinade and slow-cook the pork with half a can of Coke, the water and the garlic salt (high 3–4 hours or low 8 hours) until it shreds easily.","Take the pork out, pour off the liquid, and shred the meat.","Blend the remaining half can of Coke with the green chilies, enchilada sauce and 1 cup brown sugar, thinning with more Coke if too thick.","Return the shredded pork and sauce to the slow cooker and cook on low 2 more hours."],
   },
   {
     key: "fam-cafe-rio-cilantro-ranch",
@@ -191,7 +191,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["stove top"],
     url: "https://www.favfamilyrecipes.com/cafe-rio-cilantro-lime-rice-and-black/",
     lines: [["rice", 1, "long-grain white"], ["butter", 0.33], ["garlic", 2, "minced"], ["lime", 0.67, "juiced (1 tsp + 1 tbsp)"], ["chicken-broth", 1.875, "15 oz"], ["sugar", 0.042], ["cilantro", 0.19, "chopped"]],
-    steps: ["Combine the rice, butter, garlic, 1 teaspoon lime juice, chicken broth and water in a saucepan and bring to a boil.","Cover, turn to low, and cook 15–20 minutes until the rice is tender.","Take off the heat; stir the remaining lime juice, sugar and cilantro together.","Pour the lime mixture over the hot rice and fold it in while fluffing."],
+    steps: ["You'll also need: 1 cup water.","Combine the rice, butter, garlic, 1 teaspoon lime juice, chicken broth and water in a saucepan and bring to a boil.","Cover, turn to low, and cook 15–20 minutes until the rice is tender.","Take off the heat; stir the remaining lime juice, sugar and cilantro together.","Pour the lime mixture over the hot rice and fold it in while fluffing."],
   },
   {
     key: "fam-cafe-rio-black-beans",
@@ -282,7 +282,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["stove top"],
     url: "https://www.lecremedelacrumb.com/easy-olive-garden-zuppa-toscana-soup/",
     lines: [["italian-sausage", 1, "spicy, or mild for kids"], ["butter", 4], ["onion", 0.5, "diced"], ["garlic", 3, "1 tbsp minced"], ["chicken-broth", 6], ["gold-potatoes", 2, "4–5 potatoes, 1-inch pieces"], ["salt", 3, "or to taste"], ["pepper", 1], ["heavy-cream", 2], ["kale", 4, "chopped"], ["bacon", 4, "chopped, to top"], ["parmesan", 4, "grated, to top"]],
-    steps: ["Brown the sausage in a large pot for 5-6 minutes, then lift it out with a slotted spoon and set aside.","Melt the butter in the same pot and cook the onion until translucent; add the garlic for about a minute.","Add the broth, water, potatoes, salt and pepper, bring to a boil and cook until the potatoes are tender.","Stir in the kale and cream, then return the sausage to the pot and heat through.","Taste and adjust seasoning; serve topped with parmesan and/or bacon if you like."],
+    steps: ["You'll also need: 2 cups water.","Brown the sausage in a large pot for 5-6 minutes, then lift it out with a slotted spoon and set aside.","Melt the butter in the same pot and cook the onion until translucent; add the garlic for about a minute.","Add the broth, water, potatoes, salt and pepper, bring to a boil and cook until the potatoes are tender.","Stir in the kale and cream, then return the sausage to the pot and heat through.","Taste and adjust seasoning; serve topped with parmesan and/or bacon if you like."],
   },
   {
     key: "fam-brazilian-black-beans",
@@ -295,7 +295,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["instant pot"],
     url: "https://braziliankitchenabroad.com/everyday-black-beans/",
     lines: [["dry-black-beans", 1], ["smoked-sausage", 1, "cut into chunks"], ["bay-leaves", 1], ["cumin", 0.5], ["salt", 1], ["white-vinegar", 0.17, "½ tsp"], ["bacon", 4, "cut into lardons"], ["olive-oil", 2], ["onion", 1, "diced"], ["garlic", 6, "minced, or 2 tbsp Brazilian sofrito"]],
-    steps: ["Sort and rinse the beans, then soak them in cold water for 30 minutes, drain, and repeat with fresh water.","Put the soaked beans and sausage in an Instant Pot, cover with water, and pressure cook on manual for 30 minutes; quick-release.","Meanwhile, fry the bacon in the olive oil until browned, then cook the onion until see-through and add the sofrito or garlic until fragrant.","Switch the Instant Pot to sauté, add the bay leaf, cumin, salt, pepper and vinegar, and simmer about 15 minutes.","Stir in the bacon and onion mixture and keep simmering until the beans are as thick as you like."],
+    steps: ["You'll also need: black pepper to taste.","Sort and rinse the beans, then soak them in cold water for 30 minutes, drain, and repeat with fresh water.","Put the soaked beans and sausage in an Instant Pot, cover with water, and pressure cook on manual for 30 minutes; quick-release.","Meanwhile, fry the bacon in the olive oil until browned, then cook the onion until see-through and add the sofrito or garlic until fragrant.","Switch the Instant Pot to sauté, add the bay leaf, cumin, salt, pepper and vinegar, and simmer about 15 minutes.","Stir in the bacon and onion mixture and keep simmering until the beans are as thick as you like."],
   },
   {
     key: "fam-feijoada",
@@ -308,7 +308,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["stove top","holiday"],
     url: "https://www.allrecipes.com/recipe/232437/chef-johns-brazilian-feijoada/",
     lines: [["dry-black-beans", 1, "soaked overnight"], ["dried-beef", 3, "chopped"], ["bay-leaves", 1], ["smoked-pork-chops", 2, "in large chunks, bones reserved"], ["bacon", 4, "4 oz, chopped"], ["linguica", 12, "in large chunks"], ["italian-sausage", 0.5, "2 links"], ["onion", 1, "chopped"], ["garlic", 6, "minced"], ["cumin", 1], ["coriander", 0.5], ["cayenne", 0.0625, "a pinch"], ["parsley", 0.07, "1 tbsp chopped"], ["olive-oil", 1, "topping"], ["bread-crumbs", 0.5, "topping"], ["parsley", 0.13, "2 tbsp chopped, topping"], ["orange", 0.5, "2 tsp zest, topping"], ["rice", 2, "to serve (not in the original)"]],
-    steps: ["Soak the beans in plenty of water overnight, then drain.","Simmer the beans in the 2 quarts of water with the dried beef, bay leaf and reserved pork chop bones until they start to soften.","Meanwhile brown the bacon, then brown the pork chop chunks, linguica and Italian sausage in the fat; cook the onion and garlic in the same pan.","Add the browned meats, onion mixture, cumin, coriander and cayenne to the beans and simmer gently for several hours, adding water as needed, until the beans are very tender and the stew is thick. Season with salt, pepper and parsley.","For the topping, toast the bread crumbs in the olive oil until golden, then mix in the parsley and orange zest.","Serve the stew in bowls with the crumb topping sprinkled over."],
+    steps: ["You'll also need: 2 quarts water, plus more as needed; salt and black pepper to taste.","Soak the beans in plenty of water overnight, then drain.","Simmer the beans in the 2 quarts of water with the dried beef, bay leaf and reserved pork chop bones until they start to soften.","Meanwhile brown the bacon, then brown the pork chop chunks, linguica and Italian sausage in the fat; cook the onion and garlic in the same pan.","Add the browned meats, onion mixture, cumin, coriander and cayenne to the beans and simmer gently for several hours, adding water as needed, until the beans are very tender and the stew is thick. Season with salt, pepper and parsley.","For the topping, toast the bread crumbs in the olive oil until golden, then mix in the parsley and orange zest.","Serve the stew in bowls with the crumb topping sprinkled over."],
   },
   {
     key: "fam-butter-chicken",
@@ -334,7 +334,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["oven"],
     url: "https://www.spendwithpennies.com/simple-herb-oven-roasted-potatoes/",
     lines: [["gold-potatoes", 2, "red or yellow, in chunks"], ["olive-oil", 2], ["garlic-powder", 1], ["italian-seasoning", 2, "dried herbs, or 3 tbsp fresh"], ["paprika", 0.5]],
-    steps: ["Heat the oven to 425°F.","Scrub the potatoes and cut them into roughly 1-inch cubes. If you like, soak them in cold water for up to an hour to draw out starch, then drain and dry them well.","Toss the potatoes with the oil, garlic powder, herbs, paprika, salt and pepper.","Spread in a single layer on a baking sheet and roast 30-35 minutes until browned and tender."],
+    steps: ["You'll also need: kosher salt and black pepper to taste.","Heat the oven to 425°F.","Scrub the potatoes and cut them into roughly 1-inch cubes. If you like, soak them in cold water for up to an hour to draw out starch, then drain and dry them well.","Toss the potatoes with the oil, garlic powder, herbs, paprika, salt and pepper.","Spread in a single layer on a baking sheet and roast 30-35 minutes until browned and tender."],
   },
   {
     key: "fam-spaghetti-sauce",
@@ -347,7 +347,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["stove top","freezer"],
     url: "https://tastesbetterfromscratch.com/homemade-spaghetti-sauce/",
     lines: [["ground-beef", 1, "or half Italian sausage"], ["onion", 1, "chopped"], ["tomato-sauce", 1, "15 oz"], ["tomato-paste", 1, "6 oz"], ["italian-seasoning", 0.5], ["dried-parsley", 1], ["garlic-powder", 1], ["worcestershire", 1], ["sugar", 0.0625], ["basil", 0.25, "fresh, optional"], ["spaghetti", 1, "to serve (not in the original sauce recipe)"]],
-    steps: ["Season the beef with salt and pepper, then brown it with the onion in a large skillet; drain off the fat.","Stir in the tomato sauce, tomato paste, Italian seasoning, parsley, garlic powder, red pepper flakes, Worcestershire and sugar.","Bring to a boil, then stir in the water.","Turn the heat down and simmer about 30 minutes.","Stir in chopped basil if using and serve over cooked spaghetti."],
+    steps: ["You'll also need: 1 cup water; salt, black pepper and crushed red pepper flakes to taste.","Season the beef with salt and pepper, then brown it with the onion in a large skillet; drain off the fat.","Stir in the tomato sauce, tomato paste, Italian seasoning, parsley, garlic powder, red pepper flakes, Worcestershire and sugar.","Bring to a boil, then stir in the water.","Turn the heat down and simmer about 30 minutes.","Stir in chopped basil if using and serve over cooked spaghetti."],
   },
   {
     key: "fam-white-chicken-chili",
@@ -360,7 +360,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["stove top","crock pot"],
     url: "https://www.halfbakedharvest.com/creamy-white-chicken-chili/",
     lines: [["olive-oil", 2], ["onion", 1, "chopped"], ["garlic", 4, "minced"], ["poblano", 2, "seeded, chopped"], ["jalapeno", 1, "chopped"], ["cumin", 2], ["paprika", 1, "smoked"], ["chili-powder", 0.17, "½ tsp"], ["chicken-breast", 1], ["chicken-broth", 6], ["cream-cheese", 3, "room temperature"], ["white-beans", 1, "drained"], ["cheddar", 0.33], ["cilantro", 0.5, "chopped"], ["avocado", 1, "to serve"], ["cheddar", 0.5, "to serve"], ["plain-yogurt", 0.5, "to serve"], ["lime", 1, "zest and juice, to serve"]],
-    steps: ["Warm the oil in a big pot over medium heat and soften the onion for about 5 minutes.","Add the garlic, poblanos, jalapeño, cumin, paprika, chili powder, salt and pepper; cook 5-10 minutes until aromatic.","Add the chicken and broth, partly cover, and simmer on medium-low about 20 minutes until the chicken is done.","Lift out the chicken and shred it; briefly microwave the cream cheese to soften.","Whisk the cream cheese into the pot, then return the chicken with the beans and cheddar; cook 5-10 minutes until the cheese melts.","Take off the heat, stir in cilantro, and serve topped with avocado, cheese, yogurt and lime.","Slow cooker option: combine everything except beans, cheddar and cilantro and cook 6-7 hours on low (4-5 on high), then shred the chicken and stir those in."],
+    steps: ["You'll also need: kosher salt and black pepper to taste.","Warm the oil in a big pot over medium heat and soften the onion for about 5 minutes.","Add the garlic, poblanos, jalapeño, cumin, paprika, chili powder, salt and pepper; cook 5-10 minutes until aromatic.","Add the chicken and broth, partly cover, and simmer on medium-low about 20 minutes until the chicken is done.","Lift out the chicken and shred it; briefly microwave the cream cheese to soften.","Whisk the cream cheese into the pot, then return the chicken with the beans and cheddar; cook 5-10 minutes until the cheese melts.","Take off the heat, stir in cilantro, and serve topped with avocado, cheese, yogurt and lime.","Slow cooker option: combine everything except beans, cheddar and cilantro and cook 6-7 hours on low (4-5 on high), then shred the chicken and stir those in."],
   },
   {
     key: "fam-taco-soup",
@@ -373,7 +373,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["stove top","freezer"],
     url: "https://tastesbetterfromscratch.com/taco-soup/",
     lines: [["ground-beef", 1, "lean"], ["garlic", 4, "minced"], ["chili-powder", 0.67, "2 tsp"], ["cumin", 1], ["salt", 1], ["oregano", 0.5], ["paprika", 0.5], ["onion-powder", 0.5], ["pepper", 0.5], ["crushed-tomatoes", 1, "28 oz, undrained"], ["green-chiles", 1], ["kidney-beans", 1, "rinsed and drained"], ["black-beans", 1, "rinsed and drained"], ["canned-corn", 1, "drained"], ["beef-broth", 2, "low-sodium"], ["tortilla-chips", 4, "crushed, to top"], ["sour-cream", 0.5, "to top"], ["cheddar", 1, "to top"], ["green-onions", 0.5, "to top"], ["avocado", 1, "to top"], ["cilantro", 0.25, "to top"]],
-    steps: ["Brown the ground beef in a soup pot or Dutch oven over medium heat and drain any fat.","Add the garlic, spices, tomatoes, green chiles, beans, corn and broth and stir well.","Bring to a boil, then lower the heat and simmer 20 minutes.","Serve with whichever toppings you like.","Slow cooker option: after browning the beef, put everything in the slow cooker on low for 4-6 hours."],
+    steps: ["You'll also need: hot sauce, for topping.","Brown the ground beef in a soup pot or Dutch oven over medium heat and drain any fat.","Add the garlic, spices, tomatoes, green chiles, beans, corn and broth and stir well.","Bring to a boil, then lower the heat and simmer 20 minutes.","Serve with whichever toppings you like.","Slow cooker option: after browning the beef, put everything in the slow cooker on low for 4-6 hours."],
   },
   {
     key: "fam-chocolate-sheet-cake",
@@ -386,7 +386,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["treat","oven","holiday"],
     url: "https://tastesbetterfromscratch.com/the-best-texas-sheet-cake/",
     lines: [["butter", 16, "cake"], ["cocoa", 3, "cake"], ["flour", 2], ["sugar", 2], ["baking-soda", 1], ["salt", 0.5], ["sour-cream", 0.5], ["eggs", 2], ["vanilla", 1], ["milk", 0.375, "frosting"], ["cocoa", 3, "frosting"], ["butter", 8, "frosting"], ["powdered-sugar", 3.75, "frosting"]],
-    steps: ["Heat the oven to 350°F and grease an 18x13-inch sheet pan.","Bring the water, butter and cocoa to a boil in a saucepan.","Meanwhile whisk the flour, sugar, baking soda and salt in one bowl, and the sour cream, eggs and vanilla in another; combine the two.","Pour the hot chocolate mixture into the batter and mix until smooth, then spread it evenly in the pan.","Bake 15-20 minutes until set.","While it bakes, boil the milk, cocoa and butter, take off the heat and beat in the powdered sugar until smooth.","Spread the hot frosting over the hot cake and let it set about 10 minutes before cutting."],
+    steps: ["You'll also need: 1 cup water (for the cake).","Heat the oven to 350°F and grease an 18x13-inch sheet pan.","Bring the water, butter and cocoa to a boil in a saucepan.","Meanwhile whisk the flour, sugar, baking soda and salt in one bowl, and the sour cream, eggs and vanilla in another; combine the two.","Pour the hot chocolate mixture into the batter and mix until smooth, then spread it evenly in the pan.","Bake 15-20 minutes until set.","While it bakes, boil the milk, cocoa and butter, take off the heat and beat in the powdered sugar until smooth.","Spread the hot frosting over the hot cake and let it set about 10 minutes before cutting."],
   },
   {
     key: "fam-garlic-green-beans",
@@ -399,7 +399,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["stove top"],
     url: "https://www.allrecipes.com/recipe/230103/buttery-garlic-green-beans/",
     lines: [["fresh-green-beans", 1, "trimmed, snapped in half"], ["butter", 3], ["garlic", 3, "minced"], ["lemon-pepper", 0.125, "2 pinches"]],
-    steps: ["Put the beans in a large skillet, cover with water and bring to a boil.","Lower to medium-low and simmer about 5 minutes until just starting to soften, then drain.","Add the butter and stir for 2-3 minutes as it melts.","Add the garlic and cook 3-4 minutes until fragrant and soft.","Season with lemon pepper and salt."],
+    steps: ["You'll also need: salt to taste.","Put the beans in a large skillet, cover with water and bring to a boil.","Lower to medium-low and simmer about 5 minutes until just starting to soften, then drain.","Add the butter and stir for 2-3 minutes as it melts.","Add the garlic and cook 3-4 minutes until fragrant and soft.","Season with lemon pepper and salt."],
   },
   {
     key: "fam-chicken-marinade",
@@ -425,7 +425,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["treat","stove top","kid project"],
     url: "https://www.iheartbrazil.com/brigadeiro-recipe/",
     lines: [["condensed-milk", 1], ["cocoa", 3, "sifted"], ["butter", 1], ["sprinkles", 6, "for coating"]],
-    steps: ["Butter a plate and set it aside.","Cook the condensed milk, butter, cocoa and salt in a nonstick pan over medium heat, stirring constantly, for 10-12 minutes until a spatula dragged through leaves a trail that holds for a few seconds.","Spread the mixture on the buttered plate and chill about an hour.","Set out candy cups and a bowl of sprinkles.","With lightly wet hands, roll tablespoon-size balls, coat them in sprinkles and set each in a cup."],
+    steps: ["You'll also need: a pinch of salt.","Butter a plate and set it aside.","Cook the condensed milk, butter, cocoa and salt in a nonstick pan over medium heat, stirring constantly, for 10-12 minutes until a spatula dragged through leaves a trail that holds for a few seconds.","Spread the mixture on the buttered plate and chill about an hour.","Set out candy cups and a bowl of sprinkles.","With lightly wet hands, roll tablespoon-size balls, coat them in sprinkles and set each in a cup."],
   },
   {
     key: "fam-pudding-cookies",
@@ -477,7 +477,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["stove top","holiday"],
     url: "https://www.allrecipes.com/recipe/143886/creamy-strawberry-crepes/",
     lines: [["eggs", 3, "batter"], ["milk", 0.5, "batter"], ["butter", 3, "melted, batter"], ["flour", 0.75, "batter"], ["salt", 0.5], ["cream-cheese", 8, "softened, filling"], ["powdered-sugar", 1.25, "sifted, filling"], ["lemon", 0.5, "1 tbsp juice and 1 tsp zest"], ["vanilla", 0.5], ["heavy-cream", 1, "whipped"], ["strawberries", 4, "sliced"]],
-    steps: ["Blend the eggs, milk, water, melted butter, flour and salt until smooth.","Beat the cream cheese, powdered sugar, lemon juice, zest and vanilla until smooth, then gently fold in the whipped cream.","Cook about 2 tbsp batter at a time in a lightly oiled nonstick pan over medium heat, swirling it thin; flip once set and browning at the edges.","Stack the cooked crepes under a damp towel.","Fill each crepe with strawberries and some of the cream filling, roll up, and top with a little more filling and berries."],
+    steps: ["You'll also need: ½ cup water (for the batter).","Blend the eggs, milk, water, melted butter, flour and salt until smooth.","Beat the cream cheese, powdered sugar, lemon juice, zest and vanilla until smooth, then gently fold in the whipped cream.","Cook about 2 tbsp batter at a time in a lightly oiled nonstick pan over medium heat, swirling it thin; flip once set and browning at the edges.","Stack the cooked crepes under a damp towel.","Fill each crepe with strawberries and some of the cream filling, roll up, and top with a little more filling and berries."],
   },
   {
     key: "fam-brownies",
@@ -490,7 +490,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["treat","oven"],
     url: "https://www.loveandlemons.com/brownies-recipe/",
     lines: [["sugar", 1.5], ["flour", 0.75], ["cocoa", 10.67, "⅔ cup, sifted"], ["powdered-sugar", 0.5], ["chocolate-chips", 0.5, "dark"], ["salt", 0.75], ["eggs", 2], ["vegetable-oil", 8, "canola, or olive oil"], ["vanilla", 0.5]],
-    steps: ["Heat the oven to 325°F; grease an 8x8 pan, line it with parchment and grease the paper.","Stir together the sugar, flour, cocoa, powdered sugar, chocolate chips and salt.","In a larger bowl whisk the eggs, oil, water and vanilla.","Add the dry mix to the wet and stir only until combined; spread the thick batter in the pan.","Bake 40–48 minutes, until a toothpick shows just a few moist crumbs.","Let cool completely before cutting into 16 squares."],
+    steps: ["You'll also need: 2 tablespoons water.","Heat the oven to 325°F; grease an 8x8 pan, line it with parchment and grease the paper.","Stir together the sugar, flour, cocoa, powdered sugar, chocolate chips and salt.","In a larger bowl whisk the eggs, oil, water and vanilla.","Add the dry mix to the wet and stir only until combined; spread the thick batter in the pan.","Bake 40–48 minutes, until a toothpick shows just a few moist crumbs.","Let cool completely before cutting into 16 squares."],
   },
   {
     key: "fam-maple-bacon-donuts",
@@ -503,7 +503,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["treat","stove top"],
     url: "https://www.bakedbyrachel.com/maple-bacon-donuts/",
     lines: [["milk", 0.75, "warmed to 115°F"], ["yeast", 1, "2¼ tsp"], ["sugar", 0.27, "1 tsp + ¼ cup, divided"], ["flour", 2.5], ["salt", 0.5], ["shortening", 3], ["vanilla", 1], ["eggs", 1], ["vegetable-oil", 4, "for frying — about ¼ of the 1 cup used is absorbed (estimate)"], ["powdered-sugar", 2, "icing"], ["maple-syrup", 0.25, "icing"], ["bacon", 8, "cooked, chopped"]],
-    steps: ["Stir the warm milk, yeast and 1 tsp sugar together and let it foam for 5–10 minutes.","In a stand mixer combine the rest of the sugar with the flour, salt, shortening, egg and vanilla, then stream in the yeast mixture and mix into a soft dough.","Put the dough in a greased bowl, cover and let it double in a warm spot, about 45 minutes.","Roll out 1/4–1/2 inch thick, cut donuts, set on a greased parchment-lined sheet and let rise again while the oil heats to 325°F.","Fry a few at a time until golden on both sides and drain on a rack or paper towels.","Whisk the powdered sugar, maple syrup and water into an icing, dip the cooled donuts, and scatter bacon on top right away."],
+    steps: ["You'll also need: 2–3 tablespoons water (for the icing).","Stir the warm milk, yeast and 1 tsp sugar together and let it foam for 5–10 minutes.","In a stand mixer combine the rest of the sugar with the flour, salt, shortening, egg and vanilla, then stream in the yeast mixture and mix into a soft dough.","Put the dough in a greased bowl, cover and let it double in a warm spot, about 45 minutes.","Roll out 1/4–1/2 inch thick, cut donuts, set on a greased parchment-lined sheet and let rise again while the oil heats to 325°F.","Fry a few at a time until golden on both sides and drain on a rack or paper towels.","Whisk the powdered sugar, maple syrup and water into an icing, dip the cooled donuts, and scatter bacon on top right away."],
   },
   {
     key: "fam-spinach-artichoke-dip",
@@ -529,7 +529,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["no bake","make ahead"],
     url: "https://www.melskitchencafe.com/amazing-shrapnel-dip/",
     lines: [["white-beans", 1, "drained and rinsed"], ["black-beans", 1, "drained and rinsed"], ["canned-corn", 0.75, "11 oz, drained"], ["avocado", 1, "diced"], ["bell-pepper", 1, "red, diced"], ["tomato", 1, "diced"], ["red-onion", 0.125, "2 tbsp chopped"], ["cilantro", 0.15, "chopped"], ["italian-dressing", 5.33, "⅓ cup"], ["lime", 0.5, "squeeze"], ["tortilla-chips", 13, "to serve"]],
-    steps: ["Drain the beans and corn together, rinse briefly, and get them as dry as possible (salad spinner or paper towels); tip into a serving bowl.","Add the avocado, bell pepper, tomatoes, red onion and cilantro.","Pour over the Italian dressing and fold gently until everything is coated.","Finish with a squeeze of lime, season with salt and pepper, and serve right away with chips.","If making ahead, hold back the avocado and stir it in just before serving."],
+    steps: ["You'll also need: salt and pepper to taste.","Drain the beans and corn together, rinse briefly, and get them as dry as possible (salad spinner or paper towels); tip into a serving bowl.","Add the avocado, bell pepper, tomatoes, red onion and cilantro.","Pour over the Italian dressing and fold gently until everything is coated.","Finish with a squeeze of lime, season with salt and pepper, and serve right away with chips.","If making ahead, hold back the avocado and stir it in just before serving."],
   },
   {
     key: "fam-caramel-sauce",
@@ -542,7 +542,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["stove top"],
     url: "https://www.melskitchencafe.com/divine-caramel-sauce/",
     lines: [["sugar", 1], ["butter", 8, "salted, in 8 pieces"], ["heavy-cream", 0.5], ["vanilla", 1], ["salt", 0.0625, "a pinch"]],
-    steps: ["Gently combine the sugar and water in a small heavy saucepan without splashing the sides.","Warm over low heat, stirring slowly, until the sugar is mostly dissolved.","Raise to medium, bring to a boil, cover and boil 2 minutes; uncover and keep boiling without stirring, brushing any crystals off the pan sides with a wet pastry brush.","Cook until the syrup is a deep amber, about 5–7 minutes more, watching closely.","Off the heat, stir in the butter until melted, then the cream (rewarm gently if lumpy), then the vanilla and salt.","Cool to warm, then jar and refrigerate; rewarm to serve."],
+    steps: ["You'll also need: ¼ cup water.","Gently combine the sugar and water in a small heavy saucepan without splashing the sides.","Warm over low heat, stirring slowly, until the sugar is mostly dissolved.","Raise to medium, bring to a boil, cover and boil 2 minutes; uncover and keep boiling without stirring, brushing any crystals off the pan sides with a wet pastry brush.","Cook until the syrup is a deep amber, about 5–7 minutes more, watching closely.","Off the heat, stir in the butter until melted, then the cream (rewarm gently if lumpy), then the vanilla and salt.","Cool to warm, then jar and refrigerate; rewarm to serve."],
   },
   {
     key: "fam-dulce-de-leche",
@@ -555,7 +555,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["crock pot","make ahead"],
     url: "https://www.melskitchencafe.com/diy-dulce-de-leche/",
     lines: [["condensed-milk", 2], ["vanilla", 1, "optional"]],
-    steps: ["Divide the condensed milk evenly among the three jars, wipe the rims and sides clean, and screw the lids on tight.","Set the jars in a slow cooker (upright or on their sides) and cover with water by about an inch.","Cook on low for 8–9 hours until the contents are a deep golden brown.","Lift the jars out carefully and let cool; stir some vanilla into each jar if you like.","Refrigerate for up to about a month; warm gently to drizzle over ice cream or crepes, or use as a dip for fruit."],
+    steps: ["You'll also need: water to cover the jars; three ½-pint canning jars with lids and rings.","Divide the condensed milk evenly among the three jars, wipe the rims and sides clean, and screw the lids on tight.","Set the jars in a slow cooker (upright or on their sides) and cover with water by about an inch.","Cook on low for 8–9 hours until the contents are a deep golden brown.","Lift the jars out carefully and let cool; stir some vanilla into each jar if you like.","Refrigerate for up to about a month; warm gently to drizzle over ice cream or crepes, or use as a dip for fruit."],
   },
   {
     key: "fam-ny-cheesecake",
@@ -594,7 +594,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["treat","make ahead"],
     url: "https://www.allrecipes.com/recipe/15836/strawberry-pie-ii/",
     lines: [["strawberries", 4, "1 quart, hulled"], ["pie-crust", 1, "9-inch, baked"], ["sugar", 1], ["cornstarch", 3], ["heavy-cream", 0.5, "whipped, to top"]],
-    steps: ["Put half the strawberries into the baked pie shell and the other half into a saucepan.","Add the sugar to the pan and bring to a boil over medium heat, stirring often.","Whisk the cornstarch into the water, stir it into the boiling berries, then lower the heat and simmer about 10 minutes, stirring, until thick.","Pour the hot mixture over the berries in the crust and refrigerate at least 3 hours until set.","Whip the cream to soft peaks and serve a spoonful on each slice."],
+    steps: ["You'll also need: ¾ cup water.","Put half the strawberries into the baked pie shell and the other half into a saucepan.","Add the sugar to the pan and bring to a boil over medium heat, stirring often.","Whisk the cornstarch into the water, stir it into the boiling berries, then lower the heat and simmer about 10 minutes, stirring, until thick.","Pour the hot mixture over the berries in the crust and refrigerate at least 3 hours until set.","Whip the cream to soft peaks and serve a spoonful on each slice."],
   },
   {
     key: "fam-tomato-onion-salad",
@@ -620,7 +620,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["oven"],
     url: "https://www.myrecipes.com/recipe/chicken-enchiladas-50400000118610/",
     lines: [["corn-tortillas", 8, "6-inch"], ["onion", 0.1, "1½ tbsp chopped"], ["cilantro", 0.1, "chopped"], ["jalapeno", 1, "seeded, chopped"], ["rotisserie-chicken", 1, "3 cups shredded breast"], ["enchilada-sauce", 3, "divided"], ["cheddar", 1.5, "reduced-fat sharp"], ["tomato", 1, "diced"], ["black-olives", 0.33, "sliced"], ["iceberg", 4, "shredded"]],
-    steps: ["Heat the oven to 350F; wrap the tortillas in foil and warm them in the oven for 15 minutes.","Meanwhile, saute the onion, cilantro and jalapeño in a sprayed nonstick skillet until soft, then add the chicken and one can of sauce and cook 5 minutes.","Fill each tortilla with the chicken mixture, roll up and lay seam-side down in a 13x9 dish.","Warm the other two cans of sauce, pour over the enchiladas and scatter the cheese on top.","Bake about 10 minutes until hot and melted, top with tomato and olives, and serve on the shredded lettuce."],
+    steps: ["You'll also need: cooking spray.","Heat the oven to 350F; wrap the tortillas in foil and warm them in the oven for 15 minutes.","Meanwhile, saute the onion, cilantro and jalapeño in a sprayed nonstick skillet until soft, then add the chicken and one can of sauce and cook 5 minutes.","Fill each tortilla with the chicken mixture, roll up and lay seam-side down in a 13x9 dish.","Warm the other two cans of sauce, pour over the enchiladas and scatter the cheese on top.","Bake about 10 minutes until hot and melted, top with tomato and olives, and serve on the shredded lettuce."],
   },
   {
     key: "fam-seven-layer-dip",
@@ -671,7 +671,7 @@ const RECIPES: readonly SeedRecipe[] = [
     tags: ["kid favorite","stove top"],
     url: "https://www.garnishandglaze.com/dorito-taco-salad-recipe/",
     lines: [["vegetable-oil", 0.67], ["onion", 0.5, "chopped"], ["ground-beef", 1], ["taco-seasoning", 1.33, "¼ cup"], ["romaine", 8, "3 hearts, chopped"], ["kidney-beans", 1, "drained and rinsed"], ["cheddar", 0.75], ["frozen-corn", 1, "fire-roasted"], ["grape-tomatoes", 1, "halved"], ["black-olives", 0.5, "sliced"], ["avocado", 1, "diced"], ["doritos", 3, "Nacho, broken"], ["catalina", 12]],
-    steps: ["Soften the onion in the oil in a skillet over medium heat for about 5 minutes, then push it to the sides.","Raise the heat and brown the beef well, breaking it up as it sears, then drain off the fat.","Stir in the taco seasoning and water, cover and simmer on low 10-15 minutes, then let it cool a little.","Toss the lettuce, beans, cheese, corn, tomatoes and olives in a large bowl.","Just before serving, add the Doritos, beef, avocado and dressing, toss to coat and serve."],
+    steps: ["You'll also need: ¾ cup water (for the taco meat).","Soften the onion in the oil in a skillet over medium heat for about 5 minutes, then push it to the sides.","Raise the heat and brown the beef well, breaking it up as it sears, then drain off the fat.","Stir in the taco seasoning and water, cover and simmer on low 10-15 minutes, then let it cool a little.","Toss the lettuce, beans, cheese, corn, tomatoes and olives in a large bowl.","Just before serving, add the Doritos, beef, avocado and dressing, toss to coat and serve."],
   },
   {
     key: "fam-buttermilk-syrup",
