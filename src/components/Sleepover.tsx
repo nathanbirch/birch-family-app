@@ -15,7 +15,7 @@ import { SceneSeats } from "./SceneSeats";
  * Family sleepover night: the five kids on camping mats on the floor, with
  * Nathan and Sarah pictured on the bed above them for reference.
  *
- * Uses the same five-week schedule as the Dinner Table and the Expedition —
+ * Uses the same five-week schedule as the Dinner Table and the Pacifica —
  * `assignments` is the very same `WeeklyAssignments` passed to those two, so
  * all three rotations turn over together. Nathan and Sarah are fixed on the
  * bed; there's no swap toggle here the way the table and car have one, since

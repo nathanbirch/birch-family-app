@@ -3,7 +3,7 @@ import Image from "next/image";
 /**
  * The photographic backdrop of a seating scene.
  *
- * The images are the family's own table and Expedition, bundled locally in
+ * The images are the family's own table and Pacifica, bundled locally in
  * `public/scenes/` so the app stays fully offline-capable. A themed wash sits
  * on top so the scene belongs to the selected theme — and so the Midnight
  * theme can darken the photo instead of leaving it glaringly bright.

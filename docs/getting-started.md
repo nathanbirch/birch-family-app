@@ -86,7 +86,7 @@ assets/        BUILD INPUTS — hand-made masters, never served
   avatars/     the full-size photographs
 public/        SERVED AS-IS — most of it generated from assets/
   avatars/     resized, content-hashed (generated)
-  scenes/      the dinner table and Expedition photographs
+  scenes/      the dinner table and Pacifica photographs
   icons/       generated PWA icons
   sw.js        the offline service worker
 scripts/       development-only utilities, plus the database seed

@@ -200,83 +200,98 @@ export const TABLE_CHILD_OPPOSITES = [
 ] as const;
 
 /* ------------------------------------------------------------------ */
-/* Ford Expedition                                                     */
+/* Chrysler Pacifica                                                   */
 /* ------------------------------------------------------------------ */
 
 /*
  *  Parent 1                Parent 2     (driver / front passenger)
  *
- *  Child 2    Child 4    Child 5        (second row)
+ *  Child 2                 Child 5      (second row)
  *
- *  Child 1               Child 3        (third row)
+ *  Child 1    Child 4      Child 3      (third row)
  *
- * Measured against `public/scenes/expedition.png`: captain's chairs up front,
- * a three-across second row, and the two outboard seats of the third row.
+ * Measured against `public/scenes/pacifica.png`: two seats up front, a pair of
+ * captain's chairs with an aisle between them in the second row, and a
+ * three-across bench in the third.
+ *
+ * The photograph is a touch taller than the 2:3 frame it is shown in, so it is
+ * cropped by about 1.7% top and bottom, and the numbers below are positions in
+ * the frame as rendered rather than in the file. There the front seats span
+ * y 32-47, the captain's chairs y 50-64 and the bench y 65-80; the outboard
+ * seats are centred on x 33 and x 67 in every row.
+ *
+ * The three rows are spaced a little wider than the seats themselves, and the
+ * third row is spread to x 30 / 50 / 70, because an avatar and its name label
+ * need more room than a Pacifica gives a passenger. Everyone still lands on
+ * their own seat.
  *
  * ---------------------------------------------------------------------------
  * WHY THE NUMBERS RUN "BACKWARDS" HERE
  * ---------------------------------------------------------------------------
  * A position number means the same child in both scenes, so if the numbering
  * ran front-to-back in the car the way it runs top-to-bottom at the table,
- * whoever sat beside a parent at dinner would also sit beside them in the car —
+ * whoever sat beside a parent at dinner would also sit behind them in the car —
  * every week, all week. The two scenes are deliberately inverted instead:
  *
  *   positions 1 and 3   beside a parent at the table   ->  third row
- *   positions 2, 4, 5   down the far end of the table  ->  second row
+ *   positions 2 and 5   the foot of each bench         ->  second row
+ *   position 4          the middle of the right bench  ->  third row, middle
  *
  * So a week spent next to a parent at dinner is a week in the back of the car,
- * and vice versa. Sides are still honoured: the left-bench children (1, 2) take
- * the driver's side of the car, the right-bench children (3, 5) the passenger
- * side, and position 4 — the middle of the right bench — takes the middle seat.
+ * and the two captain's chairs behind the parents go to the children who sat
+ * furthest from them at the table. Sides are still honoured: the left-bench
+ * children (1, 2) take the driver's side of the car, the right-bench children
+ * (3, 5) the passenger side, and position 4 — the middle of the right bench —
+ * takes the middle seat.
  *
  * The adjacency pairs below follow the *physical* seats, not the numbers, so
  * the fairness analysis still measures who actually sits beside whom.
  */
 
 /**
- * The Expedition's four doors. Third-row passengers climb in through the rear
+ * The Pacifica's four doors. Third-row passengers climb in through the sliding
  * door on their own side, exactly as they do in real life.
  */
 export const VEHICLE_ENTRIES = {
-  frontLeft: { id: "front-left-door", x: -18, y: 38 },
-  frontRight: { id: "front-right-door", x: 118, y: 38 },
-  rearLeft: { id: "rear-left-door", x: -18, y: 64 },
-  rearRight: { id: "rear-right-door", x: 118, y: 64 },
+  frontLeft: { id: "front-left-door", x: -18, y: 40 },
+  frontRight: { id: "front-right-door", x: 118, y: 40 },
+  rearLeft: { id: "rear-left-door", x: -18, y: 59 },
+  rearRight: { id: "rear-right-door", x: 118, y: 59 },
 } as const satisfies Record<string, EntryPoint>;
 
 export const VEHICLE_CHILD_SEATS: readonly ChildSeat[] = [
   {
     position: 1,
-    x: 29,
-    y: 79,
+    x: 30,
+    y: 76.5,
     label: "third row, driver side",
     entry: VEHICLE_ENTRIES.rearLeft,
   },
   {
     position: 2,
-    x: 28,
+    x: 33,
     y: 59,
     label: "second row, driver side",
     entry: VEHICLE_ENTRIES.rearLeft,
   },
   {
     position: 3,
-    x: 71,
-    y: 79,
+    x: 70,
+    y: 76.5,
     label: "third row, passenger side",
     entry: VEHICLE_ENTRIES.rearRight,
   },
   {
     position: 4,
     x: 50,
-    y: 59,
-    label: "second row, middle",
+    y: 76.5,
+    label: "third row, middle",
     // The middle seat is reached by climbing in behind the driver.
     entry: VEHICLE_ENTRIES.rearLeft,
   },
   {
     position: 5,
-    x: 72,
+    x: 67,
     y: 59,
     label: "second row, passenger side",
     entry: VEHICLE_ENTRIES.rearRight,
@@ -287,37 +302,38 @@ export const VEHICLE_PARENT_SEATS: readonly ParentSeat[] = [
   {
     key: "parent1",
     x: 33,
-    y: 41,
+    y: 41.5,
     label: "driver's seat",
     entry: VEHICLE_ENTRIES.frontLeft,
   },
   {
     key: "parent2",
-    x: 72,
-    y: 41,
+    x: 67,
+    y: 41.5,
     label: "front passenger seat",
     entry: VEHICLE_ENTRIES.frontRight,
   },
 ] as const;
 
 /**
- * Side-by-side within a row: the three across the second row (2-4-5), and the
- * two outboard third-row seats (1-3). Weighted most heavily.
+ * Side-by-side within a row: the three across the third-row bench (1-4-3), and
+ * the two captain's chairs of the second row (2-5), which face each other
+ * across the aisle. Weighted most heavily.
  */
 export const VEHICLE_CHILD_ADJACENCIES = [
-  [2, 4],
-  [4, 5],
-  [1, 3],
+  [1, 4],
+  [3, 4],
+  [2, 5],
 ] as const;
 
 /**
- * Third-row seats sit behind the gaps in the second row, so each third-row
- * child is "behind" the two second-row children flanking them. Weighted lower.
+ * Each outboard third-row seat is directly behind a captain's chair, and the
+ * middle one looks up the aisle between the two of them. Weighted lower.
  */
 export const VEHICLE_CHILD_OPPOSITES = [
   [1, 2],
-  [1, 4],
-  [3, 4],
+  [2, 4],
+  [4, 5],
   [3, 5],
 ] as const;
 
@@ -331,25 +347,32 @@ export const VEHICLE_CHILD_OPPOSITES = [
  * to see where everyone is relative to the two of them.
  *
  * This reuses the *exact same* five-week schedule as the table and the
- * Expedition (`getWeeklyAssignments` in `lib/rotation.ts`), so all three turn
+ * Pacifica (`getWeeklyAssignments` in `lib/rotation.ts`), so all three turn
  * over on the same Monday and a given week's row of `CHILD_ROTATION_SCHEDULE`
  * drives all three at once. Unlike the table/vehicle pair, there is no
  * fairness reason to invert the position numbering here — the floor spots
- * aren't meaningfully closer to or further from a sibling — so position 1-5
- * runs left-to-right, back-to-front, in reading order.
+ * aren't meaningfully closer to or further from a sibling — so the numbers
+ * simply follow the mats: 1 and 2 are the pair nearest the door, 3 is the lone
+ * mat beside the bed, and 4 and 5 are the pair at the foot of the room.
  *
  * Nathan and Sarah never rotate here (there is only one bed), so they are
  * modelled as a fixed `ParentPair` rather than going through
  * `getParentAssignments` / the swap toggle the table and car use.
  *
  * Measured against `public/scenes/sleepover.jpg` as it is actually rendered:
- * the doorway is top left, the navy pillow sits at roughly x 44 / y 21 and the
- * pink pillow at x 61 / y 21, two camping mats stand vertically at the left
- * foot of the bed, one more stands vertically to its right, and two more lie
- * horizontally along the bottom of the room.
+ * the doorway is top left and the bed stands sideways on the right of the
+ * room, its headboard against the right-hand wall, with the navy pillow at
+ * roughly x 86 / y 32 and the pink pillow below it at x 88 / y 48. Four
+ * camping mats stand vertically in a two-by-two block on the left of the room
+ * — x 28 and x 40, the upper pair spanning y 23-52 and the lower pair y 55-86
+ * — and the fifth lies horizontally between the bed and the top wall, at
+ * x 48-75 / y 15-23.
+ *
+ * A seat's point is the centre of the avatar *and* its name label together, so
+ * the face itself lands a couple of points above the `y` given here.
  */
-export const SLEEPOVER_PHOTO_WIDTH = 1321;
-export const SLEEPOVER_PHOTO_HEIGHT = 1191;
+export const SLEEPOVER_PHOTO_WIDTH = 1322;
+export const SLEEPOVER_PHOTO_HEIGHT = 1190;
 
 /** Off-frame, near the doorway in the top-left corner of the room. */
 export const SLEEPOVER_ENTRIES = {
@@ -359,15 +382,15 @@ export const SLEEPOVER_ENTRIES = {
 export const SLEEPOVER_PARENT_SEATS: readonly ParentSeat[] = [
   {
     key: "parent1",
-    x: 44,
-    y: 28,
+    x: 82,
+    y: 33,
     label: "on the bed, on the navy pillow",
     entry: SLEEPOVER_ENTRIES.door,
   },
   {
     key: "parent2",
-    x: 61,
-    y: 28,
+    x: 82,
+    y: 50,
     label: "on the bed, on the pink pillow",
     entry: SLEEPOVER_ENTRIES.door,
   },
@@ -382,36 +405,36 @@ export const SLEEPOVER_PARENTS: ParentPair = {
 export const SLEEPOVER_CHILD_SEATS: readonly ChildSeat[] = [
   {
     position: 1,
-    x: 13,
-    y: 50,
-    label: "floor mat, left of the bed",
+    x: 28,
+    y: 38,
+    label: "floor mat nearest the door, left",
     entry: SLEEPOVER_ENTRIES.door,
   },
   {
     position: 2,
-    x: 25,
-    y: 50,
-    label: "floor mat, beside the bed",
+    x: 40,
+    y: 38,
+    label: "floor mat nearest the door, right",
     entry: SLEEPOVER_ENTRIES.door,
   },
   {
     position: 3,
-    x: 82,
-    y: 50,
-    label: "floor mat, right of the bed",
+    x: 61.5,
+    y: 19,
+    label: "floor mat between the bed and the wall",
     entry: SLEEPOVER_ENTRIES.door,
   },
   {
     position: 4,
-    x: 36,
-    y: 76,
+    x: 26.5,
+    y: 70,
     label: "floor mat, foot of the room, left",
     entry: SLEEPOVER_ENTRIES.door,
   },
   {
     position: 5,
-    x: 67,
-    y: 76,
+    x: 39.5,
+    y: 70,
     label: "floor mat, foot of the room, right",
     entry: SLEEPOVER_ENTRIES.door,
   },
@@ -457,7 +480,7 @@ export const TABLE_ADJACENCY: AdjacencyModel = {
 
 export const VEHICLE_ADJACENCY: AdjacencyModel = {
   id: "vehicle",
-  label: "Ford Expedition",
+  label: "Chrysler Pacifica",
   strong: VEHICLE_CHILD_ADJACENCIES,
   weak: VEHICLE_CHILD_OPPOSITES,
 };
@@ -524,7 +547,7 @@ export const TABLE_LAYOUT: SceneLayout = {
 
 export const VEHICLE_LAYOUT: SceneLayout = {
   id: "vehicle",
-  photo: "/scenes/expedition.png",
+  photo: "/scenes/pacifica.png",
   aspect: SCENE_ASPECT,
   aspectRatio: SCENE_ASPECT_RATIO,
   avatarSize: SCENE_AVATAR_SIZE,
@@ -541,7 +564,7 @@ export const SEATS_PER_SCENE = 7;
 /**
  * Everyone walks in through a doorway and takes their place, one after
  * another, and the whole thing lasts exactly three seconds. Both scenes run
- * the same clock, so the table and the Expedition fill up together.
+ * the same clock, so the table and the Pacifica fill up together.
  *
  * The last person starts at `(SEATS_PER_SCENE - 1) * STEP` and travels for
  * `DURATION`, which is what makes the total land on `TOTAL`. A test keeps

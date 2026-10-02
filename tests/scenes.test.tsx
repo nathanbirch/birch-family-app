@@ -2,7 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { DinnerTable } from "@/components/DinnerTable";
-import { Expedition } from "@/components/Expedition";
+import { Pacifica } from "@/components/Pacifica";
 import { FAMILY, getPerson } from "@/config/family";
 import {
   ARRIVAL_DURATION_MS,
@@ -62,11 +62,11 @@ const SCENES = [
     parents: WEEK_1.tableParents,
   },
   {
-    name: "Ford Expedition",
+    name: "Chrysler Pacifica",
     render: (swapping = false) =>
-      render(<Expedition assignments={WEEK_1} swapping={swapping} arriving />),
+      render(<Pacifica assignments={WEEK_1} swapping={swapping} arriving />),
     renderSwapped: () =>
-      render(<Expedition assignments={WEEK_1_SWAPPED} swapping={false} arriving />),
+      render(<Pacifica assignments={WEEK_1_SWAPPED} swapping={false} arriving />),
     layout: VEHICLE_LAYOUT,
     parentSeats: VEHICLE_PARENT_SEATS,
     childSeats: VEHICLE_CHILD_SEATS,
@@ -277,7 +277,7 @@ describe("both scenes together", () => {
       .style.width;
     table.unmount();
 
-    const car = render(<Expedition assignments={WEEK_1} swapping={false} arriving />);
+    const car = render(<Pacifica assignments={WEEK_1} swapping={false} arriving />);
     const carWidth = car.container
       .querySelector<HTMLElement>(".seat-glide")!
       .style.width;
@@ -295,7 +295,7 @@ describe("both scenes together", () => {
       .sort((a, b) => a - b);
     table.unmount();
 
-    const car = render(<Expedition assignments={WEEK_1} swapping={false} arriving />);
+    const car = render(<Pacifica assignments={WEEK_1} swapping={false} arriving />);
     const carDelays = [
       ...car.container.querySelectorAll<HTMLElement>(".seat-glide"),
     ]
@@ -315,7 +315,7 @@ describe("both scenes together", () => {
     );
     table.unmount();
 
-    const car = render(<Expedition assignments={WEEK_1} swapping={false} arriving />);
+    const car = render(<Pacifica assignments={WEEK_1} swapping={false} arriving />);
     for (const seat of VEHICLE_CHILD_SEATS) {
       const name = getPerson(WEEK_1.children[seat.position - 1].childId).name;
       expect(tableTops.get(name)).toBe(seat.position);

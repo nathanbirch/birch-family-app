@@ -160,7 +160,7 @@ describe("sibling adjacency report", () => {
   /*
    * Documented, measured result — not an aspiration.
    *
-   * Once the Expedition's seat numbers are inverted against the table's, zero
+   * Once the Pacifica's seat numbers are inverted against the table's, zero
    * repeats is no longer reachable by any schedule; one repeated pair per
    * transition is the floor. See the comment block in src/config/rotation.ts.
    */

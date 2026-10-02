@@ -2,7 +2,7 @@
 
 Bella (the dog) and Leia (the cat) sleep with a different child every night.
 The two cards sit at the bottom of the **Whose Turn** page (`/turns`), beneath
-the dinner table and the Expedition. The page and the tab were both called
+the dinner table and the Pacifica. The page and the tab were both called
 "Seats" until these arrived — see
 [Decisions](decisions.md#seats-became-turns-url-included).
 

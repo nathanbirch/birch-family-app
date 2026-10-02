@@ -13,7 +13,7 @@ still.
 
 On load — and again whenever the rotation rolls over to a new week — everyone
 walks in through a doorway and takes their seat, one person at a time, over
-exactly **three seconds**. The table and the Expedition run off the same clock,
+exactly **three seconds**. The table and the Pacifica run off the same clock,
 so the two cards fill up in step — and so does the Family Home Evening house
 below them, which fills from the top floor down.
 
@@ -32,14 +32,14 @@ TABLE_ENTRIES = {
 }
 ```
 
-**Ford Expedition** — four, one per door. The front seats come in through the
-front doors; the second and third rows come in through the rear door on their
+**Chrysler Pacifica** — four, one per door. The front seats come in through the
+front doors; the second and third rows come in through the sliding door on their
 own side, with the middle seat climbing in behind the driver.
 
 ```ts
 VEHICLE_ENTRIES = {
-  frontLeft:  { x: -18, y: 38 },   frontRight: { x: 118, y: 38 },
-  rearLeft:   { x: -18, y: 64 },   rearRight:  { x: 118, y: 64 },
+  frontLeft:  { x: -18, y: 40 },   frontRight: { x: 118, y: 40 },
+  rearLeft:   { x: -18, y: 59 },   rearRight:  { x: 118, y: 59 },
 }
 ```
 

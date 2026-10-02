@@ -93,7 +93,7 @@ export type WeeklyAssignments = {
   children: ChildAssignment[];
   /** Parent seats for the dinner table. Never affected by the rotation. */
   tableParents: ParentPair;
-  /** Parent seats for the Expedition. Never affected by the rotation. */
+  /** Parent seats for the Pacifica. Never affected by the rotation. */
   vehicleParents: ParentPair;
 };
 

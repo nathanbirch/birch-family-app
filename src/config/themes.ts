@@ -41,7 +41,7 @@ export type ThemeColors = {
 /**
  * Scene tokens for the two photographic seating views.
  *
- * The scenes are real photographs of the family's table and Expedition, so a
+ * The scenes are real photographs of the family's table and Pacifica, so a
  * theme tints and frames them rather than recolouring furniture.
  */
 export type ThemeScene = {

@@ -49,23 +49,23 @@ begins. The index can never go negative.
 
 ```ts
 export const CHILD_ROTATION_SCHEDULE = [
-  ["hannah",  "emily",   "clara",   "william", "james"],
   ["emily",   "clara",   "james",   "hannah",  "william"],
-  ["clara",   "james",   "william", "emily",   "hannah"],
   ["james",   "william", "hannah",  "clara",   "emily"],
+  ["hannah",  "emily",   "clara",   "william", "james"],
+  ["clara",   "james",   "william", "emily",   "hannah"],
   ["william", "hannah",  "emily",   "james",   "clara"],
 ] as const;
 ```
 
 Each row is one week; the five entries are Child Positions 1 to 5. The *same*
 position numbers drive both scenes — if Clara is in position 2 this week she is
-in Dinner Table Child Seat 2 **and** Expedition Child Seat 2. The two places are
+in Dinner Table Child Seat 2 **and** Pacifica Child Seat 2. The two places are
 physically different; the number is the same.
 
-And deliberately *opposite* in character: the Expedition's seat numbering is
+And deliberately *opposite* in character: the Pacifica's seat numbering is
 inverted against the table's, so positions 1 and 3 — the two seats beside a
 parent at dinner — are the third row of the car. A week spent next to a parent
-at the table is a week in the back of the Expedition. See
+at the table is a week in the back of the Pacifica. See
 [Family and seats](family-and-seats.md#the-inverted-numbering).
 
 ## Why not just rotate the array
@@ -112,7 +112,7 @@ half.
 Over one complete five-week cycle. `strong` = side by side, `weak` = across the
 table or front/behind in the car.
 
-| Pair | Table (strong/weak) | Expedition (strong/weak) | Combined strong |
+| Pair | Table (strong/weak) | Pacifica (strong/weak) | Combined strong |
 |---|---|---|---|
 | Hannah + Emily | 2 / 0 | 1 / 3 | **3** |
 | Hannah + Clara | 1 / 2 | 2 / 1 | **3** |
@@ -137,16 +137,28 @@ These numbers are re-derived by `tests/schedule.test.ts`, not copied by hand.
 ### The honest caveat
 
 This schedule does **not** hit zero repeated adjacencies, and an earlier one
-did. That changed when the Expedition's seat numbering was inverted against the
-table's, and it was not a free choice: sweeping all twelve legal
-position-to-seat mappings against all 720 candidate schedules, **none** reaches
-zero any more. Five — one pair per transition — is the floor.
+did. That changed when the car's seat numbering was inverted against the
+table's, and it was not a free choice: with the inversion in place, **none** of
+the 720 candidate schedules reaches zero any more. Five — one pair per
+transition — is the floor.
 
 What the inversion bought back is the other half of the trade-off the old
 schedule could never have. The old zero-repeat schedule ran a 2-or-4 band of
 pairings; this one is perfectly equal at 3. So the priorities still hold —
 "minimise repeated adjacency" first, then "distribute evenly" — the first
 criterion simply has a higher floor now, and the second comes out ideal.
+
+### When the car changed
+
+The Chrysler Pacifica replaced a Ford Expedition, and the two seat the children
+differently: the Expedition put three in the second row and two in the third,
+the Pacifica two and three. Different children are side by side, so the old
+week order would have kept **three** pairs together across every Monday.
+
+The fix was to reorder the same five weeks, not to pick new ones. The pairing
+table above does not depend on order, so it is unchanged, and the new order is
+back at one repeat per transition. The cycle was turned so that Week 5 stayed
+the week it already was, because the change landed during a Week 5.
 
 ## Editing the weeks
 

@@ -125,7 +125,14 @@
  * each URL carries the photo's version and is sent `immutable`, so a repeat
  * view costs no request at all.
  */
-const CACHE_VERSION = "v15";
+/*
+ * v16: the Chrysler Pacifica replaced the Ford Expedition on the Whose Turn
+ * page, and the sleepover room was rearranged. The v12 case: no tab or
+ * dashboard card changed, but an installed device holding a cached `/turns`
+ * would go on painting the old car — whose photograph is no longer served —
+ * and the old week order, and this is the cheapest way to be sure none does.
+ */
+const CACHE_VERSION = "v16";
 const CACHE_NAME = `birch-family-app-${CACHE_VERSION}`;
 const APP_SHELL = "/";
 

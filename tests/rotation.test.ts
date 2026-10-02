@@ -83,7 +83,7 @@ describe("week-by-week assignments", () => {
     expect(getRotationIndex(localDate("2027-08-02"), START)).toBe(2);
   });
 
-  it("gives the table and the Expedition the same position mapping", () => {
+  it("gives the table and the Pacifica the same position mapping", () => {
     const assignments = getWeeklyAssignments(localDate("2026-08-17"), START);
     // Both scenes read `assignments.children`, so the mapping is shared by
     // construction — this asserts the shape they both rely on.

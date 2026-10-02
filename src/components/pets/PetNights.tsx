@@ -11,7 +11,7 @@ import { getPetNights } from "@/lib/pets/rotation";
 import { PetCard } from "./PetCard";
 
 /**
- * Tonight's pets, beneath the dinner table and the Expedition.
+ * Tonight's pets, beneath the dinner table and the Pacifica.
  *
  * The seating above rotates every Monday; this rotates every night, so it is
  * its own section rather than a third scene card. It is a client component for

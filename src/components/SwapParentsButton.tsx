@@ -78,7 +78,7 @@ const FACE_OVERLAP = 6;
  * Deliberately not `<Avatar>`. That component carries a name label, an initial
  * badge and the arrival animation, all of which are meaningless at 20px; what
  * carries over is the ring, so the faces here read as the same two people
- * sitting at the table and in the Expedition below.
+ * sitting at the table and in the Pacifica below.
  *
  * The ring is the same two-layer treatment `<Avatar>` uses — a surface-coloured
  * gap inside a themed primary ring — which happens to survive both button

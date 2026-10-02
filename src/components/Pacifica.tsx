@@ -11,16 +11,16 @@ import { ScenePhoto } from "./ScenePhoto";
 import { SceneSeats } from "./SceneSeats";
 
 /**
- * The Expedition interior, photographed from above.
+ * The Pacifica interior, photographed from above.
  *
  *   Driver                 Front passenger
- *   Child 2    Child 4    Child 5      (second row)
- *   Child 1               Child 3      (third row)
+ *   Child 2               Child 5      (second row)
+ *   Child 1    Child 4    Child 3      (third row)
  *
  * The child numbers are inverted relative to the dinner table on purpose — see
- * the Expedition section of `config/seating.ts`.
+ * the Pacifica section of `config/seating.ts`.
  */
-export function Expedition({
+export function Pacifica({
   assignments,
   swapping,
   arriving,
@@ -32,10 +32,10 @@ export function Expedition({
 }) {
   return (
     <SceneCard
-      title="Ford Expedition"
+      title="Chrysler Pacifica"
       icon={<SteeringIcon />}
       aspect={VEHICLE_LAYOUT.aspect}
-      summaryTitle="Ford Expedition seating this week"
+      summaryTitle="Chrysler Pacifica seating this week"
       summary={getVehicleSummary(assignments)}
       scene={<ScenePhoto src={VEHICLE_LAYOUT.photo} />}
     >

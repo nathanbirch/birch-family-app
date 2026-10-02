@@ -52,7 +52,7 @@ describe("paths the proxy must skip", () => {
     "/avatars/william.png",
     // The folders that happened to be listed.
     "/scenes/dinner-table.png",
-    "/scenes/expedition.png",
+    "/scenes/pacifica.png",
     "/icons/icon-192.png",
     "/icons/icon-maskable-512.png",
     "/icons/apple-touch-icon.png",

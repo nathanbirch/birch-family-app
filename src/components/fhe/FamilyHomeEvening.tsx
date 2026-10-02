@@ -14,7 +14,7 @@ import { Seat } from "../Seat";
  *
  * Full width and landscape, under the two seating scenes and above the pets: it
  * is a picture of the whole house, so it is as wide as the table and the
- * Expedition are side by side rather than sharing a column with either.
+ * Pacifica are side by side rather than sharing a column with either.
  *
  * The room names are painted into the photograph, so nothing here labels them
  * again — the only thing drawn on top is the seven people. Which room each

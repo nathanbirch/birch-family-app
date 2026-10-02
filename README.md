@@ -70,7 +70,7 @@ npm start          # serve the production build locally
 - **Dashboard** (`/`) — a card per page, plus honest "coming soon" cards for
   the planned features.
 - **Seating rotation** (`/turns`) — the original app. Photographs of the real
-  dinner table and Ford Expedition with everyone on their actual seat, rotating
+  dinner table and Chrysler Pacifica with everyone on their actual seat, rotating
   the five children through a balanced five-week schedule.
 - **Family Home Evening** (`/turns`, beneath the seats) — a cutaway of the
   house with a room per job, everybody standing in the room whose job they have

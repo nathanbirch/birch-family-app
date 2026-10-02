@@ -12,7 +12,7 @@ import { getRotationStatus } from "@/lib/rotation";
 
 import { AppHeader } from "./AppHeader";
 import { DinnerTable } from "./DinnerTable";
-import { Expedition } from "./Expedition";
+import { Pacifica } from "./Pacifica";
 import { RandomPicker } from "./RandomPicker";
 import { RotationStatus } from "./RotationStatus";
 import { Sleepover } from "./Sleepover";
@@ -117,7 +117,7 @@ export function SeatingBoard({
               swapping={swapping}
               arriving={arriving}
             />
-            <Expedition
+            <Pacifica
               assignments={status.assignments}
               swapping={swapping}
               arriving={arriving}

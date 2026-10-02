@@ -48,7 +48,7 @@ shape — which is what lets them sit side by side on a desktop and match.
 | File | Scene |
 |---|---|
 | `public/scenes/dinner-table.png` | Dinner Table |
-| `public/scenes/expedition.png` | Ford Expedition |
+| `public/scenes/pacifica.png` | Chrysler Pacifica |
 
 A third scene shares this folder and the same `<Seat>` / `<Avatar>` machinery
 without being a seating scene at all: `family-home-evening.jpg`, a landscape
@@ -86,16 +86,22 @@ The two columns sit at x 24 and x 80, straddling bench and table edge and
 symmetric about the table's centre line. The children's rows are aligned across
 the table so seat 1 faces seat 3 and seat 2 faces seat 4.
 
-### Ford Expedition
+### Chrysler Pacifica
 
 ```
    Driver                 Front passenger
-   Child 2    Child 4     Child 5          (second row)
-   Child 1                Child 3          (third row)
+   Child 2                Child 5          (second row)
+   Child 1    Child 4     Child 3          (third row)
 ```
 
-Captain's chairs up front, a three-across second row, and the two outboard
-seats of the third row.
+Two seats up front, a pair of captain's chairs with an aisle between them in
+the second row, and a three-across bench in the third.
+
+The photograph is slightly taller than the 2:3 frame, so it is cropped by about
+1.7% top and bottom; the seat coordinates are positions in the frame as
+rendered. The rows are spaced a little wider than the seats themselves, and the
+third row is spread to x 30 / 50 / 70, so that three avatars and their name
+labels fit side by side.
 
 #### The inverted numbering
 
@@ -106,16 +112,16 @@ would also sit beside them in the car — the same child, every week, all week.
 
 The two scenes are inverted against each other instead:
 
-| Position | At the table | In the Expedition |
+| Position | At the table | In the Pacifica |
 |---|---|---|
 | 1 | beside Parent 1 | third row, driver side |
 | 3 | beside Parent 2 | third row, passenger side |
 | 2 | left bench, bottom | second row, driver side |
-| 4 | right bench, lower middle | second row, middle |
+| 4 | right bench, lower middle | third row, middle |
 | 5 | right bench, bottom | second row, passenger side |
 
 So a week next to a parent at dinner is a week in the back of the car, and a
-week down the far end of the table is a week in the second row. Sides are still
+week at the foot of either bench is a week in a captain's chair. Sides are still
 honoured — the left-bench children (1, 2) take the driver's side, the
 right-bench children (3, 5) the passenger side, and position 4, the middle of
 the right bench, takes the middle seat.
@@ -176,7 +182,7 @@ The schedule optimiser needs to know which seats are near which. Defined in
 | Layout | Shoulder-to-shoulder (weight 1) | Across / front-and-behind (weight 0.5) |
 |---|---|---|
 | Table | (1,2) (3,4) (4,5) | (1,3) (2,4) |
-| Expedition | (1,2) (2,3) (4,5) | (1,4) (2,4) (2,5) (3,5) |
+| Pacifica | (1,4) (3,4) (2,5) | (1,2) (2,4) (4,5) (3,5) |
 
 Because the two places have different geometry, the same position mapping
 produces different sibling relationships in each — which is exactly what makes

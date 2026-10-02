@@ -154,7 +154,7 @@ describe("seat geometry", () => {
 
   it("renders avatars at exactly the same size in both scenes", () => {
     // Same shape and same sizing constants, so equal-width cards produce
-    // pixel-identical avatars in the table and the Expedition.
+    // pixel-identical avatars in the table and the Pacifica.
     expect(TABLE_LAYOUT.aspect).toBe(VEHICLE_LAYOUT.aspect);
     expect(TABLE_LAYOUT.aspectRatio).toBe(VEHICLE_LAYOUT.aspectRatio);
     expect(TABLE_LAYOUT.avatarSize).toBe(VEHICLE_LAYOUT.avatarSize);
@@ -168,7 +168,7 @@ describe("seat geometry", () => {
     }
   });
 
-  it("lays the Expedition out as 2 + 3 + 2", () => {
+  it("lays the Pacifica out as 2 + 2 + 3", () => {
     expect(VEHICLE_PARENT_SEATS).toHaveLength(2);
     const secondRow = VEHICLE_CHILD_SEATS.filter((seat) =>
       seat.label.startsWith("second row"),
@@ -176,8 +176,8 @@ describe("seat geometry", () => {
     const thirdRow = VEHICLE_CHILD_SEATS.filter((seat) =>
       seat.label.startsWith("third row"),
     );
-    expect(secondRow).toHaveLength(3);
-    expect(thirdRow).toHaveLength(2);
+    expect(secondRow).toHaveLength(2);
+    expect(thirdRow).toHaveLength(3);
     // Rows are distinguishable by geometry too, not just by their labels.
     expect(Math.max(...secondRow.map((seat) => seat.y))).toBeLessThan(
       Math.min(...thirdRow.map((seat) => seat.y)),
@@ -189,9 +189,10 @@ describe("seat geometry", () => {
    * that a week is either "close to a parent" or "far from one" — never both.
    * At the table the parents take the top of each bench, so positions 1 and 3
    * are the ones beside them; in the car those same two children ride in the
-   * third row, furthest from the front seats.
+   * third row, furthest from the front seats, and neither captain's chair
+   * behind the parents goes to them.
    */
-  it("inverts parent proximity between the table and the Expedition", () => {
+  it("inverts parent proximity between the table and the Pacifica", () => {
     const nearParentAtTable = TABLE_CHILD_SEATS.filter((seat) =>
       TABLE_PARENT_SEATS.some(
         (parent) =>
@@ -203,7 +204,13 @@ describe("seat geometry", () => {
     const thirdRow = VEHICLE_CHILD_SEATS.filter((seat) =>
       seat.label.startsWith("third row"),
     ).map((seat) => seat.position);
-    expect([...thirdRow].sort()).toEqual([1, 3]);
+    // The bench seats three, so position 4 rides between them.
+    expect([...thirdRow].sort()).toEqual([1, 3, 4]);
+
+    const secondRow = VEHICLE_CHILD_SEATS.filter((seat) =>
+      seat.label.startsWith("second row"),
+    ).map((seat) => seat.position);
+    expect([...secondRow].sort()).toEqual([2, 5]);
   });
 
   it("keeps each child on the same side of the table and the car", () => {
@@ -233,7 +240,7 @@ describe("arrival choreography", () => {
     }
   });
 
-  it("gives the table two doorways and the Expedition four", () => {
+  it("gives the table two doorways and the Pacifica four", () => {
     const doorways = (seats: PlacedSeat[]) =>
       new Set(seats.map((seat) => seat.entry.id));
     expect(doorways(SCENES[0].seats).size).toBe(2);
@@ -366,7 +373,7 @@ describe("screen-reader summaries", () => {
     for (const line of lines) expect(line.text).toMatch(/\.$/);
   });
 
-  it("describes all seven Expedition seats", () => {
+  it("describes all seven Pacifica seats", () => {
     const lines = getVehicleSummary(WEEK_3);
     expect(lines).toHaveLength(7);
     expect(lines[0].text).toContain("driver's seat");

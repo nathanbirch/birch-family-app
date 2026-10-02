@@ -9,7 +9,7 @@ This is the third rotation on that page and the third clock it runs on:
 
 | Rotation | Changes | Who is in it |
 |---|---|---|
-| Seats — table and Expedition | Every **Monday** | Five children rotating, two parents parked |
+| Seats — table and Pacifica | Every **Monday** | Five children rotating, two parents parked |
 | Family Home Evening | Every **Sunday** | All seven |
 | Bella and Leia | Every **night** | Five children |
 
@@ -117,7 +117,7 @@ showing.
 one room per job and the job's name painted on its wall. Three notes on it:
 
 - **It is the full width of the page**, not a column, because it is a picture of
-  the whole house: as wide as the dinner table and the Expedition are side by
+  the whole house: as wide as the dinner table and the Pacifica are side by
   side. The frame uses the photograph's own aspect ratio, so it is never
   cropped and a coordinate always means the same spot on the wall.
 - **It is a JPEG**, and the only one in `public/scenes/`. The two seating
@@ -165,7 +165,7 @@ seating card:
 
 | | Frame | 12.5cqh |
 |---|---|---|
-| Dinner table / Expedition | ~436 × 654 | 82px |
+| Dinner table / Pacifica | ~436 × 654 | 82px |
 | The house | ~936 × 526 | 66px |
 
 Matching the pixels exactly would take 15.5. It is 14.5 because the **Lesson**
@@ -183,7 +183,7 @@ if you move a spot, look at the picture.
 
 The same three-second choreography as the seating scenes, off the same
 constants in [`src/config/seating.ts`](../src/config/seating.ts), so the house
-fills up in step with the table and the Expedition. People arrive through
+fills up in step with the table and the Pacifica. People arrive through
 whichever door is nearest their room — the left end, the right end, or the
 front door in the middle — and the house fills from the top floor down.
 

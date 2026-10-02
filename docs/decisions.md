@@ -138,7 +138,7 @@ One position number means one child in both scenes. Numbered the obvious way —
 front-to-back in the car, top-to-bottom at the table — that makes the child
 beside a parent at dinner the child beside them in the car too, the same child
 all week. Inverting the car's numbering makes the two scenes opposites instead:
-beside a parent at the table means the third row in the Expedition.
+beside a parent at the table means the third row in the Pacifica.
 
 The adjacency data follows the physical seats rather than the numbers, so the
 fairness analysis is unaffected by the relabelling. See

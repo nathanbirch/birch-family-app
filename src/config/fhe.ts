@@ -5,7 +5,7 @@
  * ---------------------------------------------------------------------------
  * WHY THIS IS A THIRD ROTATION AND NOT A THIRD SCENE
  * ---------------------------------------------------------------------------
- * The dinner table and the Expedition are two views of *one* rotation: five
+ * The dinner table and the Pacifica are two views of *one* rotation: five
  * children moving through five numbered positions on a five-week cycle, with
  * the parents parked in seats of their own. This is a different thing wearing
  * the same clothes:
@@ -219,7 +219,7 @@ export const FHE_PHOTO_HEIGHT = 940;
 
 /**
  * Landscape, and the full width of the page — the picture is a cutaway of the
- * whole house, so it is as wide as the dinner table and the Expedition are
+ * whole house, so it is as wide as the dinner table and the Pacifica are
  * side by side rather than sharing a column with either.
  *
  * Sizes stay in `cqh` (a percentage of the frame's *height*), exactly as the

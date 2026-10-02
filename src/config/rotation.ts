@@ -5,7 +5,7 @@
  *
  *   [ Child Position 1, 2, 3, 4, 5 ]
  *
- * The same permutation drives both the dinner table and the Expedition for a
+ * The same permutation drives both the dinner table and the Pacifica for a
  * given week, so "Clara is in position 2" means position 2 in both scenes.
  *
  * ---------------------------------------------------------------------------
@@ -27,22 +27,33 @@
  *   ...including the Week 5 -> Week 1 wrap.
  *
  *   Sibling pairs sharing a shoulder-to-shoulder seat over the whole cycle,
- *   counting the dinner table and the Expedition together: every one of the ten
+ *   counting the dinner table and the Pacifica together: every one of the ten
  *   pairs, exactly 3 times, for an identical weighted score of 4.5 each. The
  *   distribution is perfectly equal — nobody is anybody's favourite.
  *
  * ---------------------------------------------------------------------------
- * WHY THIS IS NOT THE ZERO-REPEAT SCHEDULE IT USED TO BE
+ * WHY THIS IS NOT A ZERO-REPEAT SCHEDULE
  * ---------------------------------------------------------------------------
- * The Expedition's seat numbering is deliberately inverted against the dinner
+ * The Pacifica's seat numbering is deliberately inverted against the dinner
  * table's, so a week beside a parent at dinner is a week in the third row of
- * the car (see the Expedition section of `config/seating.ts`). That inversion
- * constrains the search: sweeping all twelve legal position-to-seat mappings
- * against all 720 candidate schedules, *none* reaches zero repeated adjacencies
- * any more. Five — exactly one pair per transition — is the floor, and among
- * the schedules that hit it this one also achieves a perfectly flat pairing
- * distribution, which the old zero-repeat schedule never managed (it ran a 2-4
- * band). So the trade-off moved, and it moved in a defensible direction.
+ * the car (see the Pacifica section of `config/seating.ts`). That inversion
+ * constrains the search: with it in place, none of the 720 candidate schedules
+ * reaches zero repeated adjacencies. Five — exactly one pair per transition —
+ * is the floor, and among the schedules that hit it this one also achieves a
+ * perfectly flat pairing distribution.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THE WEEKS ARE IN THIS ORDER
+ * ---------------------------------------------------------------------------
+ * These are the same five weeks the Chrysler Pacifica ran, in a different order.
+ * The Pacifica seats two in the second row and three in the third where the
+ * Expedition seated three and two, so different children are side by side in
+ * the car, and the old order would have kept three pairs together across
+ * every Monday instead of one. Reordering the weeks restores the floor without
+ * touching the pairing distribution, which does not depend on order.
+ *
+ * The cycle was also turned so that Week 5 is the week it always was: the
+ * car changed during a Week 5, and nobody had to move seats mid-week.
  * ---------------------------------------------------------------------------
  *
  * If you edit these weeks, run `npm test` — the schedule tests enforce all the
@@ -52,10 +63,10 @@
 import type { ChildId } from "./family";
 
 export const CHILD_ROTATION_SCHEDULE = [
-  ["hannah", "emily", "clara", "william", "james"],
   ["emily", "clara", "james", "hannah", "william"],
-  ["clara", "james", "william", "emily", "hannah"],
   ["james", "william", "hannah", "clara", "emily"],
+  ["hannah", "emily", "clara", "william", "james"],
+  ["clara", "james", "william", "emily", "hannah"],
   ["william", "hannah", "emily", "james", "clara"],
 ] as const satisfies ReadonlyArray<readonly ChildId[]>;
 

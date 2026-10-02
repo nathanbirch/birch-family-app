@@ -273,14 +273,14 @@ SeatingBoard          the client island; owns the date and the swap
 │   └── ThemePicker
 ├── RotationStatus    week, date range, next rotation, days remaining
 ├── DinnerTable  ─┐
-└── Expedition   ─┴─► SceneCard   card shell + screen-reader description
+└── Pacifica     ─┴─► SceneCard   card shell + screen-reader description
                       ├── ScenePhoto   the photograph and its themed wash
                       └── SceneSeats   places the seven people
                           └── Seat     position, arrival timing, swap glide
                               └── Avatar   photo or illustration, name, initial
 ```
 
-`DinnerTable` and `Expedition` are deliberately thin: they pick a layout and a
+`DinnerTable` and `Pacifica` are deliberately thin: they pick a layout and a
 photo, and hand everything else to the shared `SceneCard` / `SceneSeats` pair.
 The two scenes differ only in their config.
 
