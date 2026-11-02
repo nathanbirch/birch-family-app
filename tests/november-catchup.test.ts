@@ -24,7 +24,9 @@ describe("November 1 catch-up ceremony", () => {
     ["2026-11-01T05:59:59Z", false],
     ["2026-11-01T06:00:00Z", true],
     ["2026-11-02T06:59:59Z", true],
-    ["2026-11-02T07:00:00Z", false],
+    ["2026-11-02T07:00:00Z", true],
+    ["2026-11-03T06:59:59Z", true],
+    ["2026-11-03T07:00:00Z", false],
   ])("uses Boise's date at %s, including the DST change", (instant, visible) => {
     const today = familyNow(new Date(instant)).date;
     expect(Boolean(getVisibleSpanCeremony(catchup.id, today))).toBe(visible);
