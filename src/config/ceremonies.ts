@@ -70,6 +70,23 @@ export type SpanCeremony = {
 
 export const SPAN_CEREMONIES: readonly SpanCeremony[] = [
   {
+    id: "six-weeks-of-stars",
+    title: "Six Weeks of Stars",
+    blurb: "Six weeks of effort, celebrated together. Available tonight, November 8!",
+    // The five unopened ceremonies from October 4–November 1, plus November 8.
+    weekStarts: [
+      "2026-09-28",
+      "2026-10-05",
+      "2026-10-12",
+      "2026-10-19",
+      "2026-10-26",
+      "2026-11-02",
+    ],
+    visibleFrom: "2026-11-08",
+    // Midnight in America/Boise: 2026-11-09T07:00:00Z.
+    hiddenFrom: "2026-11-09",
+  },
+  {
     id: "five-weeks-of-stars",
     title: "Five Weeks of Stars",
     blurb: "Five weeks of effort, celebrated together. Available through November 2!",
