@@ -265,6 +265,7 @@ describe("when a span ceremony may be watched", () => {
      * shortcut becomes a dead link into an empty stage.
      */
     for (const configured of SPAN_CEREMONIES) {
+      if (!configured.hiddenFrom) continue;
       const dayAfter = configured.hiddenFrom;
       expect(getVisibleSpanCeremony(configured.id, dayAfter)).toBeUndefined();
       expect(visibleSpanCeremonies(dayAfter)).not.toContain(configured);
@@ -325,6 +326,7 @@ describe("the configured ceremonies", () => {
 
   it("closes after it opens", () => {
     for (const ceremony of SPAN_CEREMONIES) {
+      if (!ceremony.hiddenFrom) continue;
       expect(parseLocalDate(ceremony.hiddenFrom)).not.toBeNull();
       if (ceremony.visibleFrom) {
         expect(ceremony.visibleFrom < ceremony.hiddenFrom).toBe(true);

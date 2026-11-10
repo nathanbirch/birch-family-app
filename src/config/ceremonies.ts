@@ -64,15 +64,15 @@ export type SpanCeremony = {
    * ships if it is left out.
    */
   visibleFrom?: string;
-  /** Gone from midnight at the start of this date. Family clock. */
-  hiddenFrom: string;
+  /** Gone from midnight at the start of this date. Omit to keep available. */
+  hiddenFrom?: string;
 };
 
 export const SPAN_CEREMONIES: readonly SpanCeremony[] = [
   {
     id: "six-weeks-of-stars",
     title: "Six Weeks of Stars",
-    blurb: "Six weeks of effort, celebrated together. Available tonight, November 8!",
+    blurb: "Six weeks of effort, celebrated together. Ready whenever your family is.",
     // The five unopened ceremonies from October 4–November 1, plus November 8.
     weekStarts: [
       "2026-09-28",
@@ -83,8 +83,7 @@ export const SPAN_CEREMONIES: readonly SpanCeremony[] = [
       "2026-11-02",
     ],
     visibleFrom: "2026-11-08",
-    // Midnight in America/Boise: 2026-11-09T07:00:00Z.
-    hiddenFrom: "2026-11-09",
+    // Keep this catch-up available: the family has not held it yet.
   },
   {
     id: "five-weeks-of-stars",
@@ -128,7 +127,7 @@ export function isCeremonyVisible(
   today: string,
 ): boolean {
   if (ceremony.visibleFrom && today < ceremony.visibleFrom) return false;
-  return today < ceremony.hiddenFrom;
+  return !ceremony.hiddenFrom || today < ceremony.hiddenFrom;
 }
 
 /** The span ceremonies watchable today, in configured order. */

@@ -25,10 +25,17 @@ describe("November 8 six-week catch-up ceremony", () => {
     ["2026-11-08T07:00:00Z", true],
     ["2026-11-09T00:47:23Z", true],
     ["2026-11-09T06:59:59Z", true],
-    ["2026-11-09T07:00:00Z", false],
+    ["2026-11-09T07:00:00Z", true],
+    ["2026-11-10T03:00:00Z", true],
+    ["2027-01-01T07:00:00Z", true],
   ])("uses Boise's date at %s, including UTC tomorrow", (instant, visible) => {
     const today = familyNow(new Date(instant)).date;
     expect(Boolean(getVisibleSpanCeremony(catchup.id, today))).toBe(visible);
+  });
+
+  it("keeps the same identity without an automatic expiry", () => {
+    expect(catchup.id).toBe("six-weeks-of-stars");
+    expect(catchup.hiddenFrom).toBeUndefined();
   });
 
   it("sums each week's charts and rows without inventing perfect awards", () => {
